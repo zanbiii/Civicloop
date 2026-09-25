@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   ArrowRight,
-  Brain,
   HardHat,
   ChevronDown,
+  Check,
   CircleCheck,
   FastForward,
   GitMerge,
@@ -178,31 +178,31 @@ const PITCH_ROWS: Array<{ icon: typeof GitMerge; topic: string; typical: string;
 function PitchBanner() {
   const [open, setOpen] = useState(true);
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 text-white">
-      <button type="button" onClick={() => setOpen((value) => !value)} className="flex w-full items-center gap-3 px-5 py-4 text-left">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/20 text-violet-300">
+    <section className="overflow-hidden rounded-[1.5rem] border border-slate-800 bg-[#102b27] text-white shadow-[0_18px_55px_-38px_rgb(15_23_42_/55%)]">
+      <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} className="flex w-full items-center gap-3 px-4 py-4 text-left sm:px-5">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-300/10 text-emerald-200">
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0">
           <h2 className="text-base font-bold">Why Civicloop Wins over CPGRAMS &amp; Sahaaya 2.0</h2>
-          <p className="text-xs text-slate-400">From a complaint inbox to a self-healing loop that closes on evidence.</p>
+          <p className="text-xs text-emerald-50/55">From a complaint inbox to a self-healing loop that closes on evidence.</p>
         </div>
         <ChevronDown className={cn('ml-auto h-5 w-5 shrink-0 text-slate-400 transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
         <div className="border-t border-slate-800 px-5 pb-5 pt-2">
-          <div className="grid gap-2">
+          <div className="grid gap-2.5">
             {PITCH_ROWS.map((row) => (
-              <div key={row.topic} className="grid gap-2 rounded-xl bg-slate-800/60 p-3 md:grid-cols-[8rem_1fr_1.4fr] md:items-start">
+              <div key={row.topic} className="grid gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.045] p-3.5 md:grid-cols-[8rem_1fr_1.4fr] md:items-start">
                 <span className="flex items-center gap-2 text-sm font-semibold text-slate-100">
-                  <row.icon className="h-4 w-4 text-violet-300" /> {row.topic}
+                  <row.icon className="h-4 w-4 text-emerald-200" /> {row.topic}
                 </span>
                 <span className="text-xs text-slate-400">
                   <span className="mr-1 font-semibold uppercase tracking-wide text-slate-500 md:hidden">Typical:</span>
                   {row.typical}
                 </span>
-                <span className="flex items-start gap-1.5 text-xs text-emerald-200">
-                  <CircleCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                <span className="flex items-start gap-1.5 text-xs leading-relaxed text-emerald-100">
+                  <CircleCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-300" />
                   {row.civicloop}
                 </span>
               </div>
@@ -231,11 +231,11 @@ function DemoBar({
   onReset: () => void;
 }) {
   const button =
-    'flex shrink-0 items-center gap-1.5 rounded-lg border border-violet-200 bg-white px-3 py-1.5 text-xs font-semibold text-violet-800 hover:bg-violet-100 disabled:opacity-50';
+    'flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-900/10 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-sm transition hover:border-emerald-700/20 hover:bg-emerald-50 disabled:opacity-50';
   return (
-    <div className="border-b border-violet-200 bg-violet-50">
-      <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-4 py-2">
-        <span className="shrink-0 text-xs font-bold text-violet-700">🚀 Quick Demo</span>
+    <div className="border-b border-emerald-900/10 bg-[#e8f4ef]">
+      <div className="soft-scrollbar mx-auto flex max-w-[90rem] items-center gap-2 overflow-x-auto px-3 py-2 sm:px-5 lg:px-8">
+        <span className="shrink-0 rounded-full bg-emerald-800 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">Demo lab</span>
         <button type="button" disabled={busy} onClick={() => onScenario('pothole')} className={button}>
           <GitMerge className="h-3.5 w-3.5" /> Duplicate pothole report
         </button>
@@ -249,7 +249,7 @@ function DemoBar({
           <RotateCcw className="h-3.5 w-3.5" /> Reset
         </button>
         {clockOffsetHours > 0 && (
-          <span className="shrink-0 rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-bold text-white">Clock +{clockOffsetHours}h</span>
+          <span className="shrink-0 rounded-full bg-emerald-800 px-2 py-0.5 text-[10px] font-bold text-white">Clock +{clockOffsetHours}h</span>
         )}
       </div>
     </div>
@@ -276,7 +276,7 @@ function MapCard({
   depots?: ToolDepot[];
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-3">
+    <section className="surface-card overflow-hidden p-3 sm:p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
         <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
           <MapIcon className="h-4 w-4" /> {title}
@@ -607,7 +607,13 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-slate-50 text-slate-900">
+    <div className="app-shell flex min-h-full flex-1 flex-col text-slate-900">
+      <a
+        href="#main-content"
+        className="sr-only fixed left-4 top-4 z-[3000] rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg focus:not-sr-only"
+      >
+        Skip to content
+      </a>
       <Header
         sessionUser={activeSessionUser}
         demoMode={demoMode}
@@ -632,52 +638,84 @@ export default function Home() {
         />
       )}
 
-      <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 py-6">
+      <main id="main-content" className="mx-auto w-full max-w-[90rem] flex-1 space-y-7 px-3 py-5 sm:space-y-8 sm:px-5 sm:py-8 lg:px-8">
         {!sessionUser && (
           <>
-            <section className="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-center">
-              <div className="space-y-4">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
-                  <Brain className="h-3.5 w-3.5" /> CivicSense · 5 autonomous agents
+            <section className="relative isolate overflow-hidden rounded-[1.75rem] bg-[#0c3029] px-5 py-7 text-white shadow-[0_24px_80px_-36px_rgb(6_78_59_/65%)] sm:rounded-[2rem] sm:px-9 sm:py-10 lg:px-12 lg:py-12">
+              <div className="pointer-events-none absolute -right-24 -top-36 -z-10 h-[28rem] w-[28rem] rounded-full bg-emerald-400/15 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-48 left-[30%] -z-10 h-80 w-80 rounded-full bg-teal-300/10 blur-3xl" />
+              <div className="grid gap-9 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-14">
+              <div className="space-y-5 sm:space-y-6">
+                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200/20 bg-emerald-100/10 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-100">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-60" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-300" />
+                  </span>
+                  CIVICSENSE · 5 AI AGENTS AT WORK
                 </span>
-                <h1 className="text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl">
-                  Report it once. Watch the city fix it — and prove it.
+                <h1 className="max-w-2xl text-[2.4rem] font-bold leading-[1.08] tracking-[-0.045em] text-white sm:text-5xl lg:text-[3.65rem]">
+                  Your neighborhood, <span className="text-emerald-300">better by design.</span>
                 </h1>
-                <p className="max-w-xl text-sm leading-relaxed text-slate-600">
-                  Civicloop turns photos, voice notes and map pins into verified, deduplicated, correctly-routed civic tickets.
-                  Duplicate reports merge, routing heals itself, missed deadlines escalate on their own, and nothing closes
-                  without before/after proof.
+                <p className="max-w-xl text-sm leading-7 text-emerald-50/75 sm:text-base">
+                  Report a local issue in seconds. Civicloop brings neighbors together, gets the right team on it, and keeps the fix accountable from first photo to final proof.
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:flex-wrap">
                   <button
                     type="button"
                     onClick={() => openAuth('citizen')}
-                    className="flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-700"
+                    className="group flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-300 px-5 py-3 text-sm font-bold text-emerald-950 shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-emerald-200"
                   >
-                    Report an issue <ArrowRight className="h-4 w-4" />
+                    Report an issue <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => openAuth('volunteer')}
-                    className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
                   >
-                    <HardHat className="h-4 w-4" /> I&apos;m a CoV
+                    <HardHat className="h-4 w-4 text-emerald-200" /> Join as a CoV
                   </button>
                 </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1 text-[11px] font-medium text-emerald-50/65">
+                  <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-emerald-300" /> Your identity stays private</span>
+                  <span className="hidden h-1 w-1 rounded-full bg-emerald-200/40 sm:block" />
+                  <span>English · ಕನ್ನಡ · हिन्दी</span>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="relative">
+                <div className="absolute -inset-4 rounded-[2rem] bg-emerald-300/5 blur-2xl" />
+                <div className="relative rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur sm:p-5">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200/70">City impact</div>
+                      <div className="mt-1 text-sm font-semibold text-white">Small actions. Visible progress.</div>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/15 bg-emerald-200/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-100">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> Live demo
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                 {[
-                  { label: 'Citizen reports', value: telemetry.totalReports, sub: `${telemetry.masterIssues} master issues` },
-                  { label: 'Duplicates merged', value: `${telemetry.duplicateReductionPercent}%`, sub: `${telemetry.duplicatesMerged} tickets avoided` },
-                  { label: 'Auto-escalations', value: telemetry.autoEscalations, sub: 'breaches briefed upward' },
-                  { label: 'Proof-verified fixes', value: telemetry.proofVerified, sub: `${telemetry.proofRejected} fake proofs rejected` },
+                  { label: 'Neighbors heard', value: telemetry.totalReports, sub: `${telemetry.masterIssues} issues tracked`, icon: Users },
+                  { label: 'Less duplicate noise', value: `${telemetry.duplicateReductionPercent}%`, sub: `${telemetry.duplicatesMerged} reports combined`, icon: GitMerge },
+                  { label: 'On-time accountability', value: telemetry.autoEscalations, sub: 'automatic deadline escalations', icon: Siren },
+                  { label: 'Fixes with proof', value: telemetry.proofVerified, sub: `${telemetry.proofRejected} proofs reviewed`, icon: Check },
                 ].map((stat) => (
-                  <div key={stat.label} className="rounded-xl border border-slate-200 bg-white p-4">
-                    <div className="text-[11px] font-semibold text-slate-500">{stat.label}</div>
-                    <div className="mt-1 text-2xl font-bold text-slate-900">{stat.value}</div>
-                    <div className="text-[11px] text-slate-500">{stat.sub}</div>
+                  <div key={stat.label} className="min-h-[116px] rounded-2xl border border-white/10 bg-[#f7fbf9] p-3.5 text-slate-900 sm:p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-[10px] font-semibold text-slate-500 sm:text-[11px]">{stat.label}</div>
+                      <stat.icon className="h-4 w-4 shrink-0 text-emerald-700" />
+                    </div>
+                    <div className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-[1.75rem]">{stat.value}</div>
+                    <div className="mt-0.5 text-[10px] leading-relaxed text-slate-500 sm:text-[11px]">{stat.sub}</div>
                   </div>
                 ))}
+              </div>
+                  <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200/10 bg-emerald-950/35 px-3 py-2.5 text-[11px] text-emerald-50/75">
+                    <Check className="h-4 w-4 shrink-0 text-emerald-300" />
+                    Every report is tracked. Every resolution needs evidence.
+                  </div>
+                </div>
+              </div>
               </div>
             </section>
 
@@ -703,7 +741,7 @@ export default function Home() {
                 userLocation={userLocation}
                 onLocateMe={setUserLocation}
                 depots={SEED_TOOL_DEPOTS}
-                heightClass="h-[600px]"
+                heightClass="h-[380px] sm:h-[480px] lg:h-[600px]"
               />
             </div>
           </>
@@ -711,7 +749,7 @@ export default function Home() {
 
         {citizen && (
           <>
-            <div className="flex rounded-xl bg-white p-1 text-sm font-semibold shadow-sm ring-1 ring-slate-200">
+            <div className="soft-scrollbar surface-card flex gap-1 overflow-x-auto p-1.5 text-sm font-semibold sm:p-2" role="group" aria-label="Citizen dashboard">
               {(
                 [
                   ['bounties', '🔥 Bounty Network'],
@@ -724,7 +762,8 @@ export default function Home() {
                   key={id}
                   type="button"
                   onClick={() => setCitizenTab(id)}
-                  className={cn('flex-1 rounded-lg px-3 py-2', citizenTab === id ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800')}
+                  aria-pressed={citizenTab === id}
+                  className={cn('min-h-10 shrink-0 rounded-xl px-3 py-2 text-xs transition sm:flex-1 sm:px-4 sm:text-sm', citizenTab === id ? 'bg-emerald-800 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900')}
                 >
                   {label}
                 </button>
@@ -750,15 +789,15 @@ export default function Home() {
                   selectedTicketId={selectedTicketId}
                   onSelectTicket={setSelectedTicketId}
                   userLocation={userLocation}
-                onLocateMe={setUserLocation}
+                  onLocateMe={setUserLocation}
                   depots={SEED_TOOL_DEPOTS}
-                  heightClass="h-[600px]"
+                  heightClass="h-[380px] sm:h-[480px] lg:h-[600px]"
                 />
               </div>
             )}
 
             {citizenTab === 'report' && (
-              <section className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-5">
+              <section className="surface-card mx-auto max-w-3xl p-4 sm:p-7">
                 <CitizenIntakeForm
                   reporter={citizen}
                   language={language}
@@ -797,7 +836,7 @@ export default function Home() {
                 userLocation={userLocation}
                 onLocateMe={setUserLocation}
                 depots={SEED_TOOL_DEPOTS}
-                heightClass="h-[560px]"
+                heightClass="h-[380px] sm:h-[480px] lg:h-[560px]"
               />
             )}
           </>
@@ -805,7 +844,7 @@ export default function Home() {
 
         {volunteer && (
           <div className="space-y-5">
-            <div className="flex rounded-xl bg-white p-1 text-sm font-semibold shadow-sm ring-1 ring-slate-200">
+            <div className="surface-card flex gap-1 p-1.5 text-sm font-semibold sm:p-2" role="group" aria-label="CoV dashboard">
               {(
                 [
                   ['bounties', 'Bounty missions'],
@@ -816,7 +855,8 @@ export default function Home() {
                   key={id}
                   type="button"
                   onClick={() => setCovTab(id)}
-                  className={cn('flex-1 rounded-lg px-3 py-2', covTab === id ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800')}
+                  aria-pressed={covTab === id}
+                  className={cn('min-h-10 flex-1 rounded-xl px-3 py-2 text-xs transition sm:text-sm', covTab === id ? 'bg-emerald-800 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900')}
                 >
                   {label}
                 </button>
@@ -845,7 +885,7 @@ export default function Home() {
                   onLocateMe={setUserLocation}
                   depots={SEED_TOOL_DEPOTS}
                   title="Bounty missions near you"
-                  heightClass="h-[600px]"
+                  heightClass="h-[380px] sm:h-[480px] lg:h-[600px]"
                 />
               </div>
             )}
@@ -894,8 +934,8 @@ export default function Home() {
         )}
       </main>
 
-      <footer className="border-t border-slate-200 bg-white py-4 text-center text-[11px] text-slate-500">
-        Civicloop · CivicSense orchestration · CivicEye vision · OpenStreetMap contributors
+      <footer className="mt-8 border-t border-slate-200/80 bg-white/65 px-4 py-5 text-center text-[11px] text-slate-500">
+        <span className="font-semibold text-slate-700">Civicloop</span> · CivicSense orchestration · CivicEye vision · OpenStreetMap contributors
       </footer>
 
       <AuthModal

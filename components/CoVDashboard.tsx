@@ -580,7 +580,7 @@ export default function CoVDashboard({
         <span className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
           {cov.department}
         </span>
-        <div className="flex rounded-lg bg-slate-100 p-0.5 text-xs font-semibold">
+        <div className="flex rounded-xl bg-slate-100/80 p-1 text-xs font-semibold">
           {(
             [
               ['active', 'Active queue'],
@@ -592,7 +592,8 @@ export default function CoVDashboard({
               key={id}
               type="button"
               onClick={() => setTab(id)}
-              className={cn('rounded-md px-3 py-1', tab === id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500')}
+              aria-pressed={tab === id}
+              className={cn('min-h-8 rounded-lg px-3 py-1 transition', tab === id ? 'bg-white text-emerald-900 shadow-sm' : 'text-slate-500 hover:text-slate-800')}
             >
               {label}
             </button>
@@ -601,7 +602,7 @@ export default function CoVDashboard({
       </div>
 
       {queue.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+        <div className="surface-card p-8 text-center text-sm text-slate-500">
           Nothing here right now.
         </div>
       ) : (

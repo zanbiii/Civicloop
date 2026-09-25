@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #f4f7f6;
+  --foreground: #17211f;
+  --surface: #ffffff;
+  --brand: #087f5b;
+  --brand-dark: #075c45;
 }
 
 @theme inline {
@@ -26,15 +30,61 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
+  font-feature-settings: "ss01" on;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #a7f3d0;
+  color: #064e3b;
+}
+
+:focus-visible {
+  outline: 3px solid #34d399;
+  outline-offset: 3px;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+.app-shell {
+  background:
+    radial-gradient(ellipse at 7% 10%, rgb(16 185 129 / 5%), transparent 32rem),
+    linear-gradient(180deg, #f7faf9 0%, #f1f5f4 100%);
+}
+
+.surface-card {
+  border: 1px solid rgb(203 213 225 / 68%);
+  border-radius: 1.25rem;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 8px 30px -24px rgb(15 23 42 / 36%), 0 1px 2px rgb(15 23 42 / 4%);
+}
+
+.soft-scrollbar {
+  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

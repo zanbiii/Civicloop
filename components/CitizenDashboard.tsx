@@ -129,7 +129,7 @@ function TicketCard({
   const afterPhoto = ticket.afterPhotos[0];
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_6px_22px_-18px_rgb(15_23_42_/30%)] transition hover:border-emerald-200">
       <div className="flex gap-3">
         {photo && (
           // eslint-disable-next-line @next/next/no-img-element -- evidence may be a base64 data: URL
@@ -345,10 +345,10 @@ export default function CitizenDashboard({
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">My Reports</h2>
-          <p className="text-xs text-slate-500">
+          <h2 className="text-xl font-bold tracking-tight text-slate-900">My reports</h2>
+          <p className="mt-1 text-xs text-slate-500">
             Signed in as {reporter.displayName} · {myTickets.length} report{myTickets.length === 1 ? '' : 's'}
             {pendingCount > 0 ? ` · ${pendingCount} awaiting your confirmation` : ''}
           </p>
@@ -357,7 +357,7 @@ export default function CitizenDashboard({
           <button
             type="button"
             onClick={onNewReport}
-            className="flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+            className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl bg-emerald-800 px-3.5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-900 sm:px-4 sm:text-sm"
           >
             <Plus className="h-4 w-4" /> Report an issue
           </button>
@@ -365,8 +365,15 @@ export default function CitizenDashboard({
       </div>
 
       {myTickets.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
-          You haven&apos;t reported anything yet. Once you do, you can track its status here.
+        <div className="surface-card flex flex-col items-center px-5 py-12 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><MapPin className="h-6 w-6" /></span>
+          <h3 className="mt-4 text-sm font-bold text-slate-900">Your reports will show up here</h3>
+          <p className="mt-1 max-w-sm text-sm leading-relaxed text-slate-500">Start with a photo or a quick description. We&apos;ll keep you updated all the way to a verified fix.</p>
+          {onNewReport && (
+            <button type="button" onClick={onNewReport} className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-900">
+              <Plus className="h-4 w-4" /> Report your first issue
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -383,8 +390,8 @@ export default function CitizenDashboard({
 
       {nearbyTickets.length > 0 && (
         <div>
-          <h3 className="text-sm font-bold text-slate-900">Also happening nearby</h3>
-          <p className="mb-3 text-xs text-slate-500">
+          <h3 className="text-base font-bold tracking-tight text-slate-900">Also happening nearby</h3>
+          <p className="mb-3 mt-1 max-w-2xl text-xs leading-relaxed text-slate-500">
             Seeing the same problem? Add yourself as a co-reporter instead of filing a new ticket — it raises the issue&apos;s
             priority.
           </p>

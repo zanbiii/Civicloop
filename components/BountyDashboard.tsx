@@ -64,9 +64,9 @@ interface BountyDashboardProps {
 function CsrWidget({ fund }: { fund: CsrFund }) {
   const balancePercent = Math.round((fund.activeBalanceInr / fund.totalPoolInr) * 100);
   return (
-    <section className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-2xl backdrop-blur-xl">
+    <section className="surface-card p-4 sm:p-5">
       <div className="flex items-start gap-2">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-lg">🏢</span>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-lg">🏢</span>
         <div className="min-w-0">
           <h3 className="text-sm font-bold text-slate-900">
             {fund.sponsorName} ({fund.zone})
@@ -112,7 +112,7 @@ function CsrWidget({ fund }: { fund: CsrFund }) {
 
 function VolunteerProfileCard({ volunteer }: { volunteer: VolunteerProfile }) {
   return (
-    <section className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-2xl backdrop-blur-xl">
+    <section className="surface-card p-4 sm:p-5">
       <div className="flex items-center gap-3">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-2xl">
           <HardHat className="h-6 w-6 text-amber-700" />
@@ -337,7 +337,7 @@ function TaskCard({
     <motion.div
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.99 }}
-      className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+      className="cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_6px_22px_-18px_rgb(15_23_42_/30%)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg"
       onClick={onSelect}
     >
       <div className="flex items-start justify-between gap-2">
@@ -433,7 +433,7 @@ function TaskCard({
           }}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
         >
-          Sign in as a CoV to accept missions
+          Sign in or join to report, contribute or volunteer
         </button>
       )}
     </motion.div>
@@ -471,8 +471,8 @@ export default function BountyDashboard({
       <CsrWidget fund={csrFund} />
       {myVolunteer && <VolunteerProfileCard volunteer={myVolunteer} />}
 
-      <section className="rounded-3xl border border-slate-200/80 bg-white/90 p-4 shadow-2xl backdrop-blur-xl">
-        <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 text-xs font-semibold">
+      <section className="surface-card p-3 sm:p-4">
+        <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100/80 p-1 text-[10px] font-semibold sm:text-xs">
           {(
             [
               ['active', '🔥 Active Bounties', Flame],
@@ -484,14 +484,16 @@ export default function BountyDashboard({
               key={id}
               type="button"
               onClick={() => setTab(id)}
-              className={cn('flex items-center justify-center gap-1 rounded-lg py-2', tab === id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500')}
+              role="tab"
+              aria-selected={tab === id}
+              className={cn('flex min-h-10 items-center justify-center gap-1 rounded-lg px-1 py-2 transition sm:gap-1.5', tab === id ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-slate-200/70' : 'text-slate-500 hover:text-slate-800')}
             >
               {label}
             </button>
           ))}
         </div>
 
-        <div className="mt-4 max-h-[560px] space-y-2.5 overflow-y-auto pr-1">
+        <div className="soft-scrollbar mt-4 max-h-[560px] space-y-2.5 overflow-y-auto pr-1">
           {tab === 'active' &&
             (activeTasks.length === 0 ? (
               <p className="py-8 text-center text-sm text-slate-400">No open bounties right now — nice and clear out there.</p>
