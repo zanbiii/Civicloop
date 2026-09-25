@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   ArrowRight,
+  Camera,
   HardHat,
   ChevronDown,
   Check,
@@ -28,6 +29,7 @@ import CoVDashboard, { ProofResult } from '@/components/CoVDashboard';
 import AIBrainDashboard, { computeBrainTelemetry } from '@/components/AIBrainDashboard';
 import AgentTerminal from '@/components/AgentTerminal';
 import BountyDashboard from '@/components/BountyDashboard';
+import GlideTabs from '@/components/GlideTabs';
 import UpiReceiptModal from '@/components/UpiReceiptModal';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
 import LeafletMap from '@/components/LeafletMap';
@@ -749,26 +751,18 @@ export default function Home() {
 
         {citizen && (
           <>
-            <div className="soft-scrollbar surface-card flex gap-1 overflow-x-auto p-1.5 text-sm font-semibold sm:p-2" role="group" aria-label="Citizen dashboard">
-              {(
-                [
-                  ['bounties', '🔥 Bounty Network'],
-                  ['report', 'Report an issue'],
-                  ['reports', `My reports (${myTickets.length})`],
-                  ['map', 'City map'],
-                ] as const
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setCitizenTab(id)}
-                  aria-pressed={citizenTab === id}
-                  className={cn('min-h-10 shrink-0 rounded-xl px-3 py-2 text-xs transition sm:flex-1 sm:px-4 sm:text-sm', citizenTab === id ? 'bg-emerald-800 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900')}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <GlideTabs
+              ariaLabel="Citizen dashboard"
+              value={citizenTab}
+              onChange={setCitizenTab}
+              className="surface-card"
+              items={[
+                { id: 'bounties', label: 'Bounty network', icon: HardHat },
+                { id: 'report', label: 'Report an issue', icon: Camera },
+                { id: 'reports', label: <>My reports <span className="text-[10px] opacity-70">({myTickets.length})</span></>, icon: CircleCheck },
+                { id: 'map', label: 'City map', icon: MapIcon },
+              ]}
+            />
 
             {citizenTab === 'bounties' && (
               <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
@@ -844,24 +838,16 @@ export default function Home() {
 
         {volunteer && (
           <div className="space-y-5">
-            <div className="surface-card flex gap-1 p-1.5 text-sm font-semibold sm:p-2" role="group" aria-label="CoV dashboard">
-              {(
-                [
-                  ['bounties', 'Bounty missions'],
-                  ['operations', 'Department operations'],
-                ] as const
-              ).map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setCovTab(id)}
-                  aria-pressed={covTab === id}
-                  className={cn('min-h-10 flex-1 rounded-xl px-3 py-2 text-xs transition sm:text-sm', covTab === id ? 'bg-emerald-800 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900')}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <GlideTabs
+              ariaLabel="CoV dashboard"
+              value={covTab}
+              onChange={setCovTab}
+              className="surface-card"
+              items={[
+                { id: 'bounties', label: 'Bounty missions', icon: HardHat },
+                { id: 'operations', label: 'Department operations', icon: Route },
+              ]}
+            />
 
             {covTab === 'bounties' && (
               <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">

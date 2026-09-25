@@ -34,6 +34,7 @@ import {
 import { findNearbyVolunteers, formatInr } from '@/lib/bounty';
 import { cn } from '@/lib/cn';
 import CameraCapture from '@/components/CameraCapture';
+import GlideTabs from '@/components/GlideTabs';
 import { ProofResult } from '@/components/CoVDashboard';
 
 const BOOST_AMOUNT_INR = 50;
@@ -472,26 +473,17 @@ export default function BountyDashboard({
       {myVolunteer && <VolunteerProfileCard volunteer={myVolunteer} />}
 
       <section className="surface-card p-3 sm:p-4">
-        <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100/80 p-1 text-[10px] font-semibold sm:text-xs">
-          {(
-            [
-              ['active', '🔥 Active Bounties', Flame],
-              ['leaderboard', '🏆 Hall of Fame', Trophy],
-              ['depots', '🛠️ Tool Depots', Building2],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTab(id)}
-              role="tab"
-              aria-selected={tab === id}
-              className={cn('flex min-h-10 items-center justify-center gap-1 rounded-lg px-1 py-2 transition sm:gap-1.5', tab === id ? 'bg-white text-emerald-900 shadow-sm ring-1 ring-slate-200/70' : 'text-slate-500 hover:text-slate-800')}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <GlideTabs
+          ariaLabel="Bounty network"
+          value={tab}
+          onChange={setTab}
+          compact
+          items={[
+            { id: 'active', label: 'Active bounties', icon: Flame },
+            { id: 'leaderboard', label: 'Hall of fame', icon: Trophy },
+            { id: 'depots', label: 'Tool depots', icon: Building2 },
+          ]}
+        />
 
         <div className="soft-scrollbar mt-4 max-h-[560px] space-y-2.5 overflow-y-auto pr-1">
           {tab === 'active' &&

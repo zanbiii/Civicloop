@@ -32,6 +32,7 @@ import {
 } from '@/types/civic';
 import CameraCapture from '@/components/CameraCapture';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
+import GlideTabs from '@/components/GlideTabs';
 import { cn } from '@/lib/cn';
 
 interface CoVDashboardProps {
@@ -580,25 +581,17 @@ export default function CoVDashboard({
         <span className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
           {cov.department}
         </span>
-        <div className="flex rounded-xl bg-slate-100/80 p-1 text-xs font-semibold">
-          {(
-            [
-              ['active', 'Active queue'],
-              ['awaiting', 'Awaiting citizen'],
-              ['closed', 'Closed'],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTab(id)}
-              aria-pressed={tab === id}
-              className={cn('min-h-8 rounded-lg px-3 py-1 transition', tab === id ? 'bg-white text-emerald-900 shadow-sm' : 'text-slate-500 hover:text-slate-800')}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <GlideTabs
+          ariaLabel="Department queue status"
+          value={tab}
+          onChange={setTab}
+          compact
+          items={[
+            { id: 'active', label: 'Active queue' },
+            { id: 'awaiting', label: 'Awaiting citizen' },
+            { id: 'closed', label: 'Closed' },
+          ]}
+        />
       </div>
 
       {queue.length === 0 ? (
