@@ -12,6 +12,20 @@
   --font-mono: var(--font-geist-mono);
 }
 
+@theme {
+  --animate-voice-bar: voice-bar 0.9s ease-in-out infinite;
+
+  @keyframes voice-bar {
+    0%,
+    100% {
+      transform: scaleY(0.3);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
