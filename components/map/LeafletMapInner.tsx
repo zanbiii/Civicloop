@@ -18,7 +18,7 @@ import {
   useMap,
   useMapEvents,
 } from 'react-leaflet';
-import { LoaderCircle, LocateFixed, Users } from 'lucide-react';
+import { LoaderCircle, LocateFixed, Users, Wrench } from 'lucide-react';
 import {
   CATEGORY_META,
   DEDUP_RADIUS_METERS,
@@ -26,6 +26,7 @@ import {
   STATUS_META,
   type CivicTicket,
   type GeoPoint,
+  type ToolDepot,
 } from '@/types/civic';
 import { PLACEHOLDER_IMAGE } from '@/lib/seedData';
 import { cn } from '@/lib/cn';
@@ -43,6 +44,8 @@ export interface LeafletMapProps {
   onPickLocation?: (point: GeoPoint) => void;
   userLocation?: GeoPoint | null;
   className?: string;
+  /** Free CSR-funded materials pickup points, shown behind the "Show Tool Depots" toggle. */
+  depots?: ToolDepot[];
 }
 
 const BANGALORE_CENTER: GeoPoint = { lat: 12.9352, lng: 77.6245 };
@@ -84,6 +87,43 @@ function ticketIcon(ticket: CivicTicket, selected: boolean): L.DivIcon {
     iconAnchor: [17, 44],
     popupAnchor: [0, -40],
   });
+}
+
+const depotIcon = L.divIcon({
+  html: `
+    <div style="position:relative;width:30px;height:40px">
+      <svg width="30" height="40" viewBox="0 0 30 40" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))">
+        <path d="M15 1C7.8 1 2 6.7 2 13.9 2 23.6 15 39 15 39s13-15.4 13-25.1C28 6.7 22.2 1 15 1z" fill="#2563eb" stroke="#fff" stroke-width="2"/>
+        <circle cx="15" cy="14.5" r="9" fill="#fff"/>
+      </svg>
+      <span style="position:absolute;left:0;top:6px;width:30px;text-align:center;font-size:13px;line-height:18px">🔧</span>
+    </div>`,
+  className: 'civic-pin',
+  iconSize: [30, 40],
+  iconAnchor: [15, 40],
+  popupAnchor: [0, -36],
+});
+
+function DepotToggle({ enabled, onToggle }: { enabled: boolean; onToggle: (next: boolean) => void }) {
+  const wrapRef = useRef<HTMLLabelElement>(null);
+  useEffect(() => {
+    if (wrapRef.current) L.DomEvent.disableClickPropagation(wrapRef.current);
+  }, []);
+
+  return (
+    <label
+      ref={wrapRef}
+      className="absolute left-3 top-3 z-[1000] flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-md"
+    >
+      <input
+        type="checkbox"
+        checked={enabled}
+        onChange={(event) => onToggle(event.target.checked)}
+        className="h-3.5 w-3.5 accent-blue-600"
+      />
+      <Wrench className="h-3.5 w-3.5 text-blue-600" /> Show Tool Depots
+    </label>
+  );
 }
 
 const pickerIcon = L.divIcon({
@@ -246,12 +286,14 @@ export default function LeafletMapInner({
   onPickLocation,
   userLocation = null,
   className,
+  depots = [],
 }: LeafletMapProps) {
   const masters = tickets.filter((ticket) => ticket.isMaster);
   const duplicates = tickets.filter((ticket) => !ticket.isMaster);
   const selectedTicket = masters.find((ticket) => ticket.id === selectedTicketId) ?? null;
   const pickerEnabled = Boolean(onPickLocation);
   const initialCenter = center ?? pickedLocation ?? userLocation ?? BANGALORE_CENTER;
+  const [depotsVisible, setDepotsVisible] = useState(false);
 
   return (
     <MapContainer
@@ -268,6 +310,27 @@ export default function LeafletMapInner({
 
       <FlyTo target={center ?? null} zoom={zoom} />
       <FlyTo target={selectedTicket?.location ?? null} />
+
+      {depots.length > 0 && <DepotToggle enabled={depotsVisible} onToggle={setDepotsVisible} />}
+      {depotsVisible &&
+        depots.map((depot) => (
+          <Marker key={depot.id} position={[depot.location.lat, depot.location.lng]} icon={depotIcon} zIndexOffset={500}>
+            <Popup>
+              <div className="w-52 font-sans">
+                <div className="text-sm font-semibold text-slate-900">🔧 {depot.name}</div>
+                <div className="mt-1 text-[11px] font-semibold uppercase text-slate-400">Free CSR-funded stock</div>
+                <ul className="mt-1 space-y-0.5 text-xs text-slate-600">
+                  {depot.inventory.map((item) => (
+                    <li key={item.item} className="flex justify-between gap-2">
+                      <span>{item.item}</span>
+                      <span className="font-semibold text-slate-800">×{item.quantity}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
 
       {showDedupRadius &&
         masters.map((ticket) => (

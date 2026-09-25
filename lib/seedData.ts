@@ -19,8 +19,11 @@
 
 import type {
   AgentAuditLog,
+  BountyInfo,
+  BountyPledge,
   CivicTicket,
   ComplaintCategory,
+  CsrFund,
   Department,
   EvidencePhoto,
   GeoPoint,
@@ -30,8 +33,11 @@ import type {
   Severity,
   SlaState,
   TicketSupporter,
+  ToolDepot,
+  VolunteerProfile,
 } from '@/types/civic';
 import { SLA_HOURS, maskPhone, pseudonymFor } from '@/types/civic';
+import { computeBaseBounty } from '@/lib/bounty';
 
 /* ------------------------------------------------------------------------- */
 /* Anchors & assets                                                          */
@@ -74,6 +80,152 @@ const IMG = {
   infraBefore: UNSPLASH('photo-1534430480872-3498386e7856'),
   infraAfter: UNSPLASH('photo-1524492412937-b28074a5d7da'),
 } as const;
+
+/* ------------------------------------------------------------------------- */
+/* Civic Bounty Network — CSR fund, volunteers & tool depots                 */
+/*                                                                           */
+/* Declared before `buildSeedData` (below) is ever invoked, since that      */
+/* function's body closes over these constants.                             */
+/* ------------------------------------------------------------------------- */
+
+/** The corporate CSR programme sponsoring bounties across the demo zone. Illustrative figures for the pitch, not live accounting. */
+export const CSR_FUND: CsrFund = {
+  id: 'csr-tata-koramangala',
+  sponsorName: 'Tata Urban CSR Fund',
+  zone: 'Koramangala Zone',
+  purpose: 'Mandated 2% Corporate Social Responsibility pool for youth micro-employment',
+  totalPoolInr: 500_000,
+  activeBalanceInr: 485_000,
+  disbursedToDateInr: 64_500,
+  activeVolunteerCount: 42,
+  avgFixHours: 3.2,
+  govtBaselineDays: 45,
+};
+
+/** Six seeded Community Volunteers (CoVs), ranked by lifetime earnings for the Hall of Fame leaderboard. */
+export const SEED_VOLUNTEERS: VolunteerProfile[] = [
+  {
+    id: 'volunteer-deepa-indiranagar',
+    name: 'Deepa N.',
+    maskedPhone: maskPhone('9880011223'),
+    upiId: 'deepa.n@okaxis',
+    rating: 4.95,
+    ratingCount: 41,
+    tier: 'gold',
+    totalEarnedInr: 9_800,
+    completedMissions: 38,
+    zone: 'Indiranagar',
+    homeBase: { lat: 12.9719, lng: 77.6412, ward: 'Indiranagar', zone: 'BBMP-East' },
+    badge: 'Top Earner',
+  },
+  {
+    id: 'volunteer-ramesh-hsr',
+    name: 'Ramesh K.',
+    maskedPhone: maskPhone('9845098450'),
+    upiId: 'ramesh@oksbi',
+    rating: 4.9,
+    ratingCount: 37,
+    tier: 'gold',
+    totalEarnedInr: 8_450,
+    completedMissions: 34,
+    zone: 'HSR Layout',
+    homeBase: { lat: 12.9121, lng: 77.6446, ward: 'HSR Layout', zone: 'BBMP-Bommanahalli' },
+    badge: 'Neighborhood Hero',
+  },
+  {
+    id: 'volunteer-priya-koramangala',
+    name: 'Priya S.',
+    maskedPhone: maskPhone('9900223344'),
+    upiId: 'priya.s@ybl',
+    rating: 4.85,
+    ratingCount: 30,
+    tier: 'gold',
+    totalEarnedInr: 7_200,
+    completedMissions: 29,
+    zone: 'Koramangala',
+    homeBase: { lat: 12.9352, lng: 77.6245, ward: 'Koramangala', zone: 'BBMP-South' },
+    badge: 'Speed Demon',
+  },
+  {
+    id: 'volunteer-suresh-btm',
+    name: 'Suresh M.',
+    maskedPhone: maskPhone('9977112233'),
+    upiId: 'suresh.m@paytm',
+    rating: 4.5,
+    ratingCount: 24,
+    tier: 'silver',
+    totalEarnedInr: 5_600,
+    completedMissions: 22,
+    zone: 'BTM Layout',
+    homeBase: { lat: 12.9169, lng: 77.6165, ward: 'BTM Layout', zone: 'BBMP-Bommanahalli' },
+    badge: 'Steady Hand',
+  },
+  {
+    id: 'volunteer-anita-jayanagar',
+    name: 'Anita R.',
+    maskedPhone: maskPhone('9911224455'),
+    upiId: 'anita.r@okhdfcbank',
+    rating: 4.3,
+    ratingCount: 17,
+    tier: 'silver',
+    totalEarnedInr: 4_100,
+    completedMissions: 16,
+    zone: 'Jayanagar',
+    homeBase: { lat: 12.925, lng: 77.5938, ward: 'Jayanagar', zone: 'BBMP-South' },
+    badge: 'Rising Star',
+  },
+  {
+    id: 'volunteer-farhan-whitefield',
+    name: 'Farhan A.',
+    maskedPhone: maskPhone('9822334455'),
+    upiId: 'farhan.a@ibl',
+    rating: 3.9,
+    ratingCount: 10,
+    tier: 'bronze',
+    totalEarnedInr: 2_300,
+    completedMissions: 9,
+    zone: 'Whitefield',
+    homeBase: { lat: 12.9698, lng: 77.75, ward: 'Whitefield', zone: 'BBMP-Mahadevapura' },
+    badge: 'Newcomer',
+  },
+];
+
+/** The demo "Community Volunteer" quick-switch identity. */
+export const DEMO_VOLUNTEER: VolunteerProfile = SEED_VOLUNTEERS[1];
+
+/** Free CSR-funded materials pickup points shown on the map's Tool Depot layer. */
+export const SEED_TOOL_DEPOTS: ToolDepot[] = [
+  {
+    id: 'depot-koramangala',
+    name: 'Koramangala Tool Depot',
+    location: { lat: 12.9368, lng: 77.6198, ward: 'Koramangala', zone: 'BBMP-South' },
+    inventory: [
+      { item: 'Cold-mix asphalt bag', quantity: 40, sponsor: 'Tata Urban CSR Fund' },
+      { item: 'Safety cone', quantity: 15, sponsor: 'Tata Urban CSR Fund' },
+      { item: 'Warning tape roll', quantity: 20, sponsor: 'Tata Urban CSR Fund' },
+    ],
+  },
+  {
+    id: 'depot-hsr',
+    name: 'HSR Layout Tool Depot',
+    location: { lat: 12.9138, lng: 77.6468, ward: 'HSR Layout', zone: 'BBMP-Bommanahalli' },
+    inventory: [
+      { item: 'Cold-mix asphalt bag', quantity: 25, sponsor: 'Tata Urban CSR Fund' },
+      { item: 'Drain rod set', quantity: 10, sponsor: 'Tata Urban CSR Fund' },
+      { item: 'Work gloves (pair)', quantity: 30, sponsor: 'Tata Urban CSR Fund' },
+    ],
+  },
+  {
+    id: 'depot-btm',
+    name: 'BTM Layout Tool Depot',
+    location: { lat: 12.9175, lng: 77.6232, ward: 'BTM Layout', zone: 'BBMP-Bommanahalli' },
+    inventory: [
+      { item: 'Reflective road paint (can)', quantity: 12, sponsor: 'Tata Urban CSR Fund' },
+      { item: 'Cold-mix asphalt bag', quantity: 18, sponsor: 'Tata Urban CSR Fund' },
+      { item: 'Shovel', quantity: 8, sponsor: 'Tata Urban CSR Fund' },
+    ],
+  },
+];
 
 /* ------------------------------------------------------------------------- */
 /* Small builders                                                            */
@@ -396,6 +548,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     }),
     proof: null,
     citizenConfirmation: null,
+    bounty: null,
     auditLog: [],
     tags: ['arterial-road', 'monsoon-risk', 'high-impact', 'school-route'],
     createdAt: potholeCreated,
@@ -624,6 +777,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     }),
     proof: null,
     citizenConfirmation: null,
+    bounty: null,
     auditLog: [],
     tags: ['black-spot', 'public-health', 'market-adjacent'],
     createdAt: ago(now, 27),
@@ -777,6 +931,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     }),
     proof: null,
     citizenConfirmation: null,
+    bounty: null,
     auditLog: [],
     tags: ['emergency', 'live-wire', 'auto-escalated', 'child-safety'],
     createdAt: ago(now, 4.2),
@@ -937,6 +1092,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
       verifiedAt: ago(now, 5.9),
     },
     citizenConfirmation: null,
+    bounty: null,
     auditLog: [],
     tags: ['self-healing', 'rerouted', 'proof-verified', 'awaiting-citizen'],
     createdAt: ago(now, 74),
@@ -1085,10 +1241,12 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     citizenConfirmation: {
       decision: 'approved',
       rating: 5,
+      praiseChips: ['⚡ Super Fast', '🛡️ High Quality'],
       comment: 'Fixed properly and the footpath was relaid. Took two days, which is fair.',
       confirmedBy: pseudonymFor('9845667201'),
       confirmedAt: ago(now, 76),
     },
+    bounty: null,
     auditLog: [],
     tags: ['closed-loop', 'proof-verified', 'citizen-approved'],
     createdAt: ago(now, 98),
@@ -1208,6 +1366,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     sla: buildSla(now, 'Very High', ago(now, 7.3)),
     proof: null,
     citizenConfirmation: null,
+    bounty: null,
     auditLog: [],
     tags: ['storm-damage', 'road-blocked'],
     createdAt: ago(now, 7.4),
@@ -1322,6 +1481,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     sla: buildSla(now, 'High', ago(now, 11.4)),
     proof: null,
     citizenConfirmation: null,
+    bounty: null,
     auditLog: [],
     tags: ['peak-hour', 'contractor-debris'],
     createdAt: ago(now, 11.5),
@@ -1468,10 +1628,12 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     citizenConfirmation: {
       decision: 'approved',
       rating: 4,
+      praiseChips: ['🧹 Spotless Finish'],
       comment: 'Lights are back. Took a week to start, but the whole stretch is working now.',
       confirmedBy: pseudonymFor('9741230065'),
       confirmedAt: ago(now, 118),
     },
+    bounty: null,
     auditLog: [],
     tags: ['night-safety', 'closed-loop', 'proof-verified'],
     createdAt: ago(now, 146),
@@ -1620,6 +1782,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
       verifiedAt: ago(now, 29.9),
     },
     citizenConfirmation: null,
+    bounty: null,
     auditLog: [],
     tags: ['proof-rejected', 'auto-escalated', 'fraud-attempt'],
     createdAt: ago(now, 196),
@@ -1726,6 +1889,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     sla: buildSla(now, 'Medium', ago(now, 3.1)),
     proof: null,
     citizenConfirmation: null,
+    bounty: null,
     auditLog: [],
     tags: ['street-furniture'],
     createdAt: ago(now, 3.2),
@@ -1747,6 +1911,92 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     potholeDuplicateA,
     potholeDuplicateB,
   ];
+
+  /* ----------------------------------------------------------------------- */
+  /* Civic Bounty Network — attach a bounty to every master ticket           */
+  /* ----------------------------------------------------------------------- */
+
+  function openBounty(t: CivicTicket): BountyInfo {
+    return {
+      baseAmount: computeBaseBounty(t.category, t.severity),
+      communityBonus: 0,
+      goldBonus: 0,
+      csrSponsor: CSR_FUND.sponsorName,
+      status: 'open',
+      claimedBy: null,
+      claimedByName: null,
+      claimedAt: null,
+      paidAt: null,
+      transactionId: null,
+      pledges: [],
+    };
+  }
+
+  function pledge(id: string, ticketId: string, citizenPhone: string, amountInr: number, hoursAgo: number): BountyPledge {
+    return {
+      id,
+      ticketId,
+      citizenId: `citizen-${citizenPhone.slice(-4)}`,
+      citizenDisplayName: pseudonymFor(citizenPhone),
+      amountInr,
+      source: 'citizen-boost',
+      pledgedAt: ago(now, hoursAgo),
+    };
+  }
+
+  for (const t of tickets) {
+    t.bounty = t.isMaster ? openBounty(t) : null;
+  }
+
+  // The flagship dedup demo already has two neighbours chipping in — a live target for "Boost Bounty".
+  pothole.bounty = {
+    ...pothole.bounty!,
+    communityBonus: 100,
+    pledges: [pledge(`${potholeId}-pledge-1`, potholeId, '9845120337', 50, 40), pledge(`${potholeId}-pledge-2`, potholeId, '9845127178', 50, 22)],
+  };
+
+  // Silk Board obstruction: a CoV already accepted the mission — a live target for "Submit Fix Proof".
+  traffic.bounty = {
+    ...traffic.bounty!,
+    status: 'in_progress',
+    claimedBy: 'volunteer-suresh-btm',
+    claimedByName: 'Suresh M.',
+    claimedAt: ago(now, 5),
+  };
+
+  // HSR drain: proof is in, awaiting the citizen's confirmation — the payout releases the moment they tap "Looks good".
+  drain.bounty = {
+    ...drain.bounty!,
+    status: 'pending_payout',
+    communityBonus: 50,
+    claimedBy: 'volunteer-ramesh-hsr',
+    claimedByName: 'Ramesh K.',
+    claimedAt: ago(now, 30),
+    pledges: [pledge(`${drainId}-pledge-1`, drainId, '9845667201', 50, 26)],
+  };
+
+  // Indiranagar leak & Whitefield streetlight are already closed loops — paid receipts, for the Hall of Fame history.
+  leak.bounty = {
+    ...leak.bounty!,
+    status: 'paid',
+    communityBonus: 100,
+    goldBonus: 100,
+    claimedBy: 'volunteer-deepa-indiranagar',
+    claimedByName: 'Deepa N.',
+    claimedAt: ago(now, 82),
+    paidAt: ago(now, 76),
+    transactionId: '#CSR-71940-BLR',
+    pledges: [pledge(`${leakId}-pledge-1`, leakId, '9845098201', 50, 80), pledge(`${leakId}-pledge-2`, leakId, '9845098202', 50, 79)],
+  };
+  light.bounty = {
+    ...light.bounty!,
+    status: 'paid',
+    claimedBy: 'volunteer-farhan-whitefield',
+    claimedByName: 'Farhan A.',
+    claimedAt: ago(now, 124),
+    paidAt: ago(now, 118),
+    transactionId: '#CSR-58213-BLR',
+  };
 
   /* ----------------------------------------------------------------------- */
   /* Self-healing routing memory                                             */

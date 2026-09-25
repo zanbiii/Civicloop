@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { Camera, CheckCheck, Clock, MapPin, Plus, Star, ThumbsDown, ThumbsUp, Users, X } from 'lucide-react';
-import { CATEGORY_META, SEVERITY_META, STATUS_META, type CivicTicket, type PublicReporter } from '@/types/civic';
+import { CATEGORY_META, PRAISE_CHIPS, SEVERITY_META, STATUS_META, type CivicTicket, type PublicReporter } from '@/types/civic';
 import { PLACEHOLDER_IMAGE } from '@/lib/seedData';
 import { cn } from '@/lib/cn';
 
 export interface CitizenConfirmationInput {
   decision: 'approved' | 'rejected';
   rating: 1 | 2 | 3 | 4 | 5 | null;
+  praiseChips: string[];
   comment: string | null;
 }
 
@@ -206,9 +207,13 @@ function ConfirmationDialog({
   onSubmit: (confirmation: CitizenConfirmationInput) => void;
 }) {
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
+  const [praiseChips, setPraiseChips] = useState<string[]>([]);
   const [comment, setComment] = useState('');
   const afterPhoto = ticket.afterPhotos[0];
   const beforePhoto = ticket.beforePhotos[0];
+
+  const toggleChip = (chip: string) =>
+    setPraiseChips((current) => (current.includes(chip) ? current.filter((c) => c !== chip) : [...current, chip]));
 
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 p-4">
@@ -263,6 +268,32 @@ function ConfirmationDialog({
                 </button>
               ))}
             </div>
+            {ticket.bounty?.claimedByName && rating !== null && rating < 5 && (
+              <p className="mt-1.5 text-[11px] text-slate-400">
+                {ticket.bounty.claimedByName} keeps their 4.8★+ Gold Tier bonus as long as their average stays there.
+              </p>
+            )}
+          </div>
+
+          <div className="mt-4">
+            <span className="mb-1.5 block text-xs font-semibold text-slate-600">One-tap praise (optional)</span>
+            <div className="flex flex-wrap gap-1.5">
+              {PRAISE_CHIPS.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => toggleChip(chip)}
+                  className={cn(
+                    'rounded-full border px-3 py-1.5 text-xs font-semibold transition',
+                    praiseChips.includes(chip)
+                      ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                      : 'border-slate-200 text-slate-600 hover:bg-slate-50',
+                  )}
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="mt-4">
@@ -280,14 +311,14 @@ function ConfirmationDialog({
         <div className="flex gap-2 border-t border-slate-100 px-5 py-4">
           <button
             type="button"
-            onClick={() => onSubmit({ decision: 'rejected', rating, comment: comment.trim() || null })}
+            onClick={() => onSubmit({ decision: 'rejected', rating, praiseChips, comment: comment.trim() || null })}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-100"
           >
             <ThumbsDown className="h-4 w-4" /> Not fixed
           </button>
           <button
             type="button"
-            onClick={() => onSubmit({ decision: 'approved', rating, comment: comment.trim() || null })}
+            onClick={() => onSubmit({ decision: 'approved', rating, praiseChips, comment: comment.trim() || null })}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
           >
             <ThumbsUp className="h-4 w-4" /> Looks good

@@ -68,6 +68,7 @@ export interface TicketRow {
   triage: unknown;
   proof: unknown;
   citizen_confirmation: unknown;
+  bounty: unknown;
   before_photos: unknown;
   after_photos: unknown;
   tags: string[];
@@ -260,6 +261,7 @@ export function rowToTicket(
     },
     proof: row.proof as CivicTicket['proof'],
     citizenConfirmation: row.citizen_confirmation as CivicTicket['citizenConfirmation'],
+    bounty: (row.bounty as CivicTicket['bounty']) ?? null,
     auditLog: [],
     tags: row.tags ?? [],
     createdAt: row.created_at,
@@ -311,6 +313,7 @@ export function ticketToRow(ticket: CivicTicket): TicketRow {
     triage: ticket.triage,
     proof: ticket.proof,
     citizen_confirmation: ticket.citizenConfirmation,
+    bounty: ticket.bounty,
     before_photos: ticket.beforePhotos,
     after_photos: ticket.afterPhotos,
     tags: ticket.tags,

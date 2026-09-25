@@ -27,10 +27,12 @@ import CitizenDashboard from '@/components/CitizenDashboard';
 import AuthorityDashboard, { ProofResult } from '@/components/AuthorityDashboard';
 import AIBrainDashboard, { computeBrainTelemetry } from '@/components/AIBrainDashboard';
 import AgentTerminal from '@/components/AgentTerminal';
+import BountyDashboard from '@/components/BountyDashboard';
+import UpiReceiptModal from '@/components/UpiReceiptModal';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
 import LeafletMap from '@/components/LeafletMap';
 import { useCivicloop } from '@/lib/useCivicloop';
-import { DEMO_AUTHORITIES, PLACEHOLDER_IMAGE } from '@/lib/seedData';
+import { CSR_FUND, DEMO_AUTHORITIES, DEMO_VOLUNTEER, PLACEHOLDER_IMAGE, SEED_TOOL_DEPOTS } from '@/lib/seedData';
 import { haversineMeters } from '@/lib/haversine';
 import { cn } from '@/lib/cn';
 import {
@@ -43,11 +45,15 @@ import {
   pseudonymFor,
   type AdminProfile,
   type AuthorityProfile,
+  type BountyInfo,
+  type CivicProofVerification,
   type CivicTicket,
+  type EvidencePhoto,
   type GeoPoint,
   type IntakeDraft,
   type PublicReporter,
   type SessionUser,
+  type ToolDepot,
   type UserRole,
 } from '@/types/civic';
 
@@ -257,6 +263,7 @@ function MapCard({
   userLocation,
   title = 'Live civic map',
   heightClass = 'h-[440px]',
+  depots,
 }: {
   tickets: CivicTicket[];
   selectedTicketId: string | null;
@@ -264,6 +271,7 @@ function MapCard({
   userLocation: GeoPoint | null;
   title?: string;
   heightClass?: string;
+  depots?: ToolDepot[];
 }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-3">
@@ -289,6 +297,7 @@ function MapCard({
         onSelectTicket={onSelectTicket}
         userLocation={userLocation}
         containerClassName={heightClass}
+        depots={depots}
       />
     </section>
   );
@@ -463,23 +472,24 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 /* The integration page                                                      */
 /* ------------------------------------------------------------------------- */
 
-type CitizenTab = 'report' | 'reports' | 'map';
+type CitizenTab = 'bounties' | 'report' | 'reports' | 'map';
 
 export default function Home() {
   const civic = useCivicloop();
-  const { tickets, logs, overrides, liveAi, nowMs, clockOffsetHours } = civic;
+  const { tickets, logs, overrides, volunteers, liveAi, nowMs, clockOffsetHours } = civic;
 
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [authRole, setAuthRole] = useState<UserRole>('citizen');
   const [demoMode, setDemoMode] = useState(true);
   const [language, setLanguage] = useState<AppLanguage>('en');
-  const [citizenTab, setCitizenTab] = useState<CitizenTab>('report');
+  const [citizenTab, setCitizenTab] = useState<CitizenTab>('bounties');
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<GeoPoint | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [scenarioBusy, setScenarioBusy] = useState(false);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+  const [paidBounty, setPaidBounty] = useState<{ bounty: BountyInfo; ticketTitle: string } | null>(null);
 
   const onboarded = useSyncExternalStore(noopSubscribe, readOnboarded, () => true);
   const onboardingOpen = !onboarded && !onboardingDismissed;
@@ -496,6 +506,7 @@ export default function Home() {
 
   const citizen = sessionUser?.role === 'citizen' ? sessionUser.profile : null;
   const authority = sessionUser?.role === 'authority' ? sessionUser.profile : null;
+  const volunteer = sessionUser?.role === 'volunteer' ? sessionUser.profile : null;
 
   const myTickets = useMemo(
     () =>
@@ -526,7 +537,7 @@ export default function Home() {
     setAuthOpen(true);
   };
 
-  const signIn = (user: SessionUser, tab: CitizenTab = 'report') => {
+  const signIn = (user: SessionUser, tab: CitizenTab = 'bounties') => {
     setSessionUser(user);
     setAuthOpen(false);
     setCitizenTab(tab);
@@ -534,9 +545,27 @@ export default function Home() {
   };
 
   const quickSwitch = (role: UserRole) => {
-    if (role === 'citizen') signIn({ role: 'citizen', profile: DEMO_CITIZEN }, 'reports');
+    if (role === 'citizen') signIn({ role: 'citizen', profile: DEMO_CITIZEN }, 'bounties');
     else if (role === 'authority') signIn({ role: 'authority', profile: DEMO_AUTHORITY });
+    else if (role === 'volunteer') signIn({ role: 'volunteer', profile: DEMO_VOLUNTEER });
     else signIn({ role: 'admin', profile: DEMO_ADMIN });
+  };
+
+  const acceptMission = (ticketId: string) => {
+    if (!volunteer) return;
+    civic.claimBounty(ticketId, volunteer);
+    setToast(`Mission accepted — head to the location and tap "Submit Fix Proof" once it's done.`);
+  };
+
+  const boostBounty = (ticketId: string, amountInr: number) => {
+    if (!citizen) return;
+    civic.boostBounty(ticketId, citizen, amountInr);
+    setToast(`Boosted by ₹${amountInr} — thanks for pitching in!`);
+  };
+
+  const submitMissionProof = (ticketId: string, afterPhoto: EvidencePhoto): Promise<CivicProofVerification> => {
+    if (!volunteer) return Promise.reject(new Error('Not signed in as a Community Volunteer.'));
+    return civic.submitProof(ticketId, afterPhoto, { officialId: volunteer.id });
   };
 
   const handleIntake = async (draft: IntakeDraft) => {
@@ -641,9 +670,27 @@ export default function Home() {
 
             <PitchBanner />
 
-            <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-              <MapCard tickets={tickets} selectedTicketId={selectedTicketId} onSelectTicket={setSelectedTicketId} userLocation={userLocation} />
-              <AgentTerminal logs={logs} liveAi={liveAi} heightClass="h-[440px]" />
+            <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
+              <BountyDashboard
+                csrFund={CSR_FUND}
+                volunteers={volunteers}
+                tickets={tickets}
+                sessionUser={null}
+                depots={SEED_TOOL_DEPOTS}
+                onSelectTicket={setSelectedTicketId}
+                onAcceptMission={() => openAuth('citizen')}
+                onBoostBounty={() => openAuth('citizen')}
+                onSubmitProof={submitMissionProof}
+                onSignIn={() => openAuth('citizen')}
+              />
+              <MapCard
+                tickets={tickets}
+                selectedTicketId={selectedTicketId}
+                onSelectTicket={setSelectedTicketId}
+                userLocation={userLocation}
+                depots={SEED_TOOL_DEPOTS}
+                heightClass="h-[600px]"
+              />
             </div>
           </>
         )}
@@ -653,6 +700,7 @@ export default function Home() {
             <div className="flex rounded-xl bg-white p-1 text-sm font-semibold shadow-sm ring-1 ring-slate-200">
               {(
                 [
+                  ['bounties', '🔥 Bounty Network'],
                   ['report', 'Report an issue'],
                   ['reports', `My reports (${myTickets.length})`],
                   ['map', 'City map'],
@@ -669,24 +717,41 @@ export default function Home() {
               ))}
             </div>
 
-            {citizenTab === 'report' && (
-              <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-                <section className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <CitizenIntakeForm
-                    reporter={citizen}
-                    language={language}
-                    initialLocation={userLocation ?? (demoMode ? DEMO_PIN : null)}
-                    onSubmit={handleIntake}
-                    onCancel={() => setCitizenTab('reports')}
-                  />
-                </section>
-                <div className="space-y-3">
-                  <AgentTerminal logs={logs} liveAi={liveAi} heightClass="h-[520px]" />
-                  <p className="text-[11px] text-slate-500">
-                    Submit a report and watch CivicEye, deduplication and triage decide in real time.
-                  </p>
-                </div>
+            {citizenTab === 'bounties' && (
+              <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
+                <BountyDashboard
+                  csrFund={CSR_FUND}
+                  volunteers={volunteers}
+                  tickets={tickets}
+                  sessionUser={sessionUser}
+                  depots={SEED_TOOL_DEPOTS}
+                  onSelectTicket={setSelectedTicketId}
+                  onAcceptMission={acceptMission}
+                  onBoostBounty={boostBounty}
+                  onSubmitProof={submitMissionProof}
+                  onSignIn={() => openAuth('citizen')}
+                />
+                <MapCard
+                  tickets={tickets}
+                  selectedTicketId={selectedTicketId}
+                  onSelectTicket={setSelectedTicketId}
+                  userLocation={userLocation}
+                  depots={SEED_TOOL_DEPOTS}
+                  heightClass="h-[600px]"
+                />
               </div>
+            )}
+
+            {citizenTab === 'report' && (
+              <section className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-5">
+                <CitizenIntakeForm
+                  reporter={citizen}
+                  language={language}
+                  initialLocation={userLocation ?? (demoMode ? DEMO_PIN : null)}
+                  onSubmit={handleIntake}
+                  onCancel={() => setCitizenTab('reports')}
+                />
+              </section>
             )}
 
             {citizenTab === 'reports' && (
@@ -699,8 +764,10 @@ export default function Home() {
                   setToast('You were added as a co-reporter — the impact counter went up.');
                 }}
                 onConfirmResolution={(ticketId, confirmation) => {
-                  civic.confirmResolution(ticketId, confirmation, citizen.displayName);
-                  setToast(confirmation.decision === 'approved' ? 'Thanks — the ticket is now closed.' : 'Ticket reopened and sent back to the department.');
+                  const ticket = tickets.find((entry) => entry.id === ticketId);
+                  const payout = civic.confirmResolution(ticketId, confirmation, citizen.displayName);
+                  if (payout && ticket) setPaidBounty({ bounty: payout, ticketTitle: ticket.title });
+                  setToast(confirmation.decision === 'approved' ? 'Thanks — the ticket is now closed.' : 'Ticket reopened and sent back to the CoV.');
                 }}
                 onSelectTicket={setSelectedTicketId}
                 onNewReport={() => setCitizenTab('report')}
@@ -708,9 +775,42 @@ export default function Home() {
             )}
 
             {citizenTab === 'map' && (
-              <MapCard tickets={tickets} selectedTicketId={selectedTicketId} onSelectTicket={setSelectedTicketId} userLocation={userLocation} heightClass="h-[560px]" />
+              <MapCard
+                tickets={tickets}
+                selectedTicketId={selectedTicketId}
+                onSelectTicket={setSelectedTicketId}
+                userLocation={userLocation}
+                depots={SEED_TOOL_DEPOTS}
+                heightClass="h-[560px]"
+              />
             )}
           </>
+        )}
+
+        {volunteer && (
+          <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
+            <BountyDashboard
+              csrFund={CSR_FUND}
+              volunteers={volunteers}
+              tickets={tickets}
+              sessionUser={sessionUser}
+              depots={SEED_TOOL_DEPOTS}
+              onSelectTicket={setSelectedTicketId}
+              onAcceptMission={acceptMission}
+              onBoostBounty={boostBounty}
+              onSubmitProof={submitMissionProof}
+              onSignIn={() => openAuth('citizen')}
+            />
+            <MapCard
+              tickets={tickets}
+              selectedTicketId={selectedTicketId}
+              onSelectTicket={setSelectedTicketId}
+              userLocation={userLocation}
+              depots={SEED_TOOL_DEPOTS}
+              title="Bounty missions near you"
+              heightClass="h-[600px]"
+            />
+          </div>
         )}
 
         {authority && (
@@ -736,7 +836,6 @@ export default function Home() {
                 title={`${authority.department} issues`}
                 heightClass="h-[360px]"
               />
-              <AgentTerminal logs={logs} liveAi={liveAi} heightClass="h-64" />
             </div>
           </div>
         )}
@@ -772,6 +871,13 @@ export default function Home() {
 
       {selectedTicket && <TicketDrawer ticket={selectedTicket} logs={selectedLogs} onClose={() => setSelectedTicketId(null)} />}
       {toast && <Toast message={toast} onClose={dismissToast} />}
+
+      <UpiReceiptModal
+        bounty={paidBounty?.bounty ?? null}
+        ticketTitle={paidBounty?.ticketTitle ?? ''}
+        volunteerUpiId={volunteers.find((entry) => entry.id === paidBounty?.bounty.claimedBy)?.upiId ?? null}
+        onClose={() => setPaidBounty(null)}
+      />
     </div>
   );
 }

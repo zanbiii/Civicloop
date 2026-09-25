@@ -10,7 +10,7 @@
 /* Roles & identity                                                          */
 /* ------------------------------------------------------------------------- */
 
-export const USER_ROLES = ['citizen', 'authority', 'admin'] as const;
+export const USER_ROLES = ['citizen', 'authority', 'volunteer', 'admin'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const DEPARTMENTS = [
@@ -90,9 +90,41 @@ export interface AdminProfile {
   clearance: 'super-admin';
 }
 
+export const VOLUNTEER_TIERS = ['bronze', 'silver', 'gold'] as const;
+export type VolunteerTier = (typeof VOLUNTEER_TIERS)[number];
+
+/** Rating at or above this unlocks the automatic Gold Tier bounty bonus. */
+export const GOLD_TIER_RATING_THRESHOLD = 4.8;
+export const SILVER_TIER_RATING_THRESHOLD = 4.2;
+
+/**
+ * A Community Volunteer (CoV) — the gig worker who claims a bounty mission,
+ * repairs the issue, and gets paid from the sponsoring CSR fund once
+ * CivicProof verifies the fix and the citizen confirms it.
+ */
+export interface VolunteerProfile {
+  id: string;
+  name: string;
+  maskedPhone: string;
+  /** Simulated UPI handle the payout receipt is "sent" to, e.g. "ramesh@oksbi". */
+  upiId: string;
+  /** 0–5, averaged from citizen feedback. */
+  rating: number;
+  ratingCount: number;
+  tier: VolunteerTier;
+  totalEarnedInr: number;
+  completedMissions: number;
+  zone: string;
+  /** Where this CoV is based, for the "N volunteers nearby" distance check. */
+  homeBase: GeoPoint;
+  /** Flavour title shown on the leaderboard, e.g. "Neighborhood Hero". */
+  badge: string;
+}
+
 export type SessionUser =
   | { role: 'citizen'; profile: PublicReporter }
   | { role: 'authority'; profile: AuthorityProfile }
+  | { role: 'volunteer'; profile: VolunteerProfile }
   | { role: 'admin'; profile: AdminProfile };
 
 /* ------------------------------------------------------------------------- */
@@ -446,6 +478,8 @@ export interface CivicProofVerification {
 export interface CitizenConfirmation {
   decision: 'approved' | 'rejected';
   rating: 1 | 2 | 3 | 4 | 5 | null;
+  /** One-tap praise chips the citizen attached — see PRAISE_CHIPS below. */
+  praiseChips: string[];
   comment: string | null;
   confirmedBy: string;
   confirmedAt: string;
@@ -560,6 +594,8 @@ export interface CivicTicket {
   sla: SlaState;
   proof: CivicProofVerification | null;
   citizenConfirmation: CitizenConfirmation | null;
+  /** Null for a merged duplicate — only the master ticket carries the bounty. */
+  bounty: BountyInfo | null;
 
   auditLog: AgentAuditLog[];
   tags: string[];
@@ -605,6 +641,88 @@ export interface BrainTelemetry {
   byDepartment: Array<{ department: Department; open: number; resolved: number; breached: number }>;
   byCategory: Array<{ category: ComplaintCategory; count: number }>;
 }
+
+/* ------------------------------------------------------------------------- */
+/* Civic Bounty Network — CSR-funded gig payouts                            */
+/* ------------------------------------------------------------------------- */
+
+export type BountyStatus = 'open' | 'claimed' | 'in_progress' | 'pending_payout' | 'paid';
+
+/** One citizen (or CSR auto-boost) pledge that raises a bounty's pot. */
+export interface BountyPledge {
+  id: string;
+  ticketId: string;
+  /** Null when the pledge is an automatic CSR top-up rather than a citizen boost. */
+  citizenId: string | null;
+  citizenDisplayName: string | null;
+  amountInr: number;
+  source: 'citizen-boost' | 'csr-auto-boost';
+  pledgedAt: string;
+}
+
+/**
+ * The bounty attached to a master ticket. `baseAmount` is set once by Smart
+ * Triage from the repair-effort estimate; everything else accumulates as
+ * citizens boost it, a volunteer claims it, and CivicProof + the citizen
+ * clear it for payout.
+ */
+export interface BountyInfo {
+  baseAmount: number;
+  /** Sum of every BountyPledge — citizen boosts plus CSR auto-boosts. */
+  communityBonus: number;
+  /** +₹100 automatic bonus, applied at payout if the claiming volunteer's rating clears the gold threshold. */
+  goldBonus: number;
+  csrSponsor: string;
+  status: BountyStatus;
+  claimedBy: string | null;
+  claimedByName: string | null;
+  claimedAt: string | null;
+  paidAt: string | null;
+  /** e.g. "#CSR-89210-BLR", generated at payout time. */
+  transactionId: string | null;
+  pledges: BountyPledge[];
+}
+
+/** `baseAmount + communityBonus + goldBonus`. */
+export function bountyTotal(bounty: BountyInfo): number {
+  return bounty.baseAmount + bounty.communityBonus + bounty.goldBonus;
+}
+
+export interface DepotInventoryItem {
+  item: string;
+  quantity: number;
+  /** The CSR programme funding this stock, e.g. "Tata Urban CSR Fund". */
+  sponsor: string;
+}
+
+/** A hardware/materials pickup point CoVs can draw free CSR-funded stock from. */
+export interface ToolDepot {
+  id: string;
+  name: string;
+  location: GeoPoint;
+  inventory: DepotInventoryItem[];
+}
+
+/** The corporate CSR programme sponsoring bounties in a zone. Demo-illustrative figures, not live accounting. */
+export interface CsrFund {
+  id: string;
+  sponsorName: string;
+  zone: string;
+  purpose: string;
+  totalPoolInr: number;
+  /** Currently allocated/reserved across open and in-flight bounties. */
+  activeBalanceInr: number;
+  /** Cumulative lifetime payout — the seed baseline; the session adds newly paid bounties on top. */
+  disbursedToDateInr: number;
+  activeVolunteerCount: number;
+  avgFixHours: number;
+  /** Illustrative comparison figure for the "vs government" stat, in days. */
+  govtBaselineDays: number;
+}
+
+/** One-tap praise chips a citizen can attach to their 5-star volunteer rating. */
+export const PRAISE_CHIPS = ['⚡ Super Fast', '🧹 Spotless Finish', '🛡️ High Quality'] as const;
+export type PraiseChip = (typeof PRAISE_CHIPS)[number];
 
 /* ------------------------------------------------------------------------- */
 /* Shared helpers                                                            */

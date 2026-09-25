@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, Building, Globe, LogOut, Phone, Rocket, ShieldCheck, Siren, User, X } from 'lucide-react';
+import { Bot, Building, Globe, HardHat, LogOut, Phone, Rocket, ShieldCheck, Siren, User, X } from 'lucide-react';
 import type { SessionUser, UserRole } from '@/types/civic';
 import { cn } from '@/lib/cn';
 
@@ -12,18 +12,24 @@ const LANGUAGE_LABELS: Record<AppLanguage, string> = { en: 'English', kn: 'ಕ�
 const ROLE_META: Record<SessionUser['role'], { label: string; icon: typeof User }> = {
   citizen: { label: 'Citizen', icon: User },
   authority: { label: 'Authority', icon: Building },
+  volunteer: { label: 'CoV', icon: HardHat },
   admin: { label: 'Admin', icon: Bot },
 };
+
+/** Roles offered in the demo-mode quick-switcher — Authority stays reachable via real sign-in, just not this shortcut. */
+const QUICK_SWITCH_ROLES: UserRole[] = ['citizen', 'volunteer', 'admin'];
 
 function sessionDisplayName(user: SessionUser): string {
   if (user.role === 'citizen') return user.profile.displayName;
   if (user.role === 'authority') return user.profile.name;
+  if (user.role === 'volunteer') return user.profile.name;
   return user.profile.name;
 }
 
 function sessionSubline(user: SessionUser): string {
   if (user.role === 'citizen') return user.profile.maskedPhone;
   if (user.role === 'authority') return `${user.profile.department} · ${user.profile.zone}`;
+  if (user.role === 'volunteer') return `${user.profile.badge} · ${user.profile.zone}`;
   return 'Super-admin clearance';
 }
 
@@ -82,7 +88,9 @@ export default function Header({
             </div>
             <div className="min-w-0 leading-tight">
               <div className="truncate text-base font-bold text-slate-900">Civicloop</div>
-              <div className="hidden truncate text-[11px] text-slate-500 sm:block">Self-Healing Civic Complaint Network</div>
+              <div className="hidden truncate text-[11px] text-slate-500 sm:block">
+                Decentralized Civic Bounty Network · Powered by Corporate CSR &amp; Community Volunteers (CoV)
+              </div>
             </div>
           </div>
 
@@ -117,7 +125,7 @@ export default function Header({
 
             {demoMode && onQuickSwitchRole && (
               <div className="flex items-center rounded-full border border-violet-200 bg-violet-50 p-0.5" role="group" aria-label="Quick role switch">
-                {(Object.keys(ROLE_META) as UserRole[]).map((role) => {
+                {QUICK_SWITCH_ROLES.map((role) => {
                   const Icon = ROLE_META[role].icon;
                   const active = sessionUser?.role === role;
                   return (
