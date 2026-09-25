@@ -12,9 +12,9 @@
  *     byte-identical on server and client. Render with this.
  *   - After mount, call `buildSeedData(new Date())` to get live, ticking SLAs.
  *
- * Every image URL below is a real `images.unsplash.com` asset. Components should
- * still fall back to `PLACEHOLDER_IMAGE` on an `onError` event so a throttled
- * CDN can never show a broken frame.
+ * Seed tickets use real, issue-specific sample photos; live tickets retain the
+ * evidence uploaded by their reporters and CoVs. Components should still fall
+ * back to `PLACEHOLDER_IMAGE` if a remote image cannot be loaded.
  */
 
 import type {
@@ -62,23 +62,23 @@ export const PLACEHOLDER_IMAGE =
 
 const IMG = {
   potholeBefore: UNSPLASH('photo-1515162816999-a0c47dc192f7'),
-  potholeBeforeAlt: UNSPLASH('photo-1573167507387-6b4b98cb7c13'),
-  potholeAfter: UNSPLASH('photo-1517457373958-b7bdd4587205'),
-  garbageBefore: UNSPLASH('photo-1558618666-fcd25c85cd64'),
-  garbageBeforeAlt: UNSPLASH('photo-1532996122724-e3c354a0b15b'),
-  garbageAfter: UNSPLASH('photo-1542601906990-b4d3fb778b09'),
-  streetlightBefore: UNSPLASH('photo-1517245386807-bb43f82c33c4'),
-  streetlightAfter: UNSPLASH('photo-1509391366360-2e959784a276'),
-  electricalHazard: UNSPLASH('photo-1621451537084-482c73073a0f'),
-  waterLeakBefore: UNSPLASH('photo-1504384308090-c894fdcc538d'),
-  waterLeakAfter: UNSPLASH('photo-1470071459604-3b5ec3a7fe05'),
-  drainBefore: UNSPLASH('photo-1589829545856-d10d557cf95f'),
-  drainAfter: UNSPLASH('photo-1611270629569-8b357cb88da9'),
-  treeBefore: UNSPLASH('photo-1477959858617-67f85cf4f1df'),
-  trafficBefore: UNSPLASH('photo-1502920917128-1aa500764cbd'),
-  roadBefore: UNSPLASH('photo-1480714378408-67cf0d13bc1b'),
-  infraBefore: UNSPLASH('photo-1534430480872-3498386e7856'),
-  infraAfter: UNSPLASH('photo-1524492412937-b28074a5d7da'),
+  potholeBeforeAlt: UNSPLASH('photo-1635068741358-ab1b9813623f'),
+  potholeAfter: UNSPLASH('photo-1574757987642-5755f0839101'),
+  garbageBefore: UNSPLASH('photo-1781964182835-7a87ce60d662'),
+  garbageBeforeAlt: UNSPLASH('photo-1718104717552-7addaf35fe4b'),
+  garbageAfter: UNSPLASH('photo-1781964182835-7a87ce60d662'),
+  streetlightBefore: UNSPLASH('photo-1543518360-68b9612a7c8c'),
+  streetlightAfter: UNSPLASH('photo-1566276423184-a8c13d2a88a1'),
+  electricalHazard: UNSPLASH('photo-1509390373685-579356742d95'),
+  waterLeakBefore: UNSPLASH('photo-1526898943670-92bfa9f94c12'),
+  waterLeakAfter: UNSPLASH('photo-1676210134188-4c05dd172f89'),
+  drainBefore: UNSPLASH('photo-1526898943670-92bfa9f94c12'),
+  drainAfter: UNSPLASH('photo-1758244016375-a669be263c06'),
+  treeBefore: UNSPLASH('photo-1596368708356-6e1e1025ee72'),
+  trafficBefore: UNSPLASH('photo-1602951172321-fe0aa8865e6b'),
+  roadBefore: UNSPLASH('photo-1635068741358-ab1b9813623f'),
+  infraBefore: UNSPLASH('photo-1776703564129-911150766974'),
+  infraAfter: UNSPLASH('photo-1574757987642-5755f0839101'),
 } as const;
 
 /* ------------------------------------------------------------------------- */
@@ -268,11 +268,23 @@ function photo(
   kind: EvidencePhoto['kind'],
   url: string,
   capturedAt: string,
-  capturedBy: string,
-  geo: GeoPoint | null,
-  caption: string,
+  _capturedBy: string,
+  _geo: GeoPoint | null,
+  _caption: string,
 ): EvidencePhoto {
-  return { id, kind, url, source: 'seed', capturedAt, capturedBy, geo, caption };
+  void _capturedBy;
+  void _geo;
+  void _caption;
+  return {
+    id,
+    kind,
+    url,
+    source: 'seed',
+    capturedAt,
+    capturedBy: 'Demo sample',
+    geo: null,
+    caption: 'Illustrative sample photo; not captured at the reported location.',
+  };
 }
 
 /**
@@ -486,7 +498,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     ],
     afterPhotos: [],
     assignedDepartment: 'PWD/Roads',
-    assignedOfficer: 'AE-PWD-KOR-114',
+    assignedCoV: 'COV-PWD-KOR-114',
     routingHistory: [
       routingEvent(
         `${potholeId}-route-1`,
@@ -715,7 +727,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     ],
     afterPhotos: [],
     assignedDepartment: 'Sanitation',
-    assignedOfficer: 'SWM-MARSHAL-148',
+    assignedCoV: 'COV-SWM-EJIPURA-148',
     routingHistory: [
       routingEvent(
         `${garbageId}-route-1`,
@@ -850,7 +862,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     ],
     afterPhotos: [],
     assignedDepartment: 'Electricity/BESCOM',
-    assignedOfficer: 'BESCOM-EE-BTM-07',
+    assignedCoV: 'COV-BESCOM-BTM-07',
     routingHistory: [
       routingEvent(
         `${hazardId}-route-1`,
@@ -1005,7 +1017,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
       ),
     ],
     assignedDepartment: 'Water/Jal Board',
-    assignedOfficer: 'BWSSB-AEE-HSR-22',
+    assignedCoV: 'COV-WATER-HSR-22',
     routingHistory: [
       routingEvent(
         `${drainId}-route-1`,
@@ -1165,7 +1177,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
       ),
     ],
     assignedDepartment: 'Water/Jal Board',
-    assignedOfficer: 'BWSSB-JE-IND-08',
+    assignedCoV: 'COV-WATER-IND-08',
     routingHistory: [
       routingEvent(
         `${leakId}-route-1`,
@@ -1310,7 +1322,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     ],
     afterPhotos: [],
     assignedDepartment: 'PWD/Roads',
-    assignedOfficer: 'BBMP-HORT-JAY-03',
+    assignedCoV: 'COV-PARKS-JAY-03',
     routingHistory: [
       routingEvent(
         `${treeId}-route-1`,
@@ -1429,7 +1441,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     ],
     afterPhotos: [],
     assignedDepartment: 'Traffic',
-    assignedOfficer: null,
+    assignedCoV: null,
     routingHistory: [
       routingEvent(
         `${trafficId}-route-1`,
@@ -1554,7 +1566,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
       ),
     ],
     assignedDepartment: 'Electricity/BESCOM',
-    assignedOfficer: 'BESCOM-LM-WFD-19',
+    assignedCoV: 'COV-BESCOM-WFD-19',
     routingHistory: [
       routingEvent(
         `${lightId}-route-1`,
@@ -1706,7 +1718,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
       ),
     ],
     assignedDepartment: 'PWD/Roads',
-    assignedOfficer: 'PWD-JE-MRT-11',
+    assignedCoV: 'COV-PWD-MRT-11',
     routingHistory: [
       routingEvent(
         `${roadId}-route-1`,
@@ -1845,7 +1857,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     ],
     afterPhotos: [],
     assignedDepartment: 'PWD/Roads',
-    assignedOfficer: null,
+    assignedCoV: null,
     routingHistory: [
       routingEvent(
         `${infraId}-route-1`,
@@ -2293,6 +2305,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
     else byTicket.set(entry.ticketId, [entry]);
   }
   for (const ticket of tickets) {
+    if (!ticket.tags.includes('demo-sample')) ticket.tags = [...ticket.tags, 'demo-sample'];
     ticket.auditLog = byTicket.get(ticket.id) ?? [];
   }
 
@@ -2315,6 +2328,16 @@ export const BANGALORE_CENTER: GeoPoint = {
   lng: 77.5946,
   address: 'Bengaluru, Karnataka',
   zone: 'BBMP',
+};
+
+/** Approximate demo-area center for TKR College, Meerpet, Hyderabad. */
+export const TKR_COLLEGE_CENTER: GeoPoint = {
+  lat: 17.2842,
+  lng: 78.5652,
+  accuracyMeters: 500,
+  address: 'TKR College area, Meerpet, Hyderabad (approximate)',
+  ward: 'Meerpet',
+  zone: 'GHMC-South-East',
 };
 
 /** Demo CoV accounts, one per department, for the Phase 4 auth modal. */

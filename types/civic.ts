@@ -576,7 +576,7 @@ export interface CivicTicket {
   afterPhotos: EvidencePhoto[];
 
   assignedDepartment: Department;
-  assignedOfficer: string | null;
+  assignedCoV: string | null;
   routingHistory: RoutingEvent[];
 
   civicEye: CivicEyeAnalysis | null;
@@ -606,6 +606,8 @@ export interface IntakeDraft {
   reporter: PublicReporter;
   /** Citizen may override CivicEye's category; null means "trust the agent". */
   categoryOverride: ComplaintCategory | null;
+  /** Demo scenarios run in memory only and must never be saved as citizen reports. */
+  isDemo?: boolean;
 }
 
 /* ------------------------------------------------------------------------- */

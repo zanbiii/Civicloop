@@ -4,16 +4,22 @@ import dynamic from 'next/dynamic';
 import { MapPin } from 'lucide-react';
 import type { LeafletMapProps } from './map/LeafletMapInner';
 import { cn } from '@/lib/cn';
+import { useTranslate } from '@/components/AppLanguageProvider';
+
+function MapLoading() {
+  const t = useTranslate();
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-100 text-slate-400">
+      <MapPin className="h-8 w-8 animate-bounce" />
+      <span className="text-xs font-medium">{t('Loading OpenStreetMap…')}</span>
+    </div>
+  );
+}
 
 // Leaflet reads `window` at import time, so it is only ever loaded in the browser.
 const LeafletMapInner = dynamic(() => import('./map/LeafletMapInner'), {
   ssr: false,
-  loading: () => (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-100 text-slate-400">
-      <MapPin className="h-8 w-8 animate-bounce" />
-      <span className="text-xs font-medium">Loading OpenStreetMap…</span>
-    </div>
-  ),
+  loading: () => <MapLoading />,
 });
 
 export type { LeafletMapProps };

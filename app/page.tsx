@@ -20,7 +20,8 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import Header, { type AppLanguage } from '@/components/Header';
+import Header from '@/components/Header';
+import { useAppLanguage, useTranslate } from '@/components/AppLanguageProvider';
 import AuthModal from '@/components/AuthModal';
 import OnboardingModal from '@/components/OnboardingModal';
 import CitizenIntakeForm from '@/components/CitizenIntakeForm';
@@ -34,8 +35,9 @@ import UpiReceiptModal from '@/components/UpiReceiptModal';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
 import LeafletMap from '@/components/LeafletMap';
 import { useCivicloop } from '@/lib/useCivicloop';
-import { CSR_FUND, DEMO_COVS, DEMO_VOLUNTEER, PLACEHOLDER_IMAGE, SEED_TOOL_DEPOTS } from '@/lib/seedData';
+import { CSR_FUND, DEMO_COVS, DEMO_VOLUNTEER, PLACEHOLDER_IMAGE, SEED_TOOL_DEPOTS, TKR_COLLEGE_CENTER } from '@/lib/seedData';
 import { haversineMeters } from '@/lib/haversine';
+import { isDemoTicket } from '@/lib/demo';
 import { cn } from '@/lib/cn';
 import {
   CATEGORY_META,
@@ -90,8 +92,7 @@ const DEMO_ADMIN: AdminProfile = {
   clearance: 'super-admin',
 };
 
-/** ~20 m from the seeded Koramangala pothole, so a manual pothole report demonstrates the merge. */
-const DEMO_PIN: GeoPoint = { lat: 12.93535, lng: 77.62465, ward: 'Koramangala', zone: 'BBMP-South' };
+const DEMO_PIN: GeoPoint = TKR_COLLEGE_CENTER;
 
 const ONBOARDING_KEY = 'civicloop.onboarded';
 
@@ -101,19 +102,19 @@ function randomDemoReporter(): PublicReporter {
 }
 
 function scenarioDraft(kind: 'pothole' | 'obstruction'): IntakeDraft {
-  const base = { photos: [], language: 'en' as const, reporter: randomDemoReporter(), categoryOverride: null, voiceTranscript: null };
+  const base = { photos: [], language: 'en' as const, reporter: randomDemoReporter(), categoryOverride: null, voiceTranscript: null, isDemo: true };
   if (kind === 'pothole') {
     return {
       ...base,
       description: 'Huge pothole near Sony World signal on 80 Feet Road, my bike almost skidded into it this morning.',
-      location: { lat: 12.93532, lng: 77.62468, accuracyMeters: 9, address: 'Near Sony World Signal', ward: 'Koramangala', zone: 'BBMP-South' },
+      location: { lat: 17.2844, lng: 78.5651, accuracyMeters: 250, address: 'Near TKR College main gate, Meerpet (demo)', ward: 'Meerpet', zone: 'GHMC-South-East' },
       inputModes: ['text', 'map-pin'],
     };
   }
   return {
     ...base,
     description: 'Contractor barricades and debris are blocking a lane near Silk Board junction, huge traffic jam every evening.',
-    location: { lat: 12.9186, lng: 77.6241, accuracyMeters: 12, address: 'Hosur Road service lane, Silk Board', ward: 'BTM Layout', zone: 'BBMP-Bommanahalli' },
+    location: { lat: 17.2826, lng: 78.5684, accuracyMeters: 350, address: 'Meerpet main road near TKR College (demo)', ward: 'Meerpet', zone: 'GHMC-South-East' },
     inputModes: ['text', 'map-pin'],
   };
 }
@@ -160,7 +161,7 @@ const PITCH_ROWS: Array<{ icon: typeof GitMerge; topic: string; typical: string;
   {
     icon: ShieldCheck,
     topic: 'Closure',
-    typical: 'An officer can mark a complaint closed.',
+    typical: 'A CoV can mark a complaint closed.',
     civicloop: 'No closure without proof: the after-photo is checked against the before-photo for matching landmarks, then the citizen signs off.',
   },
   {
@@ -178,6 +179,7 @@ const PITCH_ROWS: Array<{ icon: typeof GitMerge; topic: string; typical: string;
 ];
 
 function PitchBanner() {
+  const t = useTranslate();
   const [open, setOpen] = useState(true);
   return (
     <section className="overflow-hidden rounded-[1.5rem] border border-slate-800 bg-[#102b27] text-white shadow-[0_18px_55px_-38px_rgb(15_23_42_/55%)]">
@@ -186,8 +188,8 @@ function PitchBanner() {
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0">
-          <h2 className="text-base font-bold">Why Civicloop Wins over CPGRAMS &amp; Sahaaya 2.0</h2>
-          <p className="text-xs text-emerald-50/55">From a complaint inbox to a self-healing loop that closes on evidence.</p>
+          <h2 className="text-base font-bold">{t('Why Civicloop Wins over CPGRAMS & Sahaaya 2.0')}</h2>
+          <p className="text-xs text-emerald-50/55">{t('From a complaint inbox to a self-healing loop that closes on evidence.')}</p>
         </div>
         <ChevronDown className={cn('ml-auto h-5 w-5 shrink-0 text-slate-400 transition-transform', open && 'rotate-180')} />
       </button>
@@ -197,21 +199,21 @@ function PitchBanner() {
             {PITCH_ROWS.map((row) => (
               <div key={row.topic} className="grid gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.045] p-3.5 md:grid-cols-[8rem_1fr_1.4fr] md:items-start">
                 <span className="flex items-center gap-2 text-sm font-semibold text-slate-100">
-                  <row.icon className="h-4 w-4 text-emerald-200" /> {row.topic}
+                  <row.icon className="h-4 w-4 text-emerald-200" /> {t(row.topic)}
                 </span>
                 <span className="text-xs text-slate-400">
-                  <span className="mr-1 font-semibold uppercase tracking-wide text-slate-500 md:hidden">Typical:</span>
-                  {row.typical}
+                  <span className="mr-1 font-semibold uppercase tracking-wide text-slate-500 md:hidden">{t('Typical:')}</span>
+                  {t(row.typical)}
                 </span>
                 <span className="flex items-start gap-1.5 text-xs leading-relaxed text-emerald-100">
                   <CircleCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-300" />
-                  {row.civicloop}
+                  {t(row.civicloop)}
                 </span>
               </div>
             ))}
           </div>
           <p className="mt-3 text-[10px] text-slate-500">
-            &quot;Typical&quot; describes common grievance-portal workflows; check current CPGRAMS and Sahaaya releases for specifics.
+            {t('"Typical" describes common grievance-portal workflows; check current CPGRAMS and Sahaaya releases for specifics.')}
           </p>
         </div>
       )}
@@ -232,23 +234,24 @@ function DemoBar({
   onFastForward: () => void;
   onReset: () => void;
 }) {
+  const t = useTranslate();
   const button =
     'flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-900/10 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-sm transition hover:border-emerald-700/20 hover:bg-emerald-50 disabled:opacity-50';
   return (
     <div className="border-b border-emerald-900/10 bg-[#e8f4ef]">
       <div className="soft-scrollbar mx-auto flex max-w-[90rem] items-center gap-2 overflow-x-auto px-3 py-2 sm:px-5 lg:px-8">
-        <span className="shrink-0 rounded-full bg-emerald-800 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">Demo lab</span>
+        <span className="shrink-0 rounded-full bg-emerald-800 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">{t('Demo lab')}</span>
         <button type="button" disabled={busy} onClick={() => onScenario('pothole')} className={button}>
-          <GitMerge className="h-3.5 w-3.5" /> Duplicate pothole report
+          <GitMerge className="h-3.5 w-3.5" /> {t('Duplicate pothole report')}
         </button>
         <button type="button" disabled={busy} onClick={() => onScenario('obstruction')} className={button}>
-          <Route className="h-3.5 w-3.5" /> Silk Board obstruction (self-healing)
+          <Route className="h-3.5 w-3.5" /> {t('Silk Board obstruction (self-healing)')}
         </button>
         <button type="button" onClick={onFastForward} className={button}>
-          <FastForward className="h-3.5 w-3.5" /> Fast-forward SLA +6h
+          <FastForward className="h-3.5 w-3.5" /> {t('Fast-forward SLA +6h')}
         </button>
         <button type="button" onClick={onReset} className={button}>
-          <RotateCcw className="h-3.5 w-3.5" /> Reset
+          <RotateCcw className="h-3.5 w-3.5" /> {t('Reset')}
         </button>
         {clockOffsetHours > 0 && (
           <span className="shrink-0 rounded-full bg-emerald-800 px-2 py-0.5 text-[10px] font-bold text-white">Clock +{clockOffsetHours}h</span>
@@ -267,6 +270,7 @@ function MapCard({
   title = 'Live civic map',
   heightClass = 'h-[440px]',
   depots,
+  showingDemoReports = false,
 }: {
   tickets: CivicTicket[];
   selectedTicketId: string | null;
@@ -276,25 +280,38 @@ function MapCard({
   title?: string;
   heightClass?: string;
   depots?: ToolDepot[];
+  showingDemoReports?: boolean;
 }) {
+  const t = useTranslate();
   return (
     <section className="surface-card overflow-hidden p-3 sm:p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
         <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
-          <MapIcon className="h-4 w-4" /> {title}
+          <MapIcon className="h-4 w-4" /> {t(title)}
         </h3>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600">
-          {SEVERITIES.map((severity) => (
-            <span key={severity} className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: SEVERITY_META[severity].pin }} />
-              {severity}
-            </span>
-          ))}
+          {SEVERITIES.map((severity) => {
+            const [label, duration] = SEVERITY_META[severity].label.split(' · ');
+            return (
+              <span key={severity} className="flex items-center gap-1">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: SEVERITY_META[severity].pin }} />
+                {t(label)} · {duration}
+              </span>
+            );
+          })}
           <span className="flex items-center gap-1">
-            <span className="h-2.5 w-2.5 rounded-full border border-dashed border-slate-500" /> 75 m cluster
+            <span className="h-2.5 w-2.5 rounded-full border border-dashed border-slate-500" /> {t('75 m cluster')}
           </span>
         </div>
       </div>
+      <p className={cn('mb-2 px-1 text-[11px]', showingDemoReports ? 'text-amber-700' : 'text-slate-500')}>
+        {showingDemoReports
+          ? t('No real reports within 10 km. Showing clearly labeled examples.')
+          : tickets.length > 0
+            ? t('Showing saved reports within 10 km of this area.')
+            : `${t('No nearby reports yet')} ${t('Use your device location for accurate nearby reports.')}`}
+        {!userLocation && <span className="ml-1 font-medium">{t('Near TKR College · approximate area')}</span>}
+      </p>
       <LeafletMap
         tickets={tickets}
         selectedTicketId={selectedTicketId}
@@ -318,6 +335,7 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
 }
 
 function TicketDrawer({ ticket, logs, onClose }: { ticket: CivicTicket; logs: CivicTicket['auditLog']; onClose: () => void }) {
+  const t = useTranslate();
   const before = ticket.beforePhotos[0];
   const after = ticket.afterPhotos[ticket.afterPhotos.length - 1];
   const breached = ticket.sla.health === 'breached' && !ticket.sla.metAt;
@@ -353,56 +371,56 @@ function TicketDrawer({ ticket, logs, onClose }: { ticket: CivicTicket; logs: Ci
             </h3>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <span className={cn('rounded border px-1.5 py-0.5 text-[10px] font-semibold', SEVERITY_META[ticket.severity].badgeClass)}>
-                {SEVERITY_META[ticket.severity].label}
+                {t(SEVERITY_META[ticket.severity].label)}
               </span>
               <span className={cn('rounded border px-1.5 py-0.5 text-[10px] font-semibold', STATUS_META[ticket.status].badgeClass)}>
-                {ticket.status}
+                {t(ticket.status)}
               </span>
               {breached && (
                 <span className="rounded border border-red-400 bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                  SLA Breached · Auto-Escalated
+                  {t('SLA Breached · Auto-Escalated')}
                 </span>
               )}
               {ticket.triage?.appliedOverrideId && (
                 <span className="rounded border border-emerald-300 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-                  🧠 Self-healed routing
+                  🧠 {t('Self-healed routing')}
                 </span>
               )}
             </div>
             <p className="mt-2 flex items-center gap-1 text-xs text-slate-500">
-              <Users className="h-3.5 w-3.5" /> Reported by {ticket.impactCount} citizen{ticket.impactCount === 1 ? '' : 's'} · first by{' '}
+              <Users className="h-3.5 w-3.5" /> {t('Reported by')} {ticket.impactCount} {t(ticket.impactCount === 1 ? 'citizen' : 'citizens')} · {t('first by')}{' '}
               {ticket.reporter.displayName}
             </p>
           </div>
 
-          <DetailSection title="Report">
+          <DetailSection title={t('Report')}>
             <p>{ticket.description}</p>
             {ticket.voiceTranscript && <p className="mt-1 italic text-slate-500">🎙️ &quot;{ticket.voiceTranscript}&quot;</p>}
             <p className="mt-1 text-xs text-slate-500">📍 {ticket.location.address ?? `${ticket.location.lat.toFixed(5)}, ${ticket.location.lng.toFixed(5)}`}</p>
           </DetailSection>
 
           {ticket.civicEye && (
-            <DetailSection title="👁️ CivicEye">
+            <DetailSection title={t('👁️ CivicEye')}>
               <p>
-                <strong>{ticket.civicEye.category}</strong> · {ticket.civicEye.confidence}% evidence confidence ({ticket.civicEye.mode})
+                <strong>{t(ticket.civicEye.category)}</strong> · {ticket.civicEye.confidence}% {t('evidence confidence')} ({ticket.civicEye.mode})
               </p>
               <p className="mt-1 text-xs text-slate-500">{ticket.civicEye.observation}</p>
               {ticket.civicEye.hazardIndicators.length > 0 && (
-                <p className="mt-1 text-xs text-slate-600">Hazards: {ticket.civicEye.hazardIndicators.join(' · ')}</p>
+                <p className="mt-1 text-xs text-slate-600">{t('Hazards:')} {ticket.civicEye.hazardIndicators.join(' · ')}</p>
               )}
             </DetailSection>
           )}
 
           {ticket.dedup && (
-            <DetailSection title="🧭 Deduplication">
+            <DetailSection title={t('🧭 Deduplication')}>
               <p className="text-xs">{ticket.dedup.rationale}</p>
             </DetailSection>
           )}
 
-          <DetailSection title="🧠 Routing">
+          <DetailSection title={t('🧠 Routing')}>
             <p>
               {DEPARTMENT_META[ticket.assignedDepartment].icon} <strong>{ticket.assignedDepartment}</strong>
-              {ticket.triage && ` · ${ticket.triage.routingConfidence}% confidence`}
+              {ticket.triage && ` · ${ticket.triage.routingConfidence}% ${t('confidence')}`}
             </p>
             {ticket.triage && <p className="mt-1 text-xs text-slate-500">{ticket.triage.rationale}</p>}
             <ol className="mt-2 space-y-1.5 border-l-2 border-slate-100 pl-3">
@@ -419,28 +437,28 @@ function TicketDrawer({ ticket, logs, onClose }: { ticket: CivicTicket; logs: Ci
             </ol>
           </DetailSection>
 
-          <DetailSection title="⏱️ SLA">
+          <DetailSection title={t('⏱️ SLA')}>
             <p className="text-xs">
-              {ticket.sla.slaHours} h {ticket.sla.severity} window · {Math.min(ticket.sla.percentElapsed, 999)}% elapsed · {ticket.sla.health.replace('_', ' ')}
+              {ticket.sla.slaHours} h {t(ticket.sla.severity)} {t('window')} · {Math.min(ticket.sla.percentElapsed, 999)}% {t('elapsed')} · {t(ticket.sla.health.replace('_', ' '))}
             </p>
             {ticket.sla.escalationBriefing && (
               <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
-                <div className="font-semibold">Escalated to {ticket.sla.escalatedTo}</div>
+                <div className="font-semibold">{t('Escalated to')} {ticket.sla.escalatedTo}</div>
                 <p className="mt-0.5">{ticket.sla.escalationBriefing}</p>
               </div>
             )}
           </DetailSection>
 
           {ticket.proof && (
-            <DetailSection title="✅ CivicProof">
+            <DetailSection title={t('✅ CivicProof')}>
               <ProofResult ticket={ticket} verification={ticket.proof} />
             </DetailSection>
           )}
 
           {ticket.citizenConfirmation && (
-            <DetailSection title="Citizen sign-off">
+            <DetailSection title={t('Citizen sign-off')}>
               <p className="text-xs">
-                {ticket.citizenConfirmation.decision === 'approved' ? '👍 Approved' : '👎 Rejected'}
+                {ticket.citizenConfirmation.decision === 'approved' ? `👍 ${t('Approved')}` : `👎 ${t('Rejected')}`}
                 {ticket.citizenConfirmation.rating ? ` · ${'★'.repeat(ticket.citizenConfirmation.rating)}` : ''}
               </p>
               {ticket.citizenConfirmation.comment && <p className="mt-1 text-xs italic text-slate-500">&quot;{ticket.citizenConfirmation.comment}&quot;</p>}
@@ -455,6 +473,7 @@ function TicketDrawer({ ticket, logs, onClose }: { ticket: CivicTicket; logs: Ci
 }
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+  const t = useTranslate();
   useEffect(() => {
     const timer = window.setTimeout(onClose, 6_000);
     return () => window.clearTimeout(timer);
@@ -464,8 +483,8 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
     <div className="fixed inset-x-0 bottom-4 z-[2100] flex justify-center px-4">
       <div className="flex max-w-lg items-start gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-2xl">
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" />
-        <span>{message}</span>
-        <button type="button" onClick={onClose} className="ml-2 shrink-0 text-slate-400 hover:text-white" aria-label="Dismiss">
+        <span>{t(message)}</span>
+        <button type="button" onClick={onClose} className="ml-2 shrink-0 text-slate-400 hover:text-white" aria-label={t('Dismiss')}>
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -481,6 +500,8 @@ type CitizenTab = 'bounties' | 'report' | 'reports' | 'map';
 type CoVTab = 'bounties' | 'operations';
 
 export default function Home() {
+  const { language, setLanguage } = useAppLanguage();
+  const t = useTranslate();
   const civic = useCivicloop();
   const { tickets, logs, overrides, volunteers, liveAi, nowMs, clockOffsetHours } = civic;
 
@@ -488,7 +509,6 @@ export default function Home() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authRole, setAuthRole] = useState<UserRole>('citizen');
   const [demoMode, setDemoMode] = useState(true);
-  const [language, setLanguage] = useState<AppLanguage>('en');
   const [citizenTab, setCitizenTab] = useState<CitizenTab>('bounties');
   const [covTab, setCovTab] = useState<CoVTab>('bounties');
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -502,8 +522,53 @@ export default function Home() {
   const onboardingOpen = !onboarded && !onboardingDismissed;
 
   const masters = useMemo(() => tickets.filter((ticket) => ticket.isMaster), [tickets]);
+  const anchorLocation = userLocation ?? TKR_COLLEGE_CENTER;
+  const tkrSampleReports = useMemo(() => {
+    const examples = [
+      { category: 'Pothole', title: 'Pothole near TKR College main gate', address: 'Near TKR College main gate, Meerpet (sample)' },
+      { category: 'Garbage accumulation', title: 'Uncollected waste near Meerpet market', address: 'Meerpet market area (sample)' },
+      { category: 'Broken streetlight', title: 'Streetlight out near the TKR College road', address: 'TKR College Road, Meerpet (sample)' },
+    ] as const;
+    return examples.flatMap((example, index) => {
+      const source = masters.find((ticket) => ticket.category === example.category);
+      if (!source) return [];
+      const angle = (index * 2 * Math.PI) / examples.length;
+      const distanceKm = 0.35 + index * 0.35;
+      return [{
+        ...source,
+        id: `demo-tkr-${index + 1}`,
+        referenceCode: `DEMO-TKR-${String(index + 1).padStart(3, '0')}`,
+        title: example.title,
+        description: 'Illustrative demo example only. This is not a verified report of an issue at this location.',
+        location: {
+          ...TKR_COLLEGE_CENTER,
+          lat: TKR_COLLEGE_CENTER.lat + (Math.cos(angle) * distanceKm) / 111.32,
+          lng: TKR_COLLEGE_CENTER.lng + (Math.sin(angle) * distanceKm) / (111.32 * Math.cos((TKR_COLLEGE_CENTER.lat * Math.PI) / 180)),
+          address: example.address,
+        },
+        supporters: [],
+        impactCount: 1,
+        assignedCoV: null,
+        routingHistory: [],
+        auditLog: [],
+        tags: [...source.tags.filter((tag) => tag !== 'demo-sample'), 'demo-sample'],
+      }];
+    });
+  }, [masters]);
+  const localAreaTickets = useMemo(() => {
+    const realReports = masters
+      .filter((ticket) => !isDemoTicket(ticket) && haversineMeters(anchorLocation, ticket.location) <= 10_000)
+      .sort((a, b) => haversineMeters(anchorLocation, a.location) - haversineMeters(anchorLocation, b.location));
+    if (realReports.length > 0) return realReports;
+    if (haversineMeters(anchorLocation, TKR_COLLEGE_CENTER) <= 10_000) return tkrSampleReports;
+    return [];
+  }, [masters, anchorLocation, tkrSampleReports]);
+  const showingDemoReports = localAreaTickets.length > 0 && localAreaTickets.every(isDemoTicket);
   const telemetry = useMemo(() => computeBrainTelemetry(tickets, overrides), [tickets, overrides]);
-  const selectedTicket = tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
+  const selectedTicket =
+    tickets.find((ticket) => ticket.id === selectedTicketId) ??
+    localAreaTickets.find((ticket) => ticket.id === selectedTicketId) ??
+    null;
   const selectedLogs = useMemo(
     () => (selectedTicketId ? logs.filter((entry) => entry.ticketId === selectedTicketId) : []),
     [logs, selectedTicketId],
@@ -527,7 +592,9 @@ export default function Home() {
     () =>
       citizen
         ? masters.filter(
-            (ticket) => ticket.reporter.id === citizen.id || ticket.supporters.some((supporter) => supporter.reporter.id === citizen.id),
+            (ticket) =>
+              !isDemoTicket(ticket) &&
+              (ticket.reporter.id === citizen.id || ticket.supporters.some((supporter) => supporter.reporter.id === citizen.id)),
           )
         : [],
     [masters, citizen],
@@ -535,17 +602,11 @@ export default function Home() {
 
   const nearbyTickets = useMemo(() => {
     if (!citizen) return [];
-    const anchor = userLocation ?? myTickets[0]?.location ?? null;
-    const candidates = masters.filter(
+    const candidates = localAreaTickets.filter(
       (ticket) => !myTickets.includes(ticket) && !['Resolved', 'Rejected', 'Pending Citizen Confirmation'].includes(ticket.status),
     );
-    if (!anchor) return candidates.slice(0, 4);
-    return candidates
-      .map((ticket) => ({ ticket, distance: haversineMeters(anchor, ticket.location) }))
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 4)
-      .map((entry) => entry.ticket);
-  }, [masters, myTickets, citizen, userLocation]);
+    return candidates.slice(0, 4);
+  }, [localAreaTickets, myTickets, citizen]);
 
   const openAuth = (role: UserRole = 'citizen') => {
     setAuthRole(role);
@@ -575,7 +636,7 @@ export default function Home() {
   const boostBounty = (ticketId: string, amountInr: number) => {
     if (!citizen) return;
     civic.boostBounty(ticketId, citizen, amountInr);
-    setToast(`Boosted by ₹${amountInr} — thanks for pitching in!`);
+    setToast(`${t('Boosted by')} ₹${amountInr} — ${t('thanks for pitching in!')}`);
   };
 
   const submitMissionProof = (ticketId: string, afterPhoto: EvidencePhoto): Promise<CivicProofVerification> => {
@@ -584,8 +645,11 @@ export default function Home() {
   };
 
   const handleIntake = async (draft: IntakeDraft) => {
+    if ((demoMode || !civic.persistenceEnabled) && !draft.isDemo) {
+      return { success: false, message: t('Live report submission is unavailable in this demo. Your report has not been sent or saved.') };
+    }
     const result = await civic.submitIntake(draft);
-    setToast(result.message);
+    if (result.success) setToast(result.message);
     return result;
   };
 
@@ -605,7 +669,11 @@ export default function Home() {
   const resetDemo = async () => {
     await civic.resetDemo();
     setSelectedTicketId(null);
-    setToast('Demo data and the self-healing routing graph were reset to the seed state.');
+    setToast(
+      civic.persistenceEnabled
+        ? t('Saved reports were preserved. The demo reset cannot clear live data.')
+        : t('Demo data and the self-healing routing graph were reset to the seed state.'),
+    );
   };
 
   return (
@@ -653,13 +721,13 @@ export default function Home() {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-60" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-300" />
                   </span>
-                  CIVICSENSE · 5 AI AGENTS AT WORK
+                  {t('CIVICSENSE · 5 AI AGENTS AT WORK')}
                 </span>
                 <h1 className="max-w-2xl text-[2.4rem] font-bold leading-[1.08] tracking-[-0.045em] text-white sm:text-5xl lg:text-[3.65rem]">
-                  Your neighborhood, <span className="text-emerald-300">better by design.</span>
+                  {t('Your neighborhood,')} <span className="text-emerald-300">{t('better by design.')}</span>
                 </h1>
                 <p className="max-w-xl text-sm leading-7 text-emerald-50/75 sm:text-base">
-                  Report a local issue in seconds. Civicloop brings neighbors together, gets the right team on it, and keeps the fix accountable from first photo to final proof.
+                  {t('Report a local issue in seconds. Civicloop brings neighbors together, gets the right team on it, and keeps the fix accountable from first photo to final proof.')}
                 </p>
                 <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:flex-wrap">
                   <button
@@ -667,20 +735,20 @@ export default function Home() {
                     onClick={() => openAuth('citizen')}
                     className="group flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-300 px-5 py-3 text-sm font-bold text-emerald-950 shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-emerald-200"
                   >
-                    Report an issue <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    {t('Report an issue')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => openAuth('volunteer')}
                     className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
                   >
-                    <HardHat className="h-4 w-4 text-emerald-200" /> Join as a CoV
+                    <HardHat className="h-4 w-4 text-emerald-200" /> {t('Join as a CoV')}
                   </button>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1 text-[11px] font-medium text-emerald-50/65">
-                  <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-emerald-300" /> Your identity stays private</span>
+                  <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-emerald-300" /> {t('Your identity stays private')}</span>
                   <span className="hidden h-1 w-1 rounded-full bg-emerald-200/40 sm:block" />
-                  <span>English · ಕನ್ನಡ · हिन्दी</span>
+                  <span>{t('English · ಕನ್ನಡ · हिन्दी')}</span>
                 </div>
               </div>
               <div className="relative">
@@ -688,19 +756,19 @@ export default function Home() {
                 <div className="relative rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur sm:p-5">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
-                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200/70">City impact</div>
-                      <div className="mt-1 text-sm font-semibold text-white">Small actions. Visible progress.</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200/70">{t('City impact')}</div>
+                      <div className="mt-1 text-sm font-semibold text-white">{t('Small actions. Visible progress.')}</div>
                     </div>
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/15 bg-emerald-200/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-100">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> Live demo
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> {t('Live demo')}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                 {[
-                  { label: 'Neighbors heard', value: telemetry.totalReports, sub: `${telemetry.masterIssues} issues tracked`, icon: Users },
-                  { label: 'Less duplicate noise', value: `${telemetry.duplicateReductionPercent}%`, sub: `${telemetry.duplicatesMerged} reports combined`, icon: GitMerge },
-                  { label: 'On-time accountability', value: telemetry.autoEscalations, sub: 'automatic deadline escalations', icon: Siren },
-                  { label: 'Fixes with proof', value: telemetry.proofVerified, sub: `${telemetry.proofRejected} proofs reviewed`, icon: Check },
+                  { label: t('Neighbors heard'), value: telemetry.totalReports, sub: `${telemetry.masterIssues} ${t('issues tracked')}`, icon: Users },
+                  { label: t('Less duplicate noise'), value: `${telemetry.duplicateReductionPercent}%`, sub: `${telemetry.duplicatesMerged} ${t('reports combined')}`, icon: GitMerge },
+                  { label: t('On-time accountability'), value: telemetry.autoEscalations, sub: t('automatic deadline escalations'), icon: Siren },
+                  { label: t('Fixes with proof'), value: telemetry.proofVerified, sub: `${telemetry.proofRejected} ${t('proofs reviewed')}`, icon: Check },
                 ].map((stat) => (
                   <div key={stat.label} className="min-h-[116px] rounded-2xl border border-white/10 bg-[#f7fbf9] p-3.5 text-slate-900 sm:p-4">
                     <div className="flex items-center justify-between gap-2">
@@ -714,7 +782,7 @@ export default function Home() {
               </div>
                   <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200/10 bg-emerald-950/35 px-3 py-2.5 text-[11px] text-emerald-50/75">
                     <Check className="h-4 w-4 shrink-0 text-emerald-300" />
-                    Every report is tracked. Every resolution needs evidence.
+                    {t('Every report is tracked. Every resolution needs evidence.')}
                   </div>
                 </div>
               </div>
@@ -727,7 +795,7 @@ export default function Home() {
               <BountyDashboard
                 csrFund={CSR_FUND}
                 volunteers={volunteers}
-                tickets={tickets}
+                tickets={localAreaTickets}
                 sessionUser={null}
                 depots={SEED_TOOL_DEPOTS}
                 onSelectTicket={setSelectedTicketId}
@@ -737,12 +805,13 @@ export default function Home() {
                 onSignIn={() => openAuth('volunteer')}
               />
               <MapCard
-                tickets={tickets}
+                tickets={localAreaTickets}
                 selectedTicketId={selectedTicketId}
                 onSelectTicket={setSelectedTicketId}
                 userLocation={userLocation}
                 onLocateMe={setUserLocation}
                 depots={SEED_TOOL_DEPOTS}
+                showingDemoReports={showingDemoReports}
                 heightClass="h-[380px] sm:h-[480px] lg:h-[600px]"
               />
             </div>
@@ -757,10 +826,10 @@ export default function Home() {
               onChange={setCitizenTab}
               className="surface-card"
               items={[
-                { id: 'bounties', label: 'Bounty network', icon: HardHat },
-                { id: 'report', label: 'Report an issue', icon: Camera },
-                { id: 'reports', label: <>My reports <span className="text-[10px] opacity-70">({myTickets.length})</span></>, icon: CircleCheck },
-                { id: 'map', label: 'City map', icon: MapIcon },
+                { id: 'bounties', label: t('Bounty network'), icon: HardHat },
+                { id: 'report', label: t('Report an issue'), icon: Camera },
+                { id: 'reports', label: <>{t('My reports')} <span className="text-[10px] opacity-70">({myTickets.length})</span></>, icon: CircleCheck },
+                { id: 'map', label: t('City map'), icon: MapIcon },
               ]}
             />
 
@@ -769,7 +838,7 @@ export default function Home() {
                 <BountyDashboard
                   csrFund={CSR_FUND}
                   volunteers={volunteerRoster}
-                  tickets={tickets}
+                  tickets={localAreaTickets}
                   sessionUser={activeSessionUser}
                   depots={SEED_TOOL_DEPOTS}
                   onSelectTicket={setSelectedTicketId}
@@ -779,12 +848,13 @@ export default function Home() {
                   onSignIn={() => openAuth('citizen')}
                 />
                 <MapCard
-                  tickets={tickets}
+                  tickets={localAreaTickets}
                   selectedTicketId={selectedTicketId}
                   onSelectTicket={setSelectedTicketId}
                   userLocation={userLocation}
                   onLocateMe={setUserLocation}
                   depots={SEED_TOOL_DEPOTS}
+                  showingDemoReports={showingDemoReports}
                   heightClass="h-[380px] sm:h-[480px] lg:h-[600px]"
                 />
               </div>
@@ -796,6 +866,7 @@ export default function Home() {
                   reporter={citizen}
                   language={language}
                   initialLocation={userLocation ?? (demoMode ? DEMO_PIN : null)}
+                  canSubmitReport={!demoMode && civic.persistenceEnabled}
                   onSubmit={handleIntake}
                   onCancel={() => setCitizenTab('reports')}
                 />
@@ -824,11 +895,12 @@ export default function Home() {
 
             {citizenTab === 'map' && (
               <MapCard
-                tickets={tickets}
+                tickets={localAreaTickets}
                 selectedTicketId={selectedTicketId}
                 onSelectTicket={setSelectedTicketId}
                 userLocation={userLocation}
                 onLocateMe={setUserLocation}
+                showingDemoReports={showingDemoReports}
                 depots={SEED_TOOL_DEPOTS}
                 heightClass="h-[380px] sm:h-[480px] lg:h-[560px]"
               />
@@ -864,7 +936,7 @@ export default function Home() {
                   onSignIn={() => openAuth('volunteer')}
                 />
                 <MapCard
-                  tickets={tickets}
+                  tickets={tickets.filter((ticket) => !isDemoTicket(ticket))}
                   selectedTicketId={selectedTicketId}
                   onSelectTicket={setSelectedTicketId}
                   userLocation={userLocation}
@@ -885,14 +957,14 @@ export default function Home() {
                   onStartWork={(ticketId) => civic.startWork(ticketId, volunteer.id)}
                   onReroute={async (ticketId, toDepartment, reason) => {
                     await civic.rerouteTicket(ticketId, toDepartment, reason, volunteer);
-                    setToast(`Re-routed to ${toDepartment}. The self-healing graph learned the correction for this zone.`);
+                    setToast(`${t('Re-routed to')} ${toDepartment}. ${t('The self-healing graph learned the correction for this zone.')}`);
                   }}
                   onSubmitProof={(ticketId, afterPhoto) => civic.submitProof(ticketId, afterPhoto, volunteer)}
                   onSelectTicket={setSelectedTicketId}
                 />
                 <div className="space-y-4 xl:sticky xl:top-28 xl:self-start">
                   <MapCard
-                    tickets={tickets.filter((ticket) => ticket.assignedDepartment === volunteer.department)}
+                    tickets={tickets.filter((ticket) => !isDemoTicket(ticket) && ticket.assignedDepartment === volunteer.department)}
                     selectedTicketId={selectedTicketId}
                     onSelectTicket={setSelectedTicketId}
                     userLocation={userLocation}
@@ -921,7 +993,7 @@ export default function Home() {
       </main>
 
       <footer className="mt-8 border-t border-slate-200/80 bg-white/65 px-4 py-5 text-center text-[11px] text-slate-500">
-        <span className="font-semibold text-slate-700">Civicloop</span> · CivicSense orchestration · CivicEye vision · OpenStreetMap contributors
+        <span className="font-semibold text-slate-700">Civicloop</span> · {t('CivicSense orchestration · CivicEye vision · OpenStreetMap contributors')}
       </footer>
 
       <AuthModal

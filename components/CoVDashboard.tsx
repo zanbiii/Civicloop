@@ -34,6 +34,8 @@ import CameraCapture from '@/components/CameraCapture';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
 import GlideTabs from '@/components/GlideTabs';
 import { cn } from '@/lib/cn';
+import { useTranslate } from '@/components/AppLanguageProvider';
+import { isDemoTicket } from '@/lib/demo';
 
 interface CoVDashboardProps {
   cov: VolunteerProfile;
@@ -68,11 +70,12 @@ function formatDuration(ms: number): string {
 }
 
 function SlaCountdown({ ticket, nowMs }: { ticket: CivicTicket; nowMs: number }) {
+  const t = useTranslate();
   const { sla } = ticket;
   if (sla.metAt) {
     return (
       <span className={cn('flex items-center gap-1 text-xs font-semibold', sla.health === 'breached' ? 'text-red-600' : 'text-emerald-600')}>
-        <CircleCheck className="h-3.5 w-3.5" /> {sla.health === 'breached' ? 'Closed late' : 'SLA met'}
+        <CircleCheck className="h-3.5 w-3.5" /> {t(sla.health === 'breached' ? 'Closed late' : 'SLA met')}
       </span>
     );
   }
@@ -80,14 +83,14 @@ function SlaCountdown({ ticket, nowMs }: { ticket: CivicTicket; nowMs: number })
   if (remaining <= 0) {
     return (
       <span className="flex items-center gap-1 text-xs font-bold text-red-600">
-        <Siren className="h-3.5 w-3.5" /> Breached {formatDuration(-remaining)} ago
+        <Siren className="h-3.5 w-3.5" /> {t('Breached')} {formatDuration(-remaining)} {t('ago')}
       </span>
     );
   }
   return (
     <span className={cn('flex items-center gap-1 text-xs font-semibold', sla.health === 'warning' ? 'text-amber-600' : 'text-slate-600')}>
       {sla.health === 'warning' ? <TriangleAlert className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
-      {formatDuration(remaining)} left of {sla.slaHours}h
+      {formatDuration(remaining)} {t('left of')} {sla.slaHours}h
     </span>
   );
 }
@@ -112,6 +115,7 @@ function RerouteDialog({
   onClose: () => void;
   onConfirm: (toDepartment: Department, reason: string) => Promise<void>;
 }) {
+  const t = useTranslate();
   const options = DEPARTMENTS.filter((dept) => dept !== ticket.assignedDepartment);
   const [toDepartment, setToDepartment] = useState<Department>(options[0]);
   const [reason, setReason] = useState('');
@@ -135,7 +139,7 @@ function RerouteDialog({
       <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
-            <Shuffle className="h-4 w-4" /> Flag wrong department
+            <Shuffle className="h-4 w-4" /> {t('Flag wrong department')}
           </h3>
           <button type="button" onClick={onClose} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X className="h-5 w-5" />
@@ -146,7 +150,7 @@ function RerouteDialog({
             {ticket.referenceCode} · {ticket.title}
           </p>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-600">Re-route to</label>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Re-route to')}</label>
             <select
               value={toDepartment}
               onChange={(event) => setToDepartment(event.target.value as Department)}
@@ -160,12 +164,12 @@ function RerouteDialog({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-600">Why is this the wrong department?</label>
+            <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Why is this the wrong department?')}</label>
             <textarea
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               rows={3}
-              placeholder="e.g. Sewage ingress into the storm-water line is a BWSSB subject, not SWM."
+              placeholder={t('e.g. Sewage ingress into the storm-water line is a BWSSB subject, not SWM.')}
               className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
             />
           </div>
@@ -180,7 +184,7 @@ function RerouteDialog({
         </div>
         <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
           <button type="button" onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">
-            Cancel
+            {t('Cancel')}
           </button>
           <button
             type="button"
@@ -189,7 +193,7 @@ function RerouteDialog({
             className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
           >
             {saving && <LoaderCircle className="h-4 w-4 animate-spin" />}
-            Re-route & teach the system
+            {t('Re-route & teach the system')}
           </button>
         </div>
       </div>
@@ -230,6 +234,7 @@ function ScoreMeter({ label, value }: { label: string; value: number }) {
 }
 
 export function ProofResult({ ticket, verification }: { ticket: CivicTicket; verification: CivicProofVerification }) {
+  const t = useTranslate();
   const style = VERDICT_STYLE[verification.verdict];
   const before = ticket.beforePhotos.find((photo) => photo.id === verification.beforePhotoId) ?? ticket.beforePhotos[0];
   const after = ticket.afterPhotos.find((photo) => photo.id === verification.afterPhotoId) ?? ticket.afterPhotos[ticket.afterPhotos.length - 1];
@@ -237,13 +242,20 @@ export function ProofResult({ ticket, verification }: { ticket: CivicTicket; ver
   return (
     <div className="space-y-3">
       <div className={cn('flex items-start gap-2 rounded-lg border px-3 py-2 text-sm font-semibold', style.box)}>
-        <style.icon className="mt-0.5 h-4 w-4 shrink-0" /> {style.title}
+        <style.icon className="mt-0.5 h-4 w-4 shrink-0" /> {t(style.title)}
       </div>
-      {before && after && <BeforeAfterSlider beforeUrl={before.url} afterUrl={after.url} />}
+      {before && after && (
+        <BeforeAfterSlider
+          beforeUrl={before.url}
+          afterUrl={after.url}
+          beforeLabel={before.source === 'seed' ? t('Before · sample') : t('Before')}
+          afterLabel={after.source === 'seed' ? t('After · sample') : t('After')}
+        />
+      )}
       <div className="grid grid-cols-3 gap-3">
-        <ScoreMeter label="Same location" value={verification.landmarkMatch} />
-        <ScoreMeter label="Repair evidence" value={verification.repairEvidence} />
-        <ScoreMeter label="Confidence" value={verification.confidence} />
+        <ScoreMeter label={t('Same location')} value={verification.landmarkMatch} />
+        <ScoreMeter label={t('Repair evidence')} value={verification.repairEvidence} />
+        <ScoreMeter label={t('Confidence')} value={verification.confidence} />
       </div>
       <p className="text-xs leading-relaxed text-slate-600">{verification.summary}</p>
       {verification.landmarksMatched.length > 0 && (
@@ -278,6 +290,7 @@ function ProofDialog({
   onClose: () => void;
   onSubmit: (afterPhoto: EvidencePhoto) => Promise<CivicProofVerification>;
 }) {
+  const t = useTranslate();
   const [photos, setPhotos] = useState<EvidencePhoto[]>([]);
   const [geo, setGeo] = useState<GeoPoint | null>(null);
   const [geoStatus, setGeoStatus] = useState<'idle' | 'locating' | 'ok' | 'failed'>('idle');
@@ -321,7 +334,7 @@ function ProofDialog({
       <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
-            <Camera className="h-4 w-4" /> Submit proof of repair
+            <Camera className="h-4 w-4" /> {t('Submit proof of repair')}
           </h3>
           <button type="button" onClick={onClose} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X className="h-5 w-5" />
@@ -334,8 +347,7 @@ function ProofDialog({
           ) : (
             <>
               <p className="text-sm text-slate-600">
-                No complaint closes without verified proof. Photograph the repaired spot from the same angle as the citizen&apos;s
-                photo — CivicProof compares fixed landmarks before the citizen is asked to confirm.
+                {t('No complaint closes without verified proof. Photograph the repaired spot from the same angle as the citizen’s photo — CivicProof compares fixed landmarks before the citizen is asked to confirm.')}
               </p>
               <CameraCapture
                 photos={photos}
@@ -344,12 +356,12 @@ function ProofDialog({
                 capturedBy={cov.id}
                 geo={geo}
                 maxPhotos={1}
-                label="After photo"
+                label={t('After photo')}
               />
               <div className="flex items-center gap-2 text-xs">
                 {geoStatus === 'ok' ? (
                   <span className="flex items-center gap-1 font-semibold text-emerald-600">
-                    <MapPin className="h-3.5 w-3.5" /> Geotag attached
+                    <MapPin className="h-3.5 w-3.5" /> {t('Geotag attached')}
                   </span>
                 ) : (
                   <button
@@ -359,10 +371,10 @@ function ProofDialog({
                     className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                   >
                     {geoStatus === 'locating' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5" />}
-                    Attach my GPS location
+                    {t('Attach my GPS location')}
                   </button>
                 )}
-                {geoStatus === 'failed' && <span className="text-amber-600">Location unavailable — proof will carry no geotag.</span>}
+                {geoStatus === 'failed' && <span className="text-amber-600">{t('Location unavailable — proof will carry no geotag.')}</span>}
               </div>
               {error && <p className="text-xs font-medium text-red-600">{error}</p>}
             </>
@@ -372,12 +384,12 @@ function ProofDialog({
         <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
           {result ? (
             <button type="button" onClick={onClose} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
-              Done
+              {t('Done')}
             </button>
           ) : (
             <>
               <button type="button" onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">
-                Cancel
+                {t('Cancel')}
               </button>
               <button
                 type="button"
@@ -386,7 +398,7 @@ function ProofDialog({
                 className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {verifying && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                {verifying ? 'CivicProof is comparing landmarks…' : 'Verify & resolve'}
+                {t(verifying ? 'CivicProof is comparing landmarks…' : 'Verify & resolve')}
               </button>
             </>
           )}
@@ -413,6 +425,7 @@ function QueueRow({
   onProof: () => void;
   onSelect?: () => void;
 }) {
+  const t = useTranslate();
   const [expanded, setExpanded] = useState(false);
   const mine = ticket.assignedDepartment === cov.department;
   const selfHealed = Boolean(ticket.triage?.appliedOverrideId);
@@ -430,11 +443,11 @@ function QueueRow({
             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-slate-500">
               <span>{ticket.referenceCode}</span>
               <span className="flex items-center gap-0.5">
-                <MapPin className="h-3 w-3" /> {ticket.location.address ?? ticket.location.ward ?? 'Pinned location'}
+                <MapPin className="h-3 w-3" /> {ticket.location.address ?? ticket.location.ward ?? t('Pinned location')}
               </span>
               {ticket.impactCount > 1 && (
                 <span className="flex items-center gap-0.5 font-semibold text-slate-700">
-                  <Users className="h-3 w-3" /> Reported by {ticket.impactCount} citizens
+                  <Users className="h-3 w-3" /> {t('Reported by')} {ticket.impactCount} {t('citizens')}
                 </span>
               )}
             </div>
@@ -444,14 +457,14 @@ function QueueRow({
 
         <div className="mt-2 flex flex-wrap gap-1.5">
           <span className={cn('rounded border px-1.5 py-0.5 text-[10px] font-semibold', SEVERITY_META[ticket.severity].badgeClass)}>
-            {SEVERITY_META[ticket.severity].label}
+            {t(SEVERITY_META[ticket.severity].label)}
           </span>
           <span className={cn('rounded border px-1.5 py-0.5 text-[10px] font-semibold', STATUS_META[ticket.status].badgeClass)}>
-            {ticket.status}
+            {t(ticket.status)}
           </span>
           {breached && (
             <span className="rounded border border-red-400 bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-              SLA Breached · Auto-Escalated
+              {t('SLA Breached · Auto-Escalated')}
             </span>
           )}
           {selfHealed && (
@@ -461,7 +474,7 @@ function QueueRow({
           )}
           {ticket.proof?.verdict === 'rejected' && ticket.status !== 'Resolved' && (
             <span className="rounded border border-red-300 bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">
-              Last proof rejected
+              {t('Last proof rejected')}
             </span>
           )}
           {!mine && (
@@ -479,7 +492,7 @@ function QueueRow({
                 onClick={onStartWork}
                 className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
               >
-                <Hammer className="h-3.5 w-3.5" /> Start work
+                <Hammer className="h-3.5 w-3.5" /> {t('Start work')}
               </button>
             )}
             {PROOFABLE.includes(ticket.status) && (
@@ -488,7 +501,7 @@ function QueueRow({
                 onClick={onProof}
                 className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
               >
-                <Camera className="h-3.5 w-3.5" /> Submit proof
+                <Camera className="h-3.5 w-3.5" /> {t('Submit proof')}
               </button>
             )}
             {TAB_STATUSES.active.includes(ticket.status) && (
@@ -497,7 +510,7 @@ function QueueRow({
                 onClick={onReroute}
                 className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
-                <Shuffle className="h-3.5 w-3.5" /> Wrong department? Re-route
+                <Shuffle className="h-3.5 w-3.5" /> {t('Wrong department? Re-route')}
               </button>
             )}
           </div>
@@ -510,14 +523,14 @@ function QueueRow({
             className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-800"
           >
             <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')} />
-            {expanded ? 'Hide details' : 'Escalation briefing & proof'}
+            {t(expanded ? 'Hide details' : 'Escalation briefing & proof')}
           </button>
         )}
         {expanded && (
           <div className="mt-2 space-y-3">
             {ticket.sla.escalationBriefing && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
-                <div className="font-semibold">Escalated to {ticket.sla.escalatedTo}</div>
+                <div className="font-semibold">{t('Escalated to')} {ticket.sla.escalatedTo}</div>
                 <p className="mt-0.5 leading-relaxed">{ticket.sla.escalationBriefing}</p>
               </div>
             )}
@@ -538,11 +551,14 @@ export default function CoVDashboard({
   onSubmitProof,
   onSelectTicket,
 }: CoVDashboardProps) {
+  const t = useTranslate();
   const [tab, setTab] = useState<QueueTab>('active');
   const [reroutingId, setReroutingId] = useState<string | null>(null);
   const [proofId, setProofId] = useState<string | null>(null);
 
-  const inDepartment = tickets.filter((ticket) => ticket.isMaster && ticket.assignedDepartment === cov.department);
+  const inDepartment = tickets.filter(
+    (ticket) => ticket.isMaster && !isDemoTicket(ticket) && ticket.assignedDepartment === cov.department,
+  );
   const queue = inDepartment
     .filter((ticket) => TAB_STATUSES[tab].includes(ticket.status))
     .sort(
@@ -558,19 +574,19 @@ export default function CoVDashboard({
     <div className="space-y-5">
       <div>
         <h2 className="text-lg font-bold text-slate-900">
-          {DEPARTMENT_META[cov.department].icon} {cov.department} · CoV Operations
+          {DEPARTMENT_META[cov.department].icon} {cov.department} · {t('CoV Operations')}
         </h2>
         <p className="text-xs text-slate-500">
-          {cov.name} · {cov.designation ?? 'Community Volunteer'} · {cov.zone}
+          {cov.name} · {t(cov.designation ?? 'Community Volunteer')} · {cov.zone}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile label="Open in queue" value={active.length} tone="text-slate-500" icon={Hammer} />
-        <StatTile label="SLA warning" value={active.filter((t) => t.sla.health === 'warning').length} tone="text-amber-600" icon={TriangleAlert} />
-        <StatTile label="SLA breached" value={active.filter((t) => t.sla.health === 'breached').length} tone="text-red-600" icon={Siren} />
+        <StatTile label={t('Open in queue')} value={active.length} tone="text-slate-500" icon={Hammer} />
+        <StatTile label={t('SLA warning')} value={active.filter((t) => t.sla.health === 'warning').length} tone="text-amber-600" icon={TriangleAlert} />
+        <StatTile label={t('SLA breached')} value={active.filter((t) => t.sla.health === 'breached').length} tone="text-red-600" icon={Siren} />
         <StatTile
-          label="Awaiting citizen"
+          label={t('Awaiting citizen')}
           value={inDepartment.filter((t) => TAB_STATUSES.awaiting.includes(t.status)).length}
           tone="text-emerald-600"
           icon={CircleCheck}
@@ -582,21 +598,21 @@ export default function CoVDashboard({
           {cov.department}
         </span>
         <GlideTabs
-          ariaLabel="Department queue status"
+          ariaLabel={t('Department queue status')}
           value={tab}
           onChange={setTab}
           compact
           items={[
-            { id: 'active', label: 'Active queue' },
-            { id: 'awaiting', label: 'Awaiting citizen' },
-            { id: 'closed', label: 'Closed' },
+            { id: 'active', label: t('Active queue') },
+            { id: 'awaiting', label: t('Awaiting citizen') },
+            { id: 'closed', label: t('Closed') },
           ]}
         />
       </div>
 
       {queue.length === 0 ? (
         <div className="surface-card p-8 text-center text-sm text-slate-500">
-          Nothing here right now.
+          {t('Nothing here right now.')}
         </div>
       ) : (
         <div className="space-y-3">

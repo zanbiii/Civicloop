@@ -28,8 +28,10 @@ import {
   type GeoPoint,
   type ToolDepot,
 } from '@/types/civic';
-import { PLACEHOLDER_IMAGE } from '@/lib/seedData';
+import { PLACEHOLDER_IMAGE, TKR_COLLEGE_CENTER } from '@/lib/seedData';
+import { isDemoTicket } from '@/lib/demo';
 import { cn } from '@/lib/cn';
+import { useTranslate } from '@/components/AppLanguageProvider';
 
 export interface LeafletMapProps {
   tickets?: CivicTicket[];
@@ -55,7 +57,6 @@ export interface LeafletMapProps {
   depots?: ToolDepot[];
 }
 
-const BANGALORE_CENTER: GeoPoint = { lat: 12.9352, lng: 77.6245 };
 const RESOLVED_STATUSES = new Set<CivicTicket['status']>(['Resolved', 'Pending Citizen Confirmation']);
 
 /**
@@ -112,6 +113,7 @@ const depotIcon = L.divIcon({
 });
 
 function DepotToggle({ enabled, onToggle }: { enabled: boolean; onToggle: (next: boolean) => void }) {
+  const t = useTranslate();
   const wrapRef = useRef<HTMLLabelElement>(null);
   useEffect(() => {
     if (wrapRef.current) L.DomEvent.disableClickPropagation(wrapRef.current);
@@ -128,7 +130,7 @@ function DepotToggle({ enabled, onToggle }: { enabled: boolean; onToggle: (next:
         onChange={(event) => onToggle(event.target.checked)}
         className="h-3.5 w-3.5 accent-blue-600"
       />
-      <Wrench className="h-3.5 w-3.5 text-blue-600" /> Show Tool Depots
+      <Wrench className="h-3.5 w-3.5 text-blue-600" /> {t(enabled ? 'Hide tool depots' : 'Show Tool Depots')}
     </label>
   );
 }
@@ -169,6 +171,7 @@ function PickerEvents({ onPick }: { onPick: (point: GeoPoint) => void }) {
 }
 
 function LocateControl({ onPick }: { onPick: (point: GeoPoint) => void }) {
+  const t = useTranslate();
   const map = useMap();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [locating, setLocating] = useState(false);
@@ -218,16 +221,17 @@ function LocateControl({ onPick }: { onPick: (point: GeoPoint) => void }) {
         className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-md hover:bg-slate-50 disabled:opacity-70"
       >
         {locating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4 text-blue-600" />}
-        {locating ? 'Locating…' : 'Use my location'}
+        {locating ? t('Finding your location…') : t('Use my location')}
       </button>
       {error && (
-        <div className="max-w-56 rounded-md bg-white/95 px-2.5 py-1.5 text-[11px] text-amber-700 shadow">{error}</div>
+        <div className="max-w-56 rounded-md bg-white/95 px-2.5 py-1.5 text-[11px] text-amber-700 shadow">{t(error)}</div>
       )}
     </div>
   );
 }
 
 function TicketPopup({ ticket, onSelect }: { ticket: CivicTicket; onSelect?: (id: string) => void }) {
+  const t = useTranslate();
   const photo = ticket.beforePhotos[0];
   const breached = ticket.sla.health === 'breached' && !RESOLVED_STATUSES.has(ticket.status);
 
@@ -247,26 +251,31 @@ function TicketPopup({ ticket, onSelect }: { ticket: CivicTicket; onSelect?: (id
       <div className="text-sm font-semibold leading-snug text-slate-900">
         {CATEGORY_META[ticket.category].icon} {ticket.title}
       </div>
+      {isDemoTicket(ticket) && (
+        <div className="mt-1 rounded bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-800">
+          {t('Illustrative sample — not a real report')}
+        </div>
+      )}
       <div className="mt-0.5 text-[11px] text-slate-500">
         {ticket.referenceCode}
         {ticket.location.address ? ` · ${ticket.location.address}` : ''}
       </div>
       <div className="mt-2 flex flex-wrap gap-1">
         <span className={cn('rounded border px-1.5 py-0.5 text-[10px] font-semibold', SEVERITY_META[ticket.severity].badgeClass)}>
-          {SEVERITY_META[ticket.severity].label}
+          {t(SEVERITY_META[ticket.severity].label)}
         </span>
         <span className={cn('rounded border px-1.5 py-0.5 text-[10px] font-semibold', STATUS_META[ticket.status].badgeClass)}>
-          {ticket.status}
+          {t(ticket.status)}
         </span>
         {breached && (
           <span className="rounded border border-red-400 bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-            SLA Breached · Auto-Escalated
+            {t('SLA Breached · Auto-Escalated')}
           </span>
         )}
       </div>
       {ticket.impactCount > 1 && (
         <div className="mt-2 flex items-center gap-1 text-xs font-medium text-slate-700">
-          <Users className="h-3.5 w-3.5" /> Reported by {ticket.impactCount} citizens
+          <Users className="h-3.5 w-3.5" /> {t('Reported by')} {ticket.impactCount} {t('citizens')}
         </div>
       )}
       {onSelect && (
@@ -275,7 +284,7 @@ function TicketPopup({ ticket, onSelect }: { ticket: CivicTicket; onSelect?: (id
           onClick={() => onSelect(ticket.id)}
           className="mt-2 w-full rounded-md bg-slate-900 px-2 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
         >
-          View details
+          {t('View details')}
         </button>
       )}
     </div>
@@ -296,11 +305,12 @@ export default function LeafletMapInner({
   className,
   depots = [],
 }: LeafletMapProps) {
+  const t = useTranslate();
   const masters = tickets.filter((ticket) => ticket.isMaster);
   const duplicates = tickets.filter((ticket) => !ticket.isMaster);
   const selectedTicket = masters.find((ticket) => ticket.id === selectedTicketId) ?? null;
   const pickerEnabled = Boolean(onPickLocation);
-  const initialCenter = center ?? pickedLocation ?? userLocation ?? BANGALORE_CENTER;
+  const initialCenter = center ?? pickedLocation ?? userLocation ?? TKR_COLLEGE_CENTER;
   const [depotsVisible, setDepotsVisible] = useState(false);
 
   return (
@@ -326,7 +336,7 @@ export default function LeafletMapInner({
             <Popup>
               <div className="w-52 font-sans">
                 <div className="text-sm font-semibold text-slate-900">🔧 {depot.name}</div>
-                <div className="mt-1 text-[11px] font-semibold uppercase text-slate-400">Free CSR-funded stock</div>
+                <div className="mt-1 text-[11px] font-semibold uppercase text-slate-400">{t('Free CSR-funded stock')}</div>
                 <ul className="mt-1 space-y-0.5 text-xs text-slate-600">
                   {depot.inventory.map((item) => (
                     <li key={item.item} className="flex justify-between gap-2">

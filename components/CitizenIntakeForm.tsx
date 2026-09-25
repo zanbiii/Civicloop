@@ -29,6 +29,7 @@ import CameraCapture from '@/components/CameraCapture';
 import VoiceInput from '@/components/VoiceInput';
 import LeafletMap from '@/components/LeafletMap';
 import { cn } from '@/lib/cn';
+import { useTranslate } from '@/components/AppLanguageProvider';
 
 export type IntakeLanguage = IntakeDraft['language'];
 
@@ -36,6 +37,7 @@ interface CitizenIntakeFormProps {
   reporter: PublicReporter;
   language: IntakeLanguage;
   initialLocation?: GeoPoint | null;
+  canSubmitReport: boolean;
   onSubmit: (draft: IntakeDraft) => Promise<{ success: boolean; message?: string }>;
   onCancel?: () => void;
 }
@@ -54,7 +56,15 @@ function finalizeLocation(point: GeoPoint): GeoPoint {
   return resolved ? { ...point, ward: point.ward ?? resolved.ward, zone: point.zone ?? resolved.zone } : point;
 }
 
-export default function CitizenIntakeForm({ reporter, language, initialLocation = null, onSubmit, onCancel }: CitizenIntakeFormProps) {
+export default function CitizenIntakeForm({
+  reporter,
+  language,
+  initialLocation = null,
+  canSubmitReport,
+  onSubmit,
+  onCancel,
+}: CitizenIntakeFormProps) {
+  const t = useTranslate();
   const [stepIndex, setStepIndex] = useState(0);
   const [photos, setPhotos] = useState<EvidencePhoto[]>([]);
   const [description, setDescription] = useState('');
@@ -88,6 +98,10 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
   };
 
   const handleSubmit = async () => {
+    if (!canSubmitReport) {
+      setSubmitError(t('Live report submission is unavailable in this demo. Your report has not been sent or saved.'));
+      return;
+    }
     if (!location) return;
     setSubmitting(true);
     setSubmitError(null);
@@ -132,7 +146,7 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100">
           <PartyPopper className="h-8 w-8 text-emerald-600" />
         </div>
-        <h3 className="text-lg font-bold text-slate-900">Report submitted</h3>
+        <h3 className="text-lg font-bold text-slate-900">{t('Report submitted')}</h3>
         <p className="max-w-sm text-sm text-slate-600">
           Civicloop&apos;s agents are already classifying it, checking for duplicates within 75 m, and routing it to the right
           department. You can track its status from &quot;My Reports&quot;.
@@ -143,11 +157,11 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
             onClick={resetForm}
             className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            Report another issue
+            {t('Report another issue')}
           </button>
           {onCancel && (
             <button type="button" onClick={onCancel} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
-              Done
+              {t('Done')}
             </button>
           )}
         </div>
@@ -173,7 +187,7 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
               {index < stepIndex ? <Check className="h-3.5 w-3.5" /> : index + 1}
             </div>
             <span className={cn('hidden text-xs font-medium sm:inline', index === stepIndex ? 'text-slate-900' : 'text-slate-400')}>
-              {s.label}
+              {t(s.label)}
             </span>
             {index < STEPS.length - 1 && <span className="h-px flex-1 bg-slate-200" />}
           </div>
@@ -183,7 +197,7 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
       {step === 'evidence' && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Camera className="h-4 w-4" /> Add a photo (optional, but it helps a lot)
+            <Camera className="h-4 w-4" /> {t('Add a photo (optional, but it helps a lot)')}
           </div>
           <CameraCapture photos={photos} onPhotosChange={setPhotos} kind="before" capturedBy={reporter.displayName} geo={location} />
         </div>
@@ -192,23 +206,23 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
       {step === 'describe' && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <Mic className="h-4 w-4" /> What&apos;s the problem?
+            <Mic className="h-4 w-4" /> {t('What’s the problem?')}
           </div>
           <VoiceInput
             value={description}
             onChange={setDescription}
             onVoiceTranscript={setVoiceTranscript}
             language={language}
-            placeholder="e.g. Big pothole near the bus stop, bikes keep skidding..."
+            placeholder={t('e.g. Big pothole near the bus stop, bikes keep skidding...')}
           />
-          {!hasDescription && <p className="text-xs text-slate-400">Type a short description or tap the mic to speak it.</p>}
+          {!hasDescription && <p className="text-xs text-slate-400">{t('Type a short description or tap the mic to speak it.')}</p>}
         </div>
       )}
 
       {step === 'location' && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-            <MapPin className="h-4 w-4" /> Where exactly is this?
+            <MapPin className="h-4 w-4" /> {t('Where exactly is this?')}
           </div>
           <LeafletMap
             pickedLocation={location}
@@ -217,11 +231,11 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
             containerClassName="h-72"
             zoom={location ? 16 : 13}
           />
-          <p className="text-xs text-slate-500">Tap the map or drag the pin to the exact spot. {resolvedWard ? `Ward: ${resolvedWard.ward}.` : ''}</p>
+          <p className="text-xs text-slate-500">{t('Tap the map or drag the pin to the exact spot.')} {resolvedWard ? `${t('Ward')}: ${resolvedWard.ward}.` : ''}</p>
           <input
             value={landmark}
             onChange={(event) => setLandmark(event.target.value)}
-            placeholder="Landmark or address note (optional) — e.g. near Sony World Signal"
+            placeholder={t('Landmark or address note (optional) — e.g. near Sony World Signal')}
             className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
           />
         </div>
@@ -231,10 +245,10 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
         <div className="space-y-4">
           <div className="rounded-xl border border-slate-200 p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-800">Category</span>
+              <span className="text-sm font-semibold text-slate-800">{t('Category')}</span>
               {categoryOverride === null && (
                 <span className="flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-700">
-                  <Sparkles className="h-3 w-3" /> CivicEye decides
+                  <Sparkles className="h-3 w-3" /> {t('CivicEye decides')}
                 </span>
               )}
             </div>
@@ -243,7 +257,7 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
               onChange={(event) => setCategoryOverride(event.target.value ? (event.target.value as ComplaintCategory) : null)}
               className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
             >
-              <option value="">Let AI classify from the photo/description</option>
+              <option value="">{t('Let AI classify from the photo/description')}</option>
               {COMPLAINT_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {CATEGORY_META[category].icon} {category}
@@ -254,25 +268,25 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
 
           <div className="grid gap-3 rounded-xl border border-slate-200 p-4 text-sm">
             <div className="flex justify-between gap-3">
-              <span className="shrink-0 font-semibold text-slate-500">Description</span>
-              <span className="text-right text-slate-800">{description.trim() || <span className="italic text-slate-400">None — voice/photo only</span>}</span>
+              <span className="shrink-0 font-semibold text-slate-500">{t('Description')}</span>
+              <span className="text-right text-slate-800">{description.trim() || <span className="italic text-slate-400">{t('None — voice/photo only')}</span>}</span>
             </div>
             {voiceTranscript && (
               <div className="flex justify-between gap-3">
-                <span className="shrink-0 font-semibold text-slate-500">Voice note</span>
+                <span className="shrink-0 font-semibold text-slate-500">{t('Voice note')}</span>
                 <span className="text-right italic text-slate-600">&quot;{voiceTranscript}&quot;</span>
               </div>
             )}
             <div className="flex justify-between gap-3">
-              <span className="shrink-0 font-semibold text-slate-500">Location</span>
+              <span className="shrink-0 font-semibold text-slate-500">{t('Location')}</span>
               <span className="text-right text-slate-800">
                 {landmark || location.address || `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`}
                 {resolvedWard ? ` · ${resolvedWard.ward}` : ''}
               </span>
             </div>
             <div className="flex justify-between gap-3">
-              <span className="shrink-0 font-semibold text-slate-500">Photos</span>
-              <span className="text-slate-800">{photos.length} attached</span>
+              <span className="shrink-0 font-semibold text-slate-500">{t('Photos')}</span>
+              <span className="text-slate-800">{photos.length} {t('attached')}</span>
             </div>
           </div>
 
@@ -299,6 +313,11 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
               {submitError}
             </div>
           )}
+          {!canSubmitReport && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800">
+              {t('Live report submission is unavailable in this demo. Your report has not been sent or saved.')}
+            </div>
+          )}
         </div>
       )}
 
@@ -315,7 +334,7 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
         ) : (
           onCancel && (
             <button type="button" onClick={onCancel} className="rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">
-              Cancel
+              {t('Cancel')}
             </button>
           )
         )}
@@ -324,11 +343,12 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || !canSubmitReport}
+            title={!canSubmitReport ? t('Live report submission is unavailable in this demo. Your report has not been sent or saved.') : undefined}
             className="ml-auto flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
           >
             {submitting && <LoaderCircle className="h-4 w-4 animate-spin" />}
-            Submit report
+            {t(canSubmitReport ? 'Submit report' : 'Live submission unavailable')}
           </button>
         ) : (
           <button
@@ -337,7 +357,7 @@ export default function CitizenIntakeForm({ reporter, language, initialLocation 
             disabled={!canAdvance}
             className="ml-auto flex items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Next <ArrowRight className="h-4 w-4" />
+            {t('Next')} <ArrowRight className="h-4 w-4" />
           </button>
         )}
       </div>

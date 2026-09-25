@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Terminal } from 'lucide-react';
 import { AGENT_META, AGENT_NAMES, type AgentAuditLog, type AgentLogLevel, type AgentName } from '@/types/civic';
 import { cn } from '@/lib/cn';
+import { useTranslate } from '@/components/AppLanguageProvider';
 
 interface AgentTerminalProps {
   logs: AgentAuditLog[];
@@ -39,6 +40,7 @@ export default function AgentTerminal({
   className,
   heightClass = 'h-80',
 }: AgentTerminalProps) {
+  const t = useTranslate();
   const [agentFilter, setAgentFilter] = useState<AgentName | 'all'>('all');
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -75,7 +77,7 @@ export default function AgentTerminal({
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
         </span>
         <Terminal className="ml-1 h-3.5 w-3.5 text-slate-500" />
-        <span className="truncate text-[11px] text-slate-400">{title}</span>
+        <span className="truncate text-[11px] text-slate-400">{t(title)}</span>
         {liveAi !== undefined && (
           <span
             className={cn(
@@ -84,7 +86,7 @@ export default function AgentTerminal({
             )}
           >
             <span className={cn('h-1.5 w-1.5 rounded-full', liveAi ? 'animate-pulse bg-emerald-400' : 'bg-slate-400')} />
-            {liveAi ? 'MISTRAL LIVE' : 'OFFLINE MOCK'}
+            {t(liveAi ? 'MISTRAL LIVE' : 'OFFLINE MOCK')}
           </span>
         )}
       </div>
@@ -100,7 +102,7 @@ export default function AgentTerminal({
               agentFilter === name ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300',
             )}
           >
-            {name === 'all' ? 'ALL' : `${AGENT_META[name].icon} ${name}`}
+            {name === 'all' ? t('ALL') : `${AGENT_META[name].icon} ${name}`}
           </button>
         ))}
       </div>
@@ -116,7 +118,7 @@ export default function AgentTerminal({
         aria-live="polite"
       >
         {visible.length === 0 ? (
-          <div className="py-6 text-center text-slate-600">No agent activity yet — submit a report to watch the pipeline run.</div>
+          <div className="py-6 text-center text-slate-600">{t('No agent activity yet — submit a report to watch the pipeline run.')}</div>
         ) : (
           visible.map((entry) => {
             const open = expanded.has(entry.id);

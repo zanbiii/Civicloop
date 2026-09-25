@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Bot, Globe, HardHat, LogOut, Phone, Repeat2, Rocket, ShieldCheck, Siren, User, X } from 'lucide-react';
 import type { SessionUser, UserRole } from '@/types/civic';
 import { cn } from '@/lib/cn';
-
-export type AppLanguage = 'en' | 'kn' | 'hi';
+import type { AppLanguage } from '@/lib/i18n';
+import { useTranslate } from '@/components/AppLanguageProvider';
 
 const LANGUAGE_LABELS: Record<AppLanguage, string> = { en: 'English', kn: 'ಕನ್ನಡ', hi: 'हिन्दी' };
 
@@ -52,6 +52,7 @@ export default function Header({
   onLogout,
   onQuickSwitchRole,
 }: HeaderProps) {
+  const t = useTranslate();
   const [sosDismissed, setSosDismissed] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
 
@@ -62,15 +63,15 @@ export default function Header({
       {!sosDismissed && (
         <div className="flex min-h-9 items-center justify-center gap-2 bg-[#a92b2b] px-3 py-1.5 text-center text-[11px] font-semibold text-white sm:text-xs">
           <Siren className="h-4 w-4 shrink-0" />
-          <span>Life-threatening emergency? Don&apos;t wait for a ticket —</span>
+          <span>{t('Life-threatening emergency? Don’t wait for a ticket —')}</span>
           <a href="tel:112" className="inline-flex items-center gap-1 underline underline-offset-2 hover:text-red-100">
-            <Phone className="h-3.5 w-3.5" /> Call 112
+            <Phone className="h-3.5 w-3.5" /> {t('Call 112')}
           </a>
           <button
             type="button"
             onClick={() => setSosDismissed(true)}
             className="ml-1 shrink-0 rounded p-0.5 hover:bg-white/20"
-            aria-label="Dismiss emergency banner"
+            aria-label={t('Dismiss emergency banner')}
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -86,7 +87,7 @@ export default function Header({
             <div className="min-w-0 leading-tight">
               <div className="truncate text-[15px] font-extrabold tracking-tight text-slate-900">Civicloop</div>
               <div className="hidden truncate text-[10px] font-medium tracking-wide text-slate-500 sm:block">
-                A better loop for city fixes
+                {t('A better loop for city fixes')}
               </div>
             </div>
           </div>
@@ -101,11 +102,11 @@ export default function Header({
                   ? 'border-violet-300 bg-violet-100 text-violet-700 hover:bg-violet-200'
                   : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100',
               )}
-              title="Quick Demo Mode pre-fills forms and skips real OTP delivery so you can click through the whole flow."
+              title={t('Quick Demo Mode pre-fills forms and skips real OTP delivery so you can click through the whole flow.')}
               aria-pressed={demoMode}
             >
               <Rocket className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Quick Demo Mode</span>
+              <span className="hidden sm:inline">{t('Quick Demo Mode')}</span>
               <span
                 className={cn(
                   'ml-0.5 flex h-4 w-7 items-center rounded-full p-0.5 transition-colors',
@@ -122,7 +123,7 @@ export default function Header({
             </button>
 
             {demoMode && onQuickSwitchRole && (
-              <div className="flex items-center gap-0.5 rounded-full border border-violet-200/80 bg-violet-50 p-0.5" role="group" aria-label="Quick role switch">
+              <div className="flex items-center gap-0.5 rounded-full border border-violet-200/80 bg-violet-50 p-0.5" role="group" aria-label={t('Quick role switch')}>
                 {QUICK_SWITCH_ROLES.map((role) => {
                   const Icon = ROLE_META[role].icon;
                   const active = sessionUser?.role === role;
@@ -131,7 +132,7 @@ export default function Header({
                       key={role}
                       type="button"
                       onClick={() => onQuickSwitchRole(role)}
-                      title={`Switch to the demo ${ROLE_META[role].label.toLowerCase()} view`}
+                      title={`${t('Switch to the demo')} ${t(ROLE_META[role].label.toLowerCase())} ${t('view')}`}
                       aria-pressed={active}
                       className={cn(
                         'flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold transition',
@@ -139,7 +140,7 @@ export default function Header({
                       )}
                     >
                       <Icon className="h-3.5 w-3.5" />
-                      <span className="hidden lg:inline">{ROLE_META[role].label}</span>
+                      <span className="hidden lg:inline">{t(ROLE_META[role].label)}</span>
                     </button>
                   );
                 })}
@@ -148,9 +149,9 @@ export default function Header({
 
             <span
               className="hidden items-center gap-1 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800 lg:flex"
-              title="Personal phone numbers and identities are scrubbed from public view — only issue location and category are shared with CoVs."
+              title={t('Personal phone numbers and identities are scrubbed from public view — only issue location and category are shared with CoVs.')}
             >
-              <ShieldCheck className="h-3.5 w-3.5" /> Privacy-first
+              <ShieldCheck className="h-3.5 w-3.5" /> {t('Privacy-first')}
             </span>
 
             <div className="relative">
@@ -194,13 +195,13 @@ export default function Header({
                 </span>
                 <div className="hidden leading-tight sm:block">
                   <div className="text-[11px] font-semibold text-slate-800">{sessionDisplayName(sessionUser)}</div>
-                  <div className="text-[10px] text-slate-500">{sessionSubline(sessionUser)}</div>
+                  <div className="text-[10px] text-slate-500">{t(sessionSubline(sessionUser))}</div>
                 </div>
                 <button
                   type="button"
                   onClick={onLogout}
                   className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-                  aria-label="Sign out"
+                  aria-label={t('Sign out')}
                 >
                   <LogOut className="h-3.5 w-3.5" />
                 </button>
@@ -211,7 +212,7 @@ export default function Header({
                 onClick={onOpenAuth}
                 className="min-h-9 rounded-full bg-emerald-800 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-900"
               >
-                Sign in
+                {t('Sign in')}
               </button>
             )}
           </div>

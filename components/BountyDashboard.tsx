@@ -34,12 +34,13 @@ import {
 import { findNearbyVolunteers, formatInr } from '@/lib/bounty';
 import { cn } from '@/lib/cn';
 import CameraCapture from '@/components/CameraCapture';
-import GlideTabs from '@/components/GlideTabs';
 import { ProofResult } from '@/components/CoVDashboard';
+import { useTranslate } from '@/components/AppLanguageProvider';
+import { isDemoTicket } from '@/lib/demo';
 
 const BOOST_AMOUNT_INR = 50;
 
-type FeedTab = 'active' | 'leaderboard' | 'depots';
+type FeedTab = 'active' | 'all' | 'leaderboard' | 'depots';
 
 const STATUS_LABEL: Record<BountyStatus, string> = {
   open: 'Open — unclaimed',
@@ -63,6 +64,7 @@ interface BountyDashboardProps {
 }
 
 function CsrWidget({ fund }: { fund: CsrFund }) {
+  const t = useTranslate();
   const balancePercent = Math.round((fund.activeBalanceInr / fund.totalPoolInr) * 100);
   return (
     <section className="surface-card p-4 sm:p-5">
@@ -72,13 +74,13 @@ function CsrWidget({ fund }: { fund: CsrFund }) {
           <h3 className="text-sm font-bold text-slate-900">
             {fund.sponsorName} ({fund.zone})
           </h3>
-          <p className="text-[11px] text-slate-500">{fund.purpose}</p>
+          <p className="text-[11px] text-slate-500">{t(fund.purpose)}</p>
         </div>
       </div>
 
       <div className="mt-4">
         <div className="flex items-baseline justify-between text-xs">
-          <span className="font-semibold text-slate-600">Active Bounty Balance</span>
+          <span className="font-semibold text-slate-600">{t('Active Bounty Balance')}</span>
           <span className="font-bold text-slate-900">
             {formatInr(fund.activeBalanceInr)} <span className="font-normal text-slate-400">/ {formatInr(fund.totalPoolInr)}</span>
           </span>
@@ -96,15 +98,15 @@ function CsrWidget({ fund }: { fund: CsrFund }) {
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-xl bg-slate-50 p-2.5">
           <div className="text-sm font-bold text-emerald-700">💰 {formatInr(fund.disbursedToDateInr)}</div>
-          <div className="mt-0.5 text-[10px] leading-tight text-slate-500">Disbursed to Local Youth</div>
+          <div className="mt-0.5 text-[10px] leading-tight text-slate-500">{t('Disbursed to Local Youth')}</div>
         </div>
         <div className="rounded-xl bg-slate-50 p-2.5">
           <div className="text-sm font-bold text-slate-900">🛠️ {fund.activeVolunteerCount}</div>
-          <div className="mt-0.5 text-[10px] leading-tight text-slate-500">Active CoVs on Field</div>
+          <div className="mt-0.5 text-[10px] leading-tight text-slate-500">{t('Active CoVs on Field')}</div>
         </div>
         <div className="rounded-xl bg-slate-50 p-2.5">
           <div className="text-sm font-bold text-slate-900">⏱️ {fund.avgFixHours}h</div>
-          <div className="mt-0.5 text-[10px] leading-tight text-slate-500">vs {fund.govtBaselineDays}d govt.</div>
+          <div className="mt-0.5 text-[10px] leading-tight text-slate-500">{t('vs')} {fund.govtBaselineDays}d {t('govt.')}</div>
         </div>
       </div>
     </section>
@@ -112,6 +114,7 @@ function CsrWidget({ fund }: { fund: CsrFund }) {
 }
 
 function VolunteerProfileCard({ volunteer }: { volunteer: VolunteerProfile }) {
+  const t = useTranslate();
   return (
     <section className="surface-card p-4 sm:p-5">
       <div className="flex items-center gap-3">
@@ -135,21 +138,22 @@ function VolunteerProfileCard({ volunteer }: { volunteer: VolunteerProfile }) {
                 volunteer.tier === 'bronze' && 'bg-orange-100 text-orange-700',
               )}
             >
-              🥇 {volunteer.tier} Tier {volunteer.tier === 'gold' && '(+₹100 Bonus)'}
+              🥇 {t(volunteer.tier)} {t('Tier')} {volunteer.tier === 'gold' && `(+₹100 ${t('Bonus')})`}
             </span>
           </div>
         </div>
       </div>
       <div className="mt-3 flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2">
-        <span className="text-xs font-semibold text-emerald-700">Lifetime earned</span>
+        <span className="text-xs font-semibold text-emerald-700">{t('Lifetime earned')}</span>
         <span className="text-base font-extrabold text-emerald-700">{formatInr(volunteer.totalEarnedInr)}</span>
       </div>
-      <p className="mt-2 text-[11px] text-slate-500">{volunteer.completedMissions} missions completed · {volunteer.zone}</p>
+      <p className="mt-2 text-[11px] text-slate-500">{volunteer.completedMissions} {t('missions completed')} · {volunteer.zone}</p>
     </section>
   );
 }
 
 function LeaderboardTab({ volunteers, highlightId }: { volunteers: VolunteerProfile[]; highlightId?: string }) {
+  const t = useTranslate();
   const ranked = [...volunteers].sort((a, b) => b.totalEarnedInr - a.totalEarnedInr);
   const medal = ['🥇', '🥈', '🥉'];
   return (
@@ -174,11 +178,11 @@ function LeaderboardTab({ volunteers, highlightId }: { volunteers: VolunteerProf
                   volunteer.tier === 'bronze' && 'bg-orange-100 text-orange-700',
                 )}
               >
-                {volunteer.tier}
+                {t(volunteer.tier)}
               </span>
             </div>
             <div className="flex items-center gap-1 text-[11px] text-slate-500">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> {volunteer.rating.toFixed(1)} · {volunteer.completedMissions} missions ·{' '}
+              <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> {volunteer.rating.toFixed(1)} · {volunteer.completedMissions} {t('missions')} ·{' '}
               {volunteer.zone}
             </div>
           </div>
@@ -222,6 +226,7 @@ function MissionProofDialog({
   onClose: () => void;
   onSubmit: (afterPhoto: EvidencePhoto) => Promise<CivicProofVerification>;
 }) {
+  const t = useTranslate();
   const [photos, setPhotos] = useState<EvidencePhoto[]>([]);
   const [geo, setGeo] = useState<GeoPoint | null>(null);
   const [busy, setBusy] = useState(false);
@@ -256,7 +261,7 @@ function MissionProofDialog({
       <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
-            <Camera className="h-4 w-4" /> Submit fix proof
+            <Camera className="h-4 w-4" /> {t('Submit fix proof')}
           </h3>
           <button type="button" onClick={onClose} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X className="h-5 w-5" />
@@ -268,8 +273,7 @@ function MissionProofDialog({
           ) : (
             <>
               <p className="text-sm text-slate-600">
-                Photograph the repaired spot from roughly the same angle as the citizen&apos;s original photo — CivicProof compares
-                fixed landmarks before the payout releases.
+                {t('Photograph the repaired spot from roughly the same angle as the citizen’s original photo — CivicProof compares fixed landmarks before the payout releases.')}
               </p>
               <CameraCapture photos={photos} onPhotosChange={setPhotos} kind="after" capturedBy={volunteerId} geo={geo} maxPhotos={1} label="After photo" />
               <button
@@ -277,7 +281,7 @@ function MissionProofDialog({
                 onClick={attachLocation}
                 className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
-                <MapPin className="h-3.5 w-3.5" /> {geo ? 'Location attached' : 'Attach my GPS location'}
+                <MapPin className="h-3.5 w-3.5" /> {geo ? t('Location attached') : t('Attach my GPS location')}
               </button>
               {error && <p className="text-xs font-medium text-red-600">{error}</p>}
             </>
@@ -313,6 +317,7 @@ function MissionProofDialog({
 function TaskCard({
   ticket,
   role,
+  demoSample,
   nearbyCount,
   canSubmitProof,
   onSelect,
@@ -323,6 +328,7 @@ function TaskCard({
 }: {
   ticket: CivicTicket;
   role: SessionUser['role'] | null;
+  demoSample: boolean;
   nearbyCount: number;
   canSubmitProof: boolean;
   onSelect: () => void;
@@ -331,8 +337,10 @@ function TaskCard({
   onOpenProof: () => void;
   onSignIn: () => void;
 }) {
+  const t = useTranslate();
   const bounty = ticket.bounty!;
   const total = bountyTotal(bounty);
+  const locationLabel = ticket.location.address ?? ticket.location.ward ?? 'Location on file';
 
   return (
     <motion.div
@@ -344,14 +352,14 @@ function TaskCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
-            {CATEGORY_META[ticket.category].icon} {ticket.category}
+            {CATEGORY_META[ticket.category].icon} {t(ticket.category)}
           </div>
           <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-500">
-            <MapPin className="h-3 w-3" /> {ticket.location.address ?? ticket.location.ward ?? 'Location on file'}
+            <MapPin className="h-3 w-3" /> {demoSample ? t(locationLabel) : locationLabel}
           </div>
           {ticket.impactCount > 1 && (
             <div className="mt-1 flex items-center gap-1 text-[11px] font-medium text-slate-600">
-              <Users className="h-3 w-3" /> {ticket.impactCount} Neighbors Supported
+              <Users className="h-3 w-3" /> {ticket.impactCount} {t('Neighbors Supported')}
             </div>
           )}
         </div>
@@ -365,25 +373,30 @@ function TaskCard({
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
+        {demoSample && (
+          <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-bold text-amber-800">
+            {t('Illustrative sample — not a real report')}
+          </span>
+        )}
         <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-semibold text-slate-500">
-          {STATUS_LABEL[bounty.status]}
+          {t(STATUS_LABEL[bounty.status])}
         </span>
         {bounty.communityBonus > 0 && (
           <span className="flex items-center gap-0.5 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-semibold text-emerald-700">
-            <Sparkles className="h-3 w-3" /> +{formatInr(bounty.communityBonus)} boosted
+            <Sparkles className="h-3 w-3" /> +{formatInr(bounty.communityBonus)} {t('boosted')}
           </span>
         )}
         {bounty.status === 'open' && nearbyCount > 0 && (
           <span className="flex items-center gap-0.5 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 font-semibold text-blue-700">
-            <HardHat className="h-3 w-3" /> {nearbyCount} CoV{nearbyCount === 1 ? '' : 's'} nearby
+            <HardHat className="h-3 w-3" /> {nearbyCount} CoV {t('nearby')}
           </span>
         )}
         {bounty.claimedByName && bounty.status !== 'paid' && (
-          <span className="text-slate-400">Claimed by {bounty.claimedByName}</span>
+          <span className="text-slate-400">{t('Claimed by')} {bounty.claimedByName}</span>
         )}
       </div>
 
-      {role === 'volunteer' && bounty.status === 'open' && (
+      {!demoSample && role === 'volunteer' && bounty.status === 'open' && (
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}
@@ -393,7 +406,7 @@ function TaskCard({
           }}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
         >
-          <Wrench className="h-4 w-4" /> Accept Mission &amp; Claim {formatInr(total)}
+          <Wrench className="h-4 w-4" /> {t('Accept Mission & Claim')} {formatInr(total)}
         </motion.button>
       )}
 
@@ -407,11 +420,11 @@ function TaskCard({
           }}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
         >
-          <Camera className="h-4 w-4" /> Submit Fix Proof
+          <Camera className="h-4 w-4" /> {t('Submit Fix Proof')}
         </motion.button>
       )}
 
-      {role === 'citizen' && bounty.status !== 'paid' && (
+      {!demoSample && role === 'citizen' && bounty.status !== 'paid' && (
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}
@@ -421,11 +434,11 @@ function TaskCard({
           }}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
         >
-          <Zap className="h-4 w-4" /> Boost Bounty (+{formatInr(BOOST_AMOUNT_INR)} Pledge)
+          <Zap className="h-4 w-4" /> {t('Boost Bounty')} (+{formatInr(BOOST_AMOUNT_INR)} {t('Pledge')})
         </motion.button>
       )}
 
-      {!role && (
+      {!demoSample && !role && (
         <button
           type="button"
           onClick={(event) => {
@@ -434,9 +447,10 @@ function TaskCard({
           }}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
         >
-          Sign in or join to report, contribute or volunteer
+          {t('Sign in or join to report, contribute or volunteer')}
         </button>
       )}
+      {demoSample && <p className="mt-3 text-center text-[11px] font-medium text-amber-800">{t('Sample data · read-only')}</p>}
     </motion.div>
   );
 }
@@ -453,6 +467,7 @@ export default function BountyDashboard({
   onSubmitProof,
   onSignIn,
 }: BountyDashboardProps) {
+  const t = useTranslate();
   const [tab, setTab] = useState<FeedTab>('active');
   const [proofTicketId, setProofTicketId] = useState<string | null>(null);
   const role = sessionUser?.role ?? null;
@@ -466,6 +481,20 @@ export default function BountyDashboard({
         .sort((a, b) => bountyTotal(b.bounty!) - bountyTotal(a.bounty!)),
     [tickets],
   );
+  const allTasks = useMemo(
+    () =>
+      tickets
+        .filter((ticket) => ticket.isMaster && ticket.bounty)
+        .sort((a, b) => bountyTotal(b.bounty!) - bountyTotal(a.bounty!)),
+    [tickets],
+  );
+
+  const tabs: Array<{ id: FeedTab; label: string; icon: typeof Flame; count?: number }> = [
+    { id: 'active', label: t('Active bounties'), icon: Flame, count: activeTasks.length },
+    { id: 'all', label: t('All'), icon: Users, count: allTasks.length },
+    { id: 'leaderboard', label: t('Hall of fame'), icon: Trophy, count: volunteers.length },
+    { id: 'depots', label: t('Tool depots'), icon: Building2, count: depots.length },
+  ];
 
   return (
     <div className="space-y-4">
@@ -473,28 +502,37 @@ export default function BountyDashboard({
       {myVolunteer && <VolunteerProfileCard volunteer={myVolunteer} />}
 
       <section className="surface-card p-3 sm:p-4">
-        <GlideTabs
-          ariaLabel="Bounty network"
-          value={tab}
-          onChange={setTab}
-          compact
-          items={[
-            { id: 'active', label: 'Active bounties', icon: Flame },
-            { id: 'leaderboard', label: 'Hall of fame', icon: Trophy },
-            { id: 'depots', label: 'Tool depots', icon: Building2 },
-          ]}
-        />
+        <div className="grid gap-3 lg:grid-cols-[11rem_minmax(0,1fr)]">
+          <nav aria-label="Bounty network" className="soft-scrollbar flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible lg:border-r lg:border-slate-100 lg:pr-3">
+            {tabs.map(({ id, label, icon: Icon, count }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTab(id)}
+                aria-pressed={tab === id}
+                className={cn(
+                  'flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold transition lg:w-full',
+                  tab === id ? 'bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="flex-1">{label}</span>
+                <span className={cn('rounded-full px-1.5 py-0.5 text-[10px]', tab === id ? 'bg-white/80' : 'bg-slate-100')}>{count}</span>
+              </button>
+            ))}
+          </nav>
 
-        <div className="soft-scrollbar mt-4 max-h-[560px] space-y-2.5 overflow-y-auto pr-1">
-          {tab === 'active' &&
-            (activeTasks.length === 0 ? (
-              <p className="py-8 text-center text-sm text-slate-400">No open bounties right now — nice and clear out there.</p>
+          <div className="soft-scrollbar max-h-[560px] space-y-2.5 overflow-y-auto pr-1">
+          {(tab === 'active' || tab === 'all') &&
+            ((tab === 'active' ? activeTasks : allTasks).length === 0 ? (
+              <p className="py-8 text-center text-sm text-slate-400">{t('No open bounties right now — nice and clear out there.')}</p>
             ) : (
-              activeTasks.map((ticket) => (
+              (tab === 'active' ? activeTasks : allTasks).map((ticket) => (
                 <TaskCard
                   key={ticket.id}
                   ticket={ticket}
                   role={role}
+                  demoSample={isDemoTicket(ticket)}
                   nearbyCount={findNearbyVolunteers(ticket.location, volunteers).length}
                   canSubmitProof={Boolean(myVolunteer && ticket.bounty?.status === 'in_progress' && ticket.bounty.claimedBy === myVolunteer.id)}
                   onSelect={() => onSelectTicket(ticket.id)}
@@ -507,11 +545,12 @@ export default function BountyDashboard({
             ))}
           {tab === 'leaderboard' && <LeaderboardTab volunteers={volunteers} highlightId={myVolunteer?.id} />}
           {tab === 'depots' && <DepotsTab depots={depots} />}
+          </div>
         </div>
       </section>
 
       <p className="flex items-center gap-1.5 px-1 text-[10px] text-slate-400">
-        <Clock className="h-3 w-3" /> Bounty figures are demo-illustrative CSR pool estimates, not live financial accounting.
+        <Clock className="h-3 w-3" /> {t('Bounty figures are demo-illustrative CSR pool estimates, not live financial accounting.')}
       </p>
 
       {proofTicket && myVolunteer && (

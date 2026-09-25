@@ -116,16 +116,12 @@ export interface CivicState {
   persistenceEnabled: boolean;
 }
 
-/** Called once at mount. Seeds Supabase on first run; falls back to an in-memory seed when unconfigured. */
+/** Called once at mount. Persistent environments load only saved tickets; demos stay in memory. */
 export async function loadStateAction(): Promise<CivicState> {
   const liveAi = isMistralLive();
 
   if (isSupabaseConfigured()) {
     try {
-      if (await repo.isEmpty()) {
-        const seed = buildSeedData(new Date());
-        await repo.seedAll(seed);
-      }
       const [tickets, overrides, logs] = await Promise.all([
         repo.listTickets(),
         repo.listRoutingOverrides(),
@@ -145,25 +141,18 @@ export async function loadStateAction(): Promise<CivicState> {
   return { tickets: seed.tickets, overrides: seed.routingOverrides, logs: seed.agentLogs, liveAi, persistenceEnabled: false };
 }
 
-/** Wipes and reseeds Supabase; when unconfigured, just hands back a fresh in-memory seed. */
+/** Resets only the local demo; persistent citizen reports are never wiped by the demo control. */
 export async function resetDemoAction(): Promise<CivicState> {
   const liveAi = isMistralLive();
 
   if (isSupabaseConfigured()) {
-    try {
-      await repo.resetAll();
-      const seed = buildSeedData(new Date());
-      await repo.seedAll(seed);
-      const [tickets, overrides, logs] = await Promise.all([
-        repo.listTickets(),
-        repo.listRoutingOverrides(),
-        repo.listAgentLogs(),
-      ]);
-      hydrateRoutingOverrides(overrides);
-      return { tickets, overrides, logs, liveAi, persistenceEnabled: true };
-    } catch (error) {
-      console.error('Supabase reset failed, falling back to in-memory seed:', error);
-    }
+    const [tickets, overrides, logs] = await Promise.all([
+      repo.listTickets(),
+      repo.listRoutingOverrides(),
+      repo.listAgentLogs(),
+    ]);
+    hydrateRoutingOverrides(overrides);
+    return { tickets, overrides, logs, liveAi, persistenceEnabled: true };
   }
 
   const seed = buildSeedData(new Date());

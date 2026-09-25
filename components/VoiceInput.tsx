@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Mic, MicOff, Square, TriangleAlert } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslate } from '@/components/AppLanguageProvider';
 
 type VoiceLanguage = 'en' | 'kn' | 'hi';
 
@@ -87,6 +88,7 @@ export default function VoiceInput({
   rows = 4,
   className,
 }: VoiceInputProps) {
+  const t = useTranslate();
   const supported = useSpeechSupported();
   const recognitionRef = useRef<Recognition | null>(null);
   const valueRef = useRef(value);
@@ -177,7 +179,7 @@ export default function VoiceInput({
         <textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
+          placeholder={t(placeholder)}
           rows={rows}
           className="block w-full resize-none rounded-xl bg-transparent px-3.5 pb-14 pt-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
         />
@@ -201,11 +203,11 @@ export default function VoiceInput({
                     />
                   ))}
                 </span>
-                <span className="font-semibold text-red-600">Listening · {LANGUAGE_META[language].label}</span>
+                <span className="font-semibold text-red-600">{t('Listening')} · {LANGUAGE_META[language].label}</span>
               </>
             ) : (
               <span className="text-slate-400">
-                {supported ? `Voice typing · ${LANGUAGE_META[language].label}` : 'Voice typing unavailable — type instead'}
+                {supported ? `${t('Voice typing')} · ${LANGUAGE_META[language].label}` : t('Voice typing unavailable — type instead')}
               </span>
             )}
           </div>
@@ -226,7 +228,7 @@ export default function VoiceInput({
           ) : (
             <span
               className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400"
-              title="Voice typing needs Chrome, Edge or Safari"
+              title={t('Voice typing needs Chrome, Edge or Safari')}
             >
               <MicOff className="h-5 w-5" />
             </span>
@@ -237,7 +239,7 @@ export default function VoiceInput({
       {error && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
           <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          {error}
+          {t(error)}
         </div>
       )}
     </div>

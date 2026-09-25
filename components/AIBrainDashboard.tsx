@@ -13,6 +13,7 @@ import {
 } from '@/types/civic';
 import AgentTerminal from '@/components/AgentTerminal';
 import { cn } from '@/lib/cn';
+import { useTranslate } from '@/components/AppLanguageProvider';
 
 /* Validated reference palette (dataviz skill): one magnitude series + the fixed status roles. */
 const SERIES_1 = '#2a78d6';
@@ -119,12 +120,13 @@ interface AIBrainDashboardProps {
 }
 
 export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: AIBrainDashboardProps) {
+  const tr = useTranslate();
   const t = computeBrainTelemetry(tickets, overrides);
   const openTotal = t.slaOnTrack + t.slaWarning + t.slaBreached;
   const slaSegments = [
-    { key: 'on_track', label: 'On track', value: t.slaOnTrack, color: STATUS.good, icon: CircleCheck },
-    { key: 'warning', label: 'Warning (≥75%)', value: t.slaWarning, color: STATUS.warning, icon: TriangleAlert },
-    { key: 'breached', label: 'Breached', value: t.slaBreached, color: STATUS.critical, icon: Siren },
+    { key: 'on_track', label: tr('On track'), value: t.slaOnTrack, color: STATUS.good, icon: CircleCheck },
+    { key: 'warning', label: tr('Warning (≥75%)'), value: t.slaWarning, color: STATUS.warning, icon: TriangleAlert },
+    { key: 'breached', label: tr('Breached'), value: t.slaBreached, color: STATUS.critical, icon: Siren },
   ];
   const maxDeptOpen = Math.max(1, ...t.byDepartment.map((row) => row.open));
   const maxCategory = Math.max(1, ...t.byCategory.map((row) => row.count));
@@ -138,9 +140,9 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-            <Brain className="h-5 w-5" /> CivicSense AI Brain
+            <Brain className="h-5 w-5" /> {tr('CivicSense AI Brain')}
           </h2>
-          <p className="text-xs text-slate-500">Five agents, one feedback loop — deduplication, self-healing routing, SLA sentinel and proof-gated closure.</p>
+          <p className="text-xs text-slate-500">{tr('Five agents, one feedback loop — deduplication, self-healing routing, SLA sentinel and proof-gated closure.')}</p>
         </div>
         <span
           className={cn(
@@ -149,21 +151,21 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
           )}
         >
           <span className={cn('h-2 w-2 rounded-full', liveAi ? 'animate-pulse bg-emerald-500' : 'bg-slate-400')} />
-          {liveAi ? 'Mistral live (pixtral-12b + mistral-large)' : 'Offline mock mode — set MISTRAL_API_KEY for live vision'}
+          {tr(liveAi ? 'Mistral live (pixtral-12b + mistral-large)' : 'Offline mock mode — set MISTRAL_API_KEY for live vision')}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Kpi icon={Users} label="Citizen reports" value={String(t.totalReports)} sub={`${t.citizensEngaged} unique citizens`} />
-        <Kpi icon={GitMerge} label="Master issues" value={String(t.masterIssues)} sub={`${t.duplicatesMerged} duplicates merged`} />
-        <Kpi icon={GitMerge} label="Duplicate reduction" value={`${t.duplicateReductionPercent}%`} sub="fewer tickets for crews" />
-        <Kpi icon={Route} label="Routing accuracy" value={`${t.routingAccuracyPercent}%`} sub={`${t.ticketsAutoCorrected} auto-corrected`} />
-        <Kpi icon={Siren} label="Auto-escalations" value={String(t.autoEscalations)} sub="breaches briefed upward" />
-        <Kpi icon={ShieldCheck} label="Proof verified" value={String(t.proofVerified)} sub={`${t.proofRejected} fraudulent/mismatched rejected`} />
+        <Kpi icon={Users} label={tr('Citizen reports')} value={String(t.totalReports)} sub={`${t.citizensEngaged} ${tr('unique citizens')}`} />
+        <Kpi icon={GitMerge} label={tr('Master issues')} value={String(t.masterIssues)} sub={`${t.duplicatesMerged} ${tr('duplicates merged')}`} />
+        <Kpi icon={GitMerge} label={tr('Duplicate reduction')} value={`${t.duplicateReductionPercent}%`} sub={tr('fewer tickets for crews')} />
+        <Kpi icon={Route} label={tr('Routing accuracy')} value={`${t.routingAccuracyPercent}%`} sub={`${t.ticketsAutoCorrected} ${tr('auto-corrected')}`} />
+        <Kpi icon={Siren} label={tr('Auto-escalations')} value={String(t.autoEscalations)} sub={tr('breaches briefed upward')} />
+        <Kpi icon={ShieldCheck} label={tr('Proof verified')} value={String(t.proofVerified)} sub={`${t.proofRejected} ${tr('fraudulent/mismatched rejected')}`} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="SLA health · open issues" subtitle={`${openTotal} open · ${t.slaMet} closed within SLA · avg resolution ${t.avgResolutionHours}h`}>
+        <Card title={tr('SLA health · open issues')} subtitle={`${openTotal} ${tr('open')} · ${t.slaMet} ${tr('closed within SLA')} · ${tr('avg resolution')} ${t.avgResolutionHours}h`}>
           {openTotal > 0 ? (
             <div className="flex h-4 w-full gap-[2px] overflow-hidden rounded">
               {slaSegments
@@ -177,7 +179,7 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
                 ))}
             </div>
           ) : (
-            <p className="text-xs text-slate-500">No open issues.</p>
+            <p className="text-xs text-slate-500">{tr('No open issues.')}</p>
           )}
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
             {slaSegments.map((segment) => (
@@ -190,21 +192,21 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
           </div>
         </Card>
 
-        <Card title="Open issues by department" subtitle="Bar = open master issues; resolved and breached counts alongside">
+        <Card title={tr('Open issues by department')} subtitle={tr('Bar = open master issues; resolved and breached counts alongside')}>
           <div className="space-y-2">
             {t.byDepartment.map((row) => (
               <div key={row.department} className="grid grid-cols-[1fr_auto] items-center gap-3">
                 <HBar
-                  label={`${DEPARTMENT_META[row.department].icon} ${row.department}`}
+                  label={`${DEPARTMENT_META[row.department].icon} ${tr(row.department)}`}
                   value={row.open}
                   max={maxDeptOpen}
-                  title={`${row.department}: ${row.open} open, ${row.resolved} resolved, ${row.breached} breached`}
+                  title={`${tr(row.department)}: ${row.open} ${tr('open')}, ${row.resolved} ${tr('resolved')}, ${row.breached} ${tr('breached')}`}
                 />
                 <div className="flex gap-2 text-[11px] tabular-nums text-slate-500">
-                  <span className="flex items-center gap-0.5" title="Resolved">
+                  <span className="flex items-center gap-0.5" title={tr('Resolved')}>
                     <CircleCheck className="h-3 w-3" /> {row.resolved}
                   </span>
-                  <span className={cn('flex items-center gap-0.5', row.breached > 0 && 'font-semibold text-red-600')} title="SLA breached">
+                  <span className={cn('flex items-center gap-0.5', row.breached > 0 && 'font-semibold text-red-600')} title={tr('SLA breached')}>
                     <Siren className="h-3 w-3" /> {row.breached}
                   </span>
                 </div>
@@ -215,23 +217,23 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="Citizen reports by category" subtitle="Counts every co-reporter, not just master tickets">
+        <Card title={tr('Citizen reports by category')} subtitle={tr('Counts every co-reporter, not just master tickets')}>
           <div className="space-y-2">
             {t.byCategory.map((row) => (
               <HBar
                 key={row.category}
-                label={`${CATEGORY_META[row.category].icon} ${row.category}`}
+                label={`${CATEGORY_META[row.category].icon} ${tr(row.category)}`}
                 value={row.count}
                 max={maxCategory}
-                title={`${row.category}: ${row.count} citizen reports`}
+                title={`${tr(row.category)}: ${row.count} ${tr('citizen reports')}`}
               />
             ))}
           </div>
         </Card>
 
-        <Card title="Auto-escalation log" subtitle="Issues the SLA Sentinel pushed up the chain, with generated briefings">
+        <Card title={tr('Auto-escalation log')} subtitle={tr('Issues the SLA Sentinel pushed up the chain, with generated briefings')}>
           {escalated.length === 0 ? (
-            <p className="text-xs text-slate-500">No open escalations.</p>
+            <p className="text-xs text-slate-500">{tr('No open escalations.')}</p>
           ) : (
             <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
               {escalated.map((ticket) => (
@@ -250,19 +252,19 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
       </div>
 
       <Card
-        title="Self-healing routing graph"
-        subtitle={`Corrections learned from CoVs. At ≥${Math.round(OVERRIDE_ACTIVATION_WEIGHT * 100)}% weight a rule rewrites routing for every new report in its zone.`}
+        title={tr('Self-healing routing graph')}
+        subtitle={`${tr('Corrections learned from CoVs. At')} ≥${Math.round(OVERRIDE_ACTIVATION_WEIGHT * 100)}% ${tr('weight a rule rewrites routing for every new report in its zone.')}`}
       >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-xs">
             <thead className="text-[11px] text-slate-500">
               <tr className="border-b border-slate-100">
-                <th className="py-2 pr-3 font-semibold">Category · zone</th>
-                <th className="py-2 pr-3 font-semibold">Correction</th>
-                <th className="py-2 pr-3 font-semibold">Weight</th>
-                <th className="py-2 pr-3 text-right font-semibold">Corrections</th>
-                <th className="py-2 pr-3 text-right font-semibold">Auto-corrected</th>
-                <th className="py-2 font-semibold">Last applied</th>
+                <th className="py-2 pr-3 font-semibold">{tr('Category · zone')}</th>
+                <th className="py-2 pr-3 font-semibold">{tr('Correction')}</th>
+                <th className="py-2 pr-3 font-semibold">{tr('Weight')}</th>
+                <th className="py-2 pr-3 text-right font-semibold">{tr('Corrections')}</th>
+                <th className="py-2 pr-3 text-right font-semibold">{tr('Auto-corrected')}</th>
+                <th className="py-2 font-semibold">{tr('Last applied')}</th>
               </tr>
             </thead>
             <tbody>
@@ -272,7 +274,7 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
                   <tr key={override.id} className="border-b border-slate-50 align-top last:border-0" title={override.reason}>
                     <td className="py-2 pr-3">
                       <div className="font-semibold text-slate-900">
-                        {CATEGORY_META[override.category].icon} {override.category}
+                        {CATEGORY_META[override.category].icon} {tr(override.category)}
                       </div>
                       <div className="text-[11px] text-slate-500">{override.zoneKey.replace(':', ' · ')}</div>
                     </td>
@@ -290,7 +292,7 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
                           <div
                             className="absolute -top-0.5 h-3 w-px bg-slate-500"
                             style={{ left: `${OVERRIDE_ACTIVATION_WEIGHT * 100}%` }}
-                            title="Activation threshold"
+                            title={tr('Activation threshold')}
                           />
                         </div>
                         <span className="tabular-nums font-semibold text-slate-800">{Math.round(override.weight * 100)}%</span>
@@ -300,7 +302,7 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
                             active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500',
                           )}
                         >
-                          {active ? 'Active' : 'Learning'}
+                          {tr(active ? 'Active' : 'Learning')}
                         </span>
                       </div>
                     </td>
@@ -312,7 +314,7 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
                           <Clock className="h-3 w-3" /> {new Date(override.lastAppliedAt).toLocaleString()}
                         </span>
                       ) : (
-                        'Not yet'
+                        tr('Not yet')
                       )}
                     </td>
                   </tr>

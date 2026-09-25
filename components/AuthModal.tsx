@@ -14,6 +14,7 @@ import {
   type VolunteerProfile,
 } from '@/types/civic';
 import { cn } from '@/lib/cn';
+import { useTranslate } from '@/components/AppLanguageProvider';
 
 const DEMO_OTP = '123456';
 const DEMO_ADMIN_PASSCODE = 'CIVICBRAIN';
@@ -56,15 +57,16 @@ function OtpStep({
   onVerify: (otp: string) => void;
   onBack: () => void;
 }) {
+  const t = useTranslate();
   const [otp, setOtp] = useState('');
 
   return (
     <div className="space-y-4">
       <div>
         <p className="text-sm text-slate-600">
-          We sent a 6-digit code to <span className="font-semibold text-slate-900">{destination}</span>.
+          {t('We sent a 6-digit code to')} <span className="font-semibold text-slate-900">{destination}</span>.
         </p>
-        <p className="mt-0.5 text-xs text-slate-400">This is a hackathon preview — no real SMS/email is sent.</p>
+        <p className="mt-0.5 text-xs text-slate-400">{t('This is a hackathon preview — no real SMS/email is sent.')}</p>
       </div>
 
       <input
@@ -85,7 +87,7 @@ function OtpStep({
             : 'border-slate-200 text-slate-500 hover:bg-slate-50',
         )}
       >
-        <Sparkles className="h-3.5 w-3.5" /> Auto-Fill Demo OTP {DEMO_OTP}
+        <Sparkles className="h-3.5 w-3.5" /> {t('Auto-Fill Demo OTP')} {DEMO_OTP}
       </button>
 
       {error && <p className="text-xs font-medium text-red-600">{error}</p>}
@@ -96,7 +98,7 @@ function OtpStep({
           onClick={onBack}
           className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
         >
-          Back
+          {t('Back')}
         </button>
         <button
           type="button"
@@ -105,7 +107,7 @@ function OtpStep({
           className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading && <LoaderCircle className="h-4 w-4 animate-spin" />}
-          Verify & Continue
+          {t('Verify & Continue')}
         </button>
       </div>
     </div>
@@ -113,6 +115,7 @@ function OtpStep({
 }
 
 function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthenticated: (user: SessionUser) => void }) {
+  const t = useTranslate();
   const [method, setMethod] = useState<'phone' | 'email'>('phone');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -124,11 +127,11 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
 
   const sendOtp = () => {
     if (method === 'phone' && !/^[6-9]\d{9}$/.test(phone.trim())) {
-      setError('Enter a valid 10-digit Indian mobile number.');
+      setError(t('Enter a valid 10-digit Indian mobile number.'));
       return;
     }
     if (method === 'email' && !/^\S+@\S+\.\S+$/.test(email.trim())) {
-      setError('Enter a valid email address.');
+      setError(t('Enter a valid email address.'));
       return;
     }
     setError(null);
@@ -137,7 +140,7 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
 
   const verify = (otp: string) => {
     if (otp !== DEMO_OTP) {
-      setError(`Incorrect code — use the demo OTP ${DEMO_OTP} in this preview.`);
+      setError(`${t('Incorrect code — use the demo OTP')} ${DEMO_OTP} ${t('in this preview.')}`);
       return;
     }
     setVerifying(true);
@@ -145,7 +148,7 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
     const profile: PublicReporter = {
       id: makeCitizenId(handle),
       displayName: pseudonymFor(handle),
-      maskedPhone: method === 'phone' ? maskPhone(phone) : 'Email verified',
+      maskedPhone: method === 'phone' ? maskPhone(phone) : t('Email verified'),
       verified: true,
       ward: null,
     };
@@ -173,20 +176,20 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
           onClick={() => setMethod('phone')}
           className={cn('flex-1 rounded-md py-1.5', method === 'phone' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500')}
         >
-          <Phone className="mr-1 inline h-3.5 w-3.5" /> Phone + OTP
+          <Phone className="mr-1 inline h-3.5 w-3.5" /> {t('Phone + OTP')}
         </button>
         <button
           type="button"
           onClick={() => setMethod('email')}
           className={cn('flex-1 rounded-md py-1.5', method === 'email' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500')}
         >
-          <Mail className="mr-1 inline h-3.5 w-3.5" /> Email
+          <Mail className="mr-1 inline h-3.5 w-3.5" /> {t('Email')}
         </button>
       </div>
 
       {method === 'phone' ? (
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">Mobile number</label>
+          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Mobile number')}</label>
           <div className="flex items-center rounded-xl border border-slate-300 focus-within:border-slate-500">
             <span className="pl-3.5 text-sm text-slate-400">+91</span>
             <input
@@ -200,7 +203,7 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
         </div>
       ) : (
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">Email address</label>
+          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Email address')}</label>
           <input
             value={email}
             onChange={(event) => setEmail(event.target.value)}
@@ -213,7 +216,7 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
 
       <p className="flex items-start gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        Your number and identity are never shown publicly — only your issue and its location reach CoVs.
+        {t('Your number and identity are never shown publicly — only your issue and its location reach CoVs.')}
       </p>
 
       {error && <p className="text-xs font-medium text-red-600">{error}</p>}
@@ -223,13 +226,14 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
         onClick={sendOtp}
         className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
       >
-        Send OTP
+        {t('Send OTP')}
       </button>
     </div>
   );
 }
 
 function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthenticated: (user: SessionUser) => void }) {
+  const t = useTranslate();
   const [name, setName] = useState('');
   const [covId, setCovId] = useState('');
   const [phone, setPhone] = useState('');
@@ -251,15 +255,15 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
 
   const sendOtp = () => {
     if (!name.trim() || !covId.trim()) {
-      setError('Enter your name and CoV ID.');
+      setError(t('Enter your name and CoV ID.'));
       return;
     }
     if (!/^[6-9]\d{9}$/.test(phone.trim())) {
-      setError('Enter a valid 10-digit Indian mobile number.');
+      setError(t('Enter a valid 10-digit Indian mobile number.'));
       return;
     }
     if (!/^[\w.-]+@[\w.-]+$/.test(upiId.trim())) {
-      setError('Enter a valid UPI ID for bounty payouts.');
+      setError(t('Enter a valid UPI ID for bounty payouts.'));
       return;
     }
     setError(null);
@@ -268,7 +272,7 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
 
   const verify = (otp: string) => {
     if (otp !== DEMO_OTP) {
-      setError(`Incorrect code — use the demo OTP ${DEMO_OTP} in this preview.`);
+      setError(`${t('Incorrect code — use the demo OTP')} ${DEMO_OTP} ${t('in this preview.')}`);
       return;
     }
     setVerifying(true);
@@ -312,23 +316,23 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
           onClick={fillDemo}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100"
         >
-          <Sparkles className="h-3.5 w-3.5" /> Autofill a demo CoV (PWD/Roads, Koramangala)
+          <Sparkles className="h-3.5 w-3.5" /> {t('Autofill a demo CoV (PWD/Roads, Koramangala)')}
         </button>
       )}
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600">Full name</label>
+        <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Full name')}</label>
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Full name"
+          placeholder={t('Full name')}
           className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">CoV ID</label>
+          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('CoV ID')}</label>
           <input
             value={covId}
             onChange={(event) => setCovId(event.target.value)}
@@ -337,7 +341,7 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">Mobile number</label>
+          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Mobile number')}</label>
           <input
             value={phone}
             onChange={(event) => setPhone(event.target.value.replace(/\D/g, '').slice(0, 10))}
@@ -349,7 +353,7 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600">UPI ID for bounty payouts</label>
+        <label className="mb-1 block text-xs font-semibold text-slate-600">{t('UPI ID for bounty payouts')}</label>
         <input
           value={upiId}
           onChange={(event) => setUpiId(event.target.value)}
@@ -360,7 +364,7 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">Department</label>
+          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Department')}</label>
           <select
             value={department}
             onChange={(event) => setDepartment(event.target.value as Department)}
@@ -374,7 +378,7 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">Zone</label>
+          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Zone')}</label>
           <select
             value={zone}
             onChange={(event) => setZone(event.target.value as (typeof ZONES)[number])}
@@ -396,13 +400,14 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
         onClick={sendOtp}
         className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
       >
-        Send OTP
+        {t('Send OTP')}
       </button>
     </div>
   );
 }
 
 function AdminAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthenticated: (user: SessionUser) => void }) {
+  const t = useTranslate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [passcode, setPasscode] = useState('');
@@ -417,11 +422,11 @@ function AdminAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthent
 
   const submit = () => {
     if (!name.trim() || !/^\S+@\S+\.\S+$/.test(email.trim())) {
-      setError('Enter your name and a valid email address.');
+      setError(t('Enter your name and a valid email address.'));
       return;
     }
     if (passcode.trim().toUpperCase() !== DEMO_ADMIN_PASSCODE) {
-      setError(`Incorrect passcode — use the demo passcode ${DEMO_ADMIN_PASSCODE} in this preview.`);
+      setError(`${t('Incorrect passcode — use the demo passcode')} ${DEMO_ADMIN_PASSCODE} ${t('in this preview.')}`);
       return;
     }
     setError(null);
@@ -439,7 +444,7 @@ function AdminAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthent
     <div className="space-y-3">
       <p className="flex items-start gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-[11px] text-slate-600">
         <Bot className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        Super-admin access to the AI Brain dashboard and self-healing telemetry.
+        {t('Super-admin access to the AI Brain dashboard and self-healing telemetry.')}
       </p>
 
       {demoMode && (
@@ -448,22 +453,22 @@ function AdminAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthent
           onClick={fillDemo}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100"
         >
-          <Sparkles className="h-3.5 w-3.5" /> Autofill demo admin
+          <Sparkles className="h-3.5 w-3.5" /> {t('Autofill demo admin')}
         </button>
       )}
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600">Full name</label>
+        <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Full name')}</label>
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Admin name"
+          placeholder={t('Admin name')}
           className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600">Email address</label>
+        <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Email address')}</label>
         <input
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -474,7 +479,7 @@ function AdminAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthent
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600">Admin passcode</label>
+        <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Admin passcode')}</label>
         <div className="flex items-center rounded-xl border border-slate-300 focus-within:border-slate-500">
           <KeyRound className="ml-3 h-4 w-4 text-slate-400" />
           <input
@@ -495,13 +500,14 @@ function AdminAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthent
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
       >
         {loading && <LoaderCircle className="h-4 w-4 animate-spin" />}
-        Enter AI Brain
+        {t('Enter AI Brain')}
       </button>
     </div>
   );
 }
 
 export default function AuthModal({ open, onClose, onAuthenticated, demoMode = false, initialRole = 'citizen' }: AuthModalProps) {
+  const t = useTranslate();
   const [role, setRole] = useState<UserRole>(initialRole);
   const [wasOpen, setWasOpen] = useState(open);
 
@@ -519,8 +525,8 @@ export default function AuthModal({ open, onClose, onAuthenticated, demoMode = f
       <div className="soft-scrollbar max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.5rem] border border-white/70 bg-white shadow-[0_28px_100px_-24px_rgb(2_6_23_/55%)]">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Welcome to Civicloop</p>
-            <h2 className="mt-0.5 text-base font-bold text-slate-900">Choose how you&apos;ll take part</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">{t('Welcome to Civicloop')}</p>
+              <h2 className="mt-0.5 text-base font-bold text-slate-900">{t('Choose how you’ll take part')}</h2>
           </div>
           <button type="button" onClick={onClose} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
             <X className="h-5 w-5" />
@@ -539,7 +545,7 @@ export default function AuthModal({ open, onClose, onAuthenticated, demoMode = f
                 role === tab.role ? 'bg-emerald-50 text-emerald-900 ring-1 ring-emerald-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800',
               )}
             >
-              <tab.icon className="h-3.5 w-3.5" /> {tab.label}
+              <tab.icon className="h-3.5 w-3.5" /> {t(tab.label)}
             </button>
           ))}
         </div>

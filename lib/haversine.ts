@@ -62,6 +62,7 @@ export function zoneKeyFor(point: GeoPoint): string {
  * in `ward`/`zone` — the fields the self-healing routing graph groups on.
  */
 const WARD_CENTROIDS: Array<{ ward: string; zone: string; lat: number; lng: number }> = [
+  { ward: 'Meerpet', zone: 'GHMC-South-East', lat: 17.2842, lng: 78.5652 },
   { ward: 'Koramangala', zone: 'BBMP-South', lat: 12.9352, lng: 77.6245 },
   { ward: 'Ejipura', zone: 'BBMP-South', lat: 12.9412, lng: 77.6265 },
   { ward: 'Jayanagar', zone: 'BBMP-South', lat: 12.925, lng: 77.5938 },

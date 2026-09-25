@@ -25,7 +25,8 @@ export interface CivicEyeInput {
   voiceTranscript?: string | null;
 }
 
-const SYSTEM_PROMPT = `You are CivicEye, the computer-vision intake agent for Civicloop, a civic-complaint platform in Bangalore, India.
+const SYSTEM_PROMPT = `You are CivicEye, the computer-vision intake agent for Civicloop, a civic-complaint platform in India.
+Citizen descriptions and voice transcripts may be in English, Kannada, or Hindi. Interpret the original language without requiring English.
 Classify the photographed civic issue into EXACTLY one of these categories: ${COMPLAINT_CATEGORIES.join(', ')}.
 Respond with ONLY a JSON object of this exact shape, no prose, no markdown fences:
 {
@@ -41,20 +42,20 @@ Respond with ONLY a JSON object of this exact shape, no prose, no markdown fence
 }`;
 
 const KEYWORD_RULES: Array<{ category: ComplaintCategory; keywords: string[] }> = [
-  { category: 'Pothole', keywords: ['pothole', 'crater', 'gaddi', 'road hole', 'pit in the road'] },
-  { category: 'Garbage accumulation', keywords: ['garbage', 'trash', 'waste', 'heap', 'dump', 'litter'] },
+  { category: 'Pothole', keywords: ['pothole', 'crater', 'gaddi', 'road hole', 'pit in the road', 'ಗುಂಡಿ', 'ರಸ್ತೆ ಗುಂಡಿ', 'ಗದ್ದೆ', 'गड्ढा', 'सड़क का गड्ढा'] },
+  { category: 'Garbage accumulation', keywords: ['garbage', 'trash', 'waste', 'heap', 'dump', 'litter', 'ಕಸ', 'ತ್ಯಾಜ್ಯ', 'ಕಸದ ರಾಶಿ', 'कचरा', 'कूड़ा', 'कचरे का ढेर'] },
   {
     category: 'Broken streetlight',
-    keywords: ['streetlight', 'street light', 'lamp', 'dark stretch', 'pole', 'live wire', 'sparking', 'cable hanging'],
+    keywords: ['streetlight', 'street light', 'lamp', 'dark stretch', 'pole', 'live wire', 'sparking', 'cable hanging', 'ಬೀದಿ ದೀಪ', 'ವಿದ್ಯುತ್ ತಂತಿ', 'ತಂತಿ ಬಿದ್ದಿದೆ', 'बत्ती', 'स्ट्रीटलाइट', 'बिजली का तार', 'तार गिरा'],
   },
-  { category: 'Overflowing drain', keywords: ['drain', 'sewage', 'culvert', 'manhole', 'overflowing'] },
-  { category: 'Damaged road', keywords: ['road damage', 'cracked road', 'broken road', 'road surface'] },
-  { category: 'Fallen tree', keywords: ['fallen tree', 'tree down', 'uprooted', 'branch fell'] },
-  { category: 'Water leakage', keywords: ['water leak', 'leakage', 'pipe burst', 'mains leak', 'pipeline'] },
-  { category: 'Traffic obstruction', keywords: ['traffic', 'barricade', 'obstruction', 'blocked road', 'jam'] },
+  { category: 'Overflowing drain', keywords: ['drain', 'sewage', 'culvert', 'manhole', 'overflowing', 'ಚರಂಡಿ', 'ಒಳಚರಂಡಿ', 'ತುಂಬಿ ಹರಿಯುತ್ತಿದೆ', 'नाली', 'सीवर', 'नाली उफन रही'] },
+  { category: 'Damaged road', keywords: ['road damage', 'cracked road', 'broken road', 'road surface', 'ಹಾಳಾದ ರಸ್ತೆ', 'ಒಡೆದ ರಸ್ತೆ', 'ರಸ್ತೆ ಬಿರುಕು', 'खराब सड़क', 'टूटी सड़क', 'सड़क में दरार'] },
+  { category: 'Fallen tree', keywords: ['fallen tree', 'tree down', 'uprooted', 'branch fell', 'ಮರ ಬಿದ್ದಿದೆ', 'ಬಿದ್ದ ಮರ', 'ಮರದ ಕೊಂಬೆ ಬಿದ್ದಿದೆ', 'पेड़ गिरा', 'गिरा हुआ पेड़', 'शाखा गिर गई'] },
+  { category: 'Water leakage', keywords: ['water leak', 'leakage', 'pipe burst', 'mains leak', 'pipeline', 'ನೀರಿನ ಸೋರಿಕೆ', 'ಪೈಪ್ ಒಡೆದಿದೆ', 'ನೀರು ಸೋರಿಕೆ', 'पानी का रिसाव', 'पाइप फट गया', 'पानी की पाइपलाइन'] },
+  { category: 'Traffic obstruction', keywords: ['traffic', 'barricade', 'obstruction', 'blocked road', 'jam', 'ಸಂಚಾರ ಅಡ್ಡಿ', 'ರಸ್ತೆ ತಡೆ', 'ಟ್ರಾಫಿಕ್', 'यातायात', 'रास्ता बंद', 'जाम'] },
   {
     category: 'Damaged public infrastructure',
-    keywords: ['infrastructure', 'bench', 'railing', 'signage', 'footpath', 'pavement', 'bridge'],
+    keywords: ['infrastructure', 'bench', 'railing', 'signage', 'footpath', 'pavement', 'bridge', 'ಪಾದಚಾರಿ ಮಾರ್ಗ', 'ಕಾಲುದಾರಿ', 'ಸೇತುವೆ', 'ಫಲಕ', 'फुटपाथ', 'पुल', 'साइनबोर्ड', 'रेलिंग'],
   },
 ];
 

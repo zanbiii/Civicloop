@@ -163,7 +163,7 @@ export async function runTriage(input: TriageInput): Promise<TriageDecision> {
       systemPrompt:
         'You are the Smart Triage agent for Civicloop, a civic-complaint platform in Bangalore. Given a ' +
         'complaint category, department and severity signals, write ONE short, concrete sentence explaining ' +
-        'the routing decision to a city official. Respond with ONLY JSON: {"rationale": "<sentence>"}',
+        'the routing decision to the assigned CoV. Respond with ONLY JSON: {"rationale": "<sentence>"}',
       userPrompt: `Category: ${input.category}. Department: ${department}. Severity: ${severity}. Signals: ${
         severitySignals.join('; ') || 'none'
       }.`,

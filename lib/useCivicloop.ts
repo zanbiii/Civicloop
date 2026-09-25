@@ -35,6 +35,7 @@ import {
   type VolunteerProfile,
 } from '@/types/civic';
 import { SEED_DATA, SEED_EPOCH, SEED_VOLUNTEERS } from '@/lib/seedData';
+import { isDemoTicket } from '@/lib/demo';
 import { haversineMeters } from '@/lib/haversine';
 import { computeBaseBounty, formatInr, generateTransactionId, goldBonusFor, nextRating, tierForRating } from '@/lib/bounty';
 import { auditLogForDedup, runDedupCluster } from '@/lib/agents/dedupClusterAgent';
@@ -210,6 +211,7 @@ export function useCivicloop() {
   // Volunteer (CoV) roster — not yet persisted to Supabase; resets to the seed roster on reload.
   const [volunteers, setVolunteers] = useState<VolunteerProfile[]>(SEED_VOLUNTEERS);
   const [liveAi, setLiveAi] = useState(false);
+  const [persistenceEnabled, setPersistenceEnabled] = useState(false);
   const [clockOffsetHours, setClockOffsetHours] = useState(0);
   const [nowMs, setNowMs] = useState(() => new Date(SEED_EPOCH).getTime());
 
@@ -237,7 +239,7 @@ export function useCivicloop() {
     const changedTickets: CivicTicket[] = [];
 
     const tickets = current.tickets.map((ticket) => {
-      if (!ticket.isMaster || CLOSED_STATUSES.has(ticket.status) || ticket.sla.metAt) return ticket;
+      if (isDemoTicket(ticket) || !ticket.isMaster || CLOSED_STATUSES.has(ticket.status) || ticket.sla.metAt) return ticket;
       const result = tickSla(ticket.sla, {
         referenceCode: ticket.referenceCode,
         department: ticket.assignedDepartment,
@@ -307,7 +309,7 @@ export function useCivicloop() {
     if (changedTickets.length === 0 && newLogs.length === 0) return;
     setStore({ tickets, logs: newLogs.length ? [...current.logs, ...newLogs] : current.logs });
 
-    if (persistenceEnabledRef.current) {
+    if (persistenceEnabledRef.current && offsetRef.current === 0) {
       changedTickets.forEach((ticket) => persist(persistTicketAction(ticket)));
       if (newLogs.length) persist(persistAgentLogsAction(newLogs));
     }
@@ -319,6 +321,7 @@ export function useCivicloop() {
       .then((state) => {
         if (cancelled) return;
         persistenceEnabledRef.current = state.persistenceEnabled;
+        setPersistenceEnabled(state.persistenceEnabled);
         setStore({ tickets: state.tickets, logs: state.logs });
         setOverrides(state.overrides);
         setLiveAi(state.liveAi);
@@ -356,7 +359,10 @@ export function useCivicloop() {
         const now = clock();
         const nowIso = now.toISOString();
         const dedupStartedAt = performance.now();
-        const dedup = runDedupCluster({ category, location: draft.location, allTickets: storeRef.current.tickets, now });
+        const dedupTickets = draft.isDemo
+          ? storeRef.current.tickets.filter(isDemoTicket)
+          : storeRef.current.tickets.filter((ticket) => !isDemoTicket(ticket));
+        const dedup = runDedupCluster({ category, location: draft.location, allTickets: dedupTickets, now });
         const dedupLog = auditLogForDedup(ticketId, dedup, Math.round(performance.now() - dedupStartedAt));
         const text = draft.description || draft.voiceTranscript || '';
 
@@ -396,7 +402,7 @@ export function useCivicloop() {
             proof: null,
             citizenConfirmation: null,
             auditLog: [eyeLog, dedupLog],
-            tags: ['merged-duplicate'],
+            tags: draft.isDemo ? ['merged-duplicate', 'demo-sample'] : ['merged-duplicate'],
             createdAt: nowIso,
             updatedAt: nowIso,
             resolvedAt: null,
@@ -420,7 +426,7 @@ export function useCivicloop() {
             logs: [...current.logs, eyeLog, ...merged.logs],
           }));
 
-          if (persistenceEnabledRef.current) {
+          if (persistenceEnabledRef.current && !draft.isDemo) {
             persist(persistTicketAction(duplicateRecord));
             persist(persistTicketAction(merged.ticket));
             persist(persistSupporterAction(merged.newSupporter));
@@ -468,7 +474,7 @@ export function useCivicloop() {
           beforePhotos: draft.photos,
           afterPhotos: [],
           assignedDepartment: triage.department,
-          assignedOfficer: null,
+          assignedCoV: null,
           routingHistory: [
             {
               id: makeId(`${ticketId}-route`),
@@ -489,7 +495,7 @@ export function useCivicloop() {
           citizenConfirmation: null,
           bounty: openBounty(category, triage.severity),
           auditLog: [eyeLog, dedupLog, triageLog],
-          tags: triage.appliedOverrideId ? ['self-healing'] : [],
+          tags: [...(triage.appliedOverrideId ? ['self-healing'] : []), ...(draft.isDemo ? ['demo-sample'] : [])],
           createdAt: createdIso,
           updatedAt: createdIso,
           resolvedAt: null,
@@ -500,7 +506,7 @@ export function useCivicloop() {
           logs: [...current.logs, eyeLog, dedupLog, triageLog],
         }));
 
-        if (persistenceEnabledRef.current) {
+        if (persistenceEnabledRef.current && !draft.isDemo) {
           persist(persistTicketAction(ticket));
           persist(persistRoutingEventAction(ticket.routingHistory[0]));
           persist(persistAgentLogsAction([eyeLog, dedupLog, triageLog]));
@@ -527,7 +533,7 @@ export function useCivicloop() {
     (ticketId: string, reporter: PublicReporter, note: string | null, reporterLocation: GeoPoint | null) => {
       const now = clock();
       const master = storeRef.current.tickets.find((ticket) => ticket.id === ticketId);
-      if (!master || isInvolved(master, reporter.id)) return;
+      if (!master || isDemoTicket(master) || isInvolved(master, reporter.id)) return;
 
       const dedup = runDedupCluster({ category: master.category, location: master.location, allTickets: [master], now });
       const dedupLog = auditLogForDedup(makeId('support'), dedup, 0);
@@ -558,12 +564,12 @@ export function useCivicloop() {
     (ticketId: string, volunteer: VolunteerProfile) => {
       const nowIso = clock().toISOString();
       const ticket = storeRef.current.tickets.find((entry) => entry.id === ticketId);
-      if (!ticket || !ticket.bounty || ticket.bounty.status !== 'open') return;
+      if (!ticket || isDemoTicket(ticket) || !ticket.bounty || ticket.bounty.status !== 'open') return;
 
       const updated: CivicTicket = {
         ...ticket,
         status: 'Assigned',
-        assignedOfficer: volunteer.name,
+        assignedCoV: volunteer.name,
         bounty: {
           ...ticket.bounty,
           status: 'in_progress',
@@ -589,7 +595,7 @@ export function useCivicloop() {
     (ticketId: string, citizen: PublicReporter, amountInr: number) => {
       const now = clock();
       const ticket = storeRef.current.tickets.find((entry) => entry.id === ticketId);
-      if (!ticket || !ticket.bounty) return;
+      if (!ticket || isDemoTicket(ticket) || !ticket.bounty) return;
 
       const newPledge: BountyPledge = {
         id: makeId(`${ticketId}-pledge`),
@@ -624,7 +630,7 @@ export function useCivicloop() {
       const now = clock();
       const nowIso = now.toISOString();
       const ticket = storeRef.current.tickets.find((entry) => entry.id === ticketId);
-      if (!ticket) return null;
+      if (!ticket || isDemoTicket(ticket)) return null;
 
       const approved = input.decision === 'approved';
 
@@ -702,12 +708,12 @@ export function useCivicloop() {
   );
 
   const startWork = useCallback(
-    (ticketId: string, officerId: string) => {
+    (ticketId: string, covId: string) => {
       const nowIso = clock().toISOString();
       const ticket = storeRef.current.tickets.find((entry) => entry.id === ticketId);
-      if (!ticket) return;
+      if (!ticket || isDemoTicket(ticket)) return;
 
-      const updated: CivicTicket = { ...ticket, status: 'In Progress', assignedOfficer: officerId, updatedAt: nowIso };
+      const updated: CivicTicket = { ...ticket, status: 'In Progress', assignedCoV: covId, updatedAt: nowIso };
       setStore((current) => ({
         ...current,
         tickets: current.tickets.map((entry) => (entry.id === ticketId ? updated : entry)),
@@ -722,6 +728,7 @@ export function useCivicloop() {
     async (ticketId: string, toDepartment: Department, reason: string, cov: VolunteerProfile) => {
       const ticket = storeRef.current.tickets.find((entry) => entry.id === ticketId);
       if (!ticket) throw new Error('Ticket not found.');
+      if (isDemoTicket(ticket)) throw new Error('Demo sample reports are read-only.');
 
       const { log, overrides: latestOverrides } = await recordRerouteAction({
         ticketId,
@@ -748,7 +755,7 @@ export function useCivicloop() {
       const updated: CivicTicket = {
         ...ticket,
         assignedDepartment: toDepartment,
-        assignedOfficer: null,
+        assignedCoV: null,
         status: 'Assigned',
         triage: ticket.triage ? { ...ticket.triage, department: toDepartment } : ticket.triage,
         routingHistory: [...ticket.routingHistory, routingEvent],
@@ -774,6 +781,7 @@ export function useCivicloop() {
     async (ticketId: string, afterPhoto: EvidencePhoto, cov: VolunteerProfile): Promise<CivicProofVerification> => {
       const ticket = storeRef.current.tickets.find((entry) => entry.id === ticketId);
       if (!ticket) throw new Error('Ticket not found.');
+      if (isDemoTicket(ticket)) throw new Error('Demo sample reports are read-only.');
       const previousStatus = ticket.status;
 
       setStore((current) => ({
@@ -848,6 +856,7 @@ export function useCivicloop() {
     try {
       const state = await resetDemoAction();
       persistenceEnabledRef.current = state.persistenceEnabled;
+      setPersistenceEnabled(state.persistenceEnabled);
       setStore({ tickets: state.tickets, logs: state.logs });
       setOverrides(state.overrides);
       setLiveAi(state.liveAi);
@@ -865,6 +874,7 @@ export function useCivicloop() {
     overrides,
     volunteers,
     liveAi,
+    persistenceEnabled,
     nowMs,
     clockOffsetHours,
     submitIntake,
