@@ -261,6 +261,7 @@ function MapCard({
   selectedTicketId,
   onSelectTicket,
   userLocation,
+  onLocateMe,
   title = 'Live civic map',
   heightClass = 'h-[440px]',
   depots,
@@ -269,6 +270,7 @@ function MapCard({
   selectedTicketId: string | null;
   onSelectTicket: (id: string) => void;
   userLocation: GeoPoint | null;
+  onLocateMe?: (point: GeoPoint) => void;
   title?: string;
   heightClass?: string;
   depots?: ToolDepot[];
@@ -296,6 +298,7 @@ function MapCard({
         selectedTicketId={selectedTicketId}
         onSelectTicket={onSelectTicket}
         userLocation={userLocation}
+        onLocateMe={onLocateMe}
         containerClassName={heightClass}
         depots={depots}
       />
@@ -688,6 +691,7 @@ export default function Home() {
                 selectedTicketId={selectedTicketId}
                 onSelectTicket={setSelectedTicketId}
                 userLocation={userLocation}
+                onLocateMe={setUserLocation}
                 depots={SEED_TOOL_DEPOTS}
                 heightClass="h-[600px]"
               />
@@ -736,6 +740,7 @@ export default function Home() {
                   selectedTicketId={selectedTicketId}
                   onSelectTicket={setSelectedTicketId}
                   userLocation={userLocation}
+                onLocateMe={setUserLocation}
                   depots={SEED_TOOL_DEPOTS}
                   heightClass="h-[600px]"
                 />
@@ -780,6 +785,7 @@ export default function Home() {
                 selectedTicketId={selectedTicketId}
                 onSelectTicket={setSelectedTicketId}
                 userLocation={userLocation}
+                onLocateMe={setUserLocation}
                 depots={SEED_TOOL_DEPOTS}
                 heightClass="h-[560px]"
               />
@@ -806,6 +812,7 @@ export default function Home() {
               selectedTicketId={selectedTicketId}
               onSelectTicket={setSelectedTicketId}
               userLocation={userLocation}
+                onLocateMe={setUserLocation}
               depots={SEED_TOOL_DEPOTS}
               title="Bounty missions near you"
               heightClass="h-[600px]"
@@ -833,6 +840,7 @@ export default function Home() {
                 selectedTicketId={selectedTicketId}
                 onSelectTicket={setSelectedTicketId}
                 userLocation={userLocation}
+                onLocateMe={setUserLocation}
                 title={`${authority.department} issues`}
                 heightClass="h-[360px]"
               />
@@ -843,7 +851,13 @@ export default function Home() {
         {sessionUser?.role === 'admin' && (
           <>
             <AIBrainDashboard tickets={tickets} overrides={overrides} logs={logs} liveAi={liveAi} />
-            <MapCard tickets={tickets} selectedTicketId={selectedTicketId} onSelectTicket={setSelectedTicketId} userLocation={userLocation} />
+            <MapCard
+              tickets={tickets}
+              selectedTicketId={selectedTicketId}
+              onSelectTicket={setSelectedTicketId}
+              userLocation={userLocation}
+              onLocateMe={setUserLocation}
+            />
           </>
         )}
       </main>

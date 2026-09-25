@@ -43,6 +43,13 @@ export interface LeafletMapProps {
   pickedLocation?: GeoPoint | null;
   onPickLocation?: (point: GeoPoint) => void;
   userLocation?: GeoPoint | null;
+  /**
+   * Shows a "Use my location" button on ordinary (non-picker) maps, so a
+   * viewer can centre the map and light up their own blue dot without going
+   * through onboarding or the report-intake picker. Ignored when
+   * `onPickLocation` is set — that mode has its own locate button.
+   */
+  onLocateMe?: (point: GeoPoint) => void;
   className?: string;
   /** Free CSR-funded materials pickup points, shown behind the "Show Tool Depots" toggle. */
   depots?: ToolDepot[];
@@ -285,6 +292,7 @@ export default function LeafletMapInner({
   pickedLocation = null,
   onPickLocation,
   userLocation = null,
+  onLocateMe,
   className,
   depots = [],
 }: LeafletMapProps) {
@@ -368,6 +376,8 @@ export default function LeafletMapInner({
           </Popup>
         </Marker>
       ))}
+
+      {!pickerEnabled && onLocateMe && <LocateControl onPick={onLocateMe} />}
 
       {userLocation && (
         <>
