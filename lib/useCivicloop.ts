@@ -29,20 +29,30 @@ import {
   type RoutingOverride,
   type Severity,
   type TicketStatus,
+  type TicketSupporter,
 } from '@/types/civic';
-import { SEED_DATA, SEED_EPOCH, buildSeedData } from '@/lib/seedData';
+import { SEED_DATA, SEED_EPOCH } from '@/lib/seedData';
 import { haversineMeters } from '@/lib/haversine';
 import { auditLogForDedup, runDedupCluster } from '@/lib/agents/dedupClusterAgent';
 import { auditLogsForTick, markSlaResolved, startSlaClock, tickSla } from '@/lib/agents/slaSentinelAgent';
 import {
   analyzeIntakeAction,
-  getAgentStatusAction,
+  loadStateAction,
+  persistAgentLogsAction,
+  persistRoutingEventAction,
+  persistSupporterAction,
+  persistTicketAction,
   recordRerouteAction,
-  resetRoutingGraphAction,
+  resetDemoAction,
   triageAction,
   verifyProofAction,
 } from '@/app/actions';
 import type { CitizenConfirmationInput } from '@/components/CitizenDashboard';
+
+/** Fire-and-forget durability write — never blocks the UI, never throws into a caller. */
+function persist(promise: Promise<unknown>): void {
+  promise.catch((error) => console.error('Civicloop: persistence write failed', error));
+}
 
 const HOUR_MS = 3_600_000;
 const SENTINEL_INTERVAL_MS = 15_000;
@@ -111,7 +121,7 @@ function attachSupporter(
   escalatedSeverity: Severity | null,
   dedupLog: AgentAuditLog,
   now: Date,
-): { ticket: CivicTicket; logs: AgentAuditLog[] } {
+): { ticket: CivicTicket; logs: AgentAuditLog[]; newSupporter: TicketSupporter } {
   const nowIso = now.toISOString();
   const logs: AgentAuditLog[] = [dedupLog];
   let severity = master.severity;
@@ -146,34 +156,29 @@ function attachSupporter(
     );
   }
 
+  const newSupporter: TicketSupporter = {
+    id: makeId(`${master.id}-sup`),
+    ticketId: master.id,
+    reporter: supporter.reporter,
+    joinedAt: nowIso,
+    distanceMeters: supporter.distanceMeters,
+    note: supporter.note,
+    photos: supporter.photos,
+  };
+
   return {
     ticket: {
       ...master,
       severity,
       sla,
-      supporters: [
-        ...master.supporters,
-        {
-          id: makeId(`${master.id}-sup`),
-          ticketId: master.id,
-          reporter: supporter.reporter,
-          joinedAt: nowIso,
-          distanceMeters: supporter.distanceMeters,
-          note: supporter.note,
-          photos: supporter.photos,
-        },
-      ],
+      supporters: [...master.supporters, newSupporter],
       impactCount: decision.impactCount,
       updatedAt: nowIso,
       auditLog: [...master.auditLog, ...logs],
     },
     logs,
+    newSupporter,
   };
-}
-
-function freshStore(now: Date): Store {
-  const seed = buildSeedData(now);
-  return { tickets: seed.tickets, logs: seed.agentLogs };
 }
 
 export function useCivicloop() {
@@ -185,6 +190,7 @@ export function useCivicloop() {
 
   const storeRef = useRef(store);
   const offsetRef = useRef(0);
+  const persistenceEnabledRef = useRef(false);
 
   useEffect(() => {
     storeRef.current = store;
@@ -195,74 +201,79 @@ export function useCivicloop() {
   const runSentinel = useCallback(() => {
     const now = clock();
     setNowMs(now.getTime());
-    setStore((current) => {
-      const newLogs: AgentAuditLog[] = [];
-      let changed = false;
 
-      const tickets = current.tickets.map((ticket) => {
-        if (!ticket.isMaster || CLOSED_STATUSES.has(ticket.status) || ticket.sla.metAt) return ticket;
-        const result = tickSla(ticket.sla, {
-          referenceCode: ticket.referenceCode,
-          department: ticket.assignedDepartment,
-          impactCount: ticket.impactCount,
-          now,
-        });
-        const logs = auditLogsForTick(ticket.id, result).map((log) => ({
-          ...log,
-          message: `${ticket.referenceCode} · ${log.message}`,
-          createdAt: now.toISOString(),
-        }));
-        if (result.state.percentElapsed === ticket.sla.percentElapsed && logs.length === 0) return ticket;
+    const current = storeRef.current;
+    const newLogs: AgentAuditLog[] = [];
+    const changedTickets: CivicTicket[] = [];
 
-        changed = true;
-        newLogs.push(...logs);
-        return {
-          ...ticket,
-          sla: result.state,
-          routingHistory: result.escalationAdvanced
-            ? [
-                ...ticket.routingHistory,
-                {
-                  id: makeId(`${ticket.id}-route`),
-                  ticketId: ticket.id,
-                  fromDepartment: ticket.assignedDepartment,
-                  toDepartment: ticket.assignedDepartment,
-                  trigger: 'escalation' as const,
-                  reason: `SLA breached. Escalated to ${result.state.escalatedTo} with an auto-briefing.`,
-                  actor: 'SlaSentinel agent',
-                  createdAt: now.toISOString(),
-                },
-              ]
-            : ticket.routingHistory,
-          auditLog: logs.length ? [...ticket.auditLog, ...logs] : ticket.auditLog,
-        };
+    const tickets = current.tickets.map((ticket) => {
+      if (!ticket.isMaster || CLOSED_STATUSES.has(ticket.status) || ticket.sla.metAt) return ticket;
+      const result = tickSla(ticket.sla, {
+        referenceCode: ticket.referenceCode,
+        department: ticket.assignedDepartment,
+        impactCount: ticket.impactCount,
+        now,
       });
+      const logs = auditLogsForTick(ticket.id, result).map((log) => ({
+        ...log,
+        message: `${ticket.referenceCode} · ${log.message}`,
+        createdAt: now.toISOString(),
+      }));
+      if (result.state.percentElapsed === ticket.sla.percentElapsed && logs.length === 0) return ticket;
 
-      if (!changed) return current;
-      return { tickets, logs: newLogs.length ? [...current.logs, ...newLogs] : current.logs };
+      newLogs.push(...logs);
+      const updated: CivicTicket = {
+        ...ticket,
+        sla: result.state,
+        routingHistory: result.escalationAdvanced
+          ? [
+              ...ticket.routingHistory,
+              {
+                id: makeId(`${ticket.id}-route`),
+                ticketId: ticket.id,
+                fromDepartment: ticket.assignedDepartment,
+                toDepartment: ticket.assignedDepartment,
+                trigger: 'escalation' as const,
+                reason: `SLA breached. Escalated to ${result.state.escalatedTo} with an auto-briefing.`,
+                actor: 'SlaSentinel agent',
+                createdAt: now.toISOString(),
+              },
+            ]
+          : ticket.routingHistory,
+        auditLog: logs.length ? [...ticket.auditLog, ...logs] : ticket.auditLog,
+      };
+      changedTickets.push(updated);
+      return updated;
     });
+
+    if (changedTickets.length === 0 && newLogs.length === 0) return;
+    setStore({ tickets, logs: newLogs.length ? [...current.logs, ...newLogs] : current.logs });
+
+    if (persistenceEnabledRef.current) {
+      changedTickets.forEach((ticket) => persist(persistTicketAction(ticket)));
+      if (newLogs.length) persist(persistAgentLogsAction(newLogs));
+    }
   }, [clock]);
 
   useEffect(() => {
-    // Re-anchor the seed to the real clock after hydration (SSR renders the frozen SEED_EPOCH copy).
-    const boot = window.setTimeout(() => {
-      setStore(freshStore(clock()));
-      runSentinel();
-    }, 0);
-    const interval = window.setInterval(runSentinel, SENTINEL_INTERVAL_MS);
-
-    getAgentStatusAction()
-      .then((status) => {
-        setLiveAi(status.liveAi);
-        setOverrides(status.overrides);
+    let cancelled = false;
+    loadStateAction()
+      .then((state) => {
+        if (cancelled) return;
+        persistenceEnabledRef.current = state.persistenceEnabled;
+        setStore({ tickets: state.tickets, logs: state.logs });
+        setOverrides(state.overrides);
+        setLiveAi(state.liveAi);
+        setNowMs(Date.now());
       })
-      .catch(() => setLiveAi(false));
+      .catch((error) => console.error('Civicloop: failed to load state', error));
 
+    const interval = window.setInterval(runSentinel, SENTINEL_INTERVAL_MS);
     return () => {
-      window.clearTimeout(boot);
+      cancelled = true;
       window.clearInterval(interval);
     };
-  }, [clock, runSentinel]);
+  }, [runSentinel]);
 
   const submitIntake = useCallback(
     async (draft: IntakeDraft): Promise<IntakeResult> => {
@@ -333,27 +344,30 @@ export function useCivicloop() {
             resolvedAt: null,
           };
 
-          setStore((current) => {
-            const master = current.tickets.find((ticket) => ticket.id === masterId);
-            if (!master) return current;
-            const merged = attachSupporter(
-              master,
-              {
-                reporter: draft.reporter,
-                note: text || null,
-                photos: draft.photos,
-                distanceMeters: dedup.decision.candidates[0]?.distanceMeters ?? 0,
-              },
-              dedup.decision,
-              dedup.escalatedSeverity,
-              dedupLog,
-              now,
-            );
-            return {
-              tickets: [...current.tickets.map((ticket) => (ticket.id === masterId ? merged.ticket : ticket)), duplicateRecord],
-              logs: [...current.logs, eyeLog, ...merged.logs],
-            };
-          });
+          const master = storeRef.current.tickets.find((ticket) => ticket.id === masterId);
+          if (!master) {
+            setStore((current) => ({ ...current, logs: [...current.logs, eyeLog, dedupLog] }));
+            return { success: false, message: 'That master ticket disappeared mid-submission — please try again.' };
+          }
+          const merged = attachSupporter(
+            master,
+            { reporter: draft.reporter, note: text || null, photos: draft.photos, distanceMeters: dedup.decision.candidates[0]?.distanceMeters ?? 0 },
+            dedup.decision,
+            dedup.escalatedSeverity,
+            dedupLog,
+            now,
+          );
+          setStore((current) => ({
+            tickets: [...current.tickets.map((ticket) => (ticket.id === masterId ? merged.ticket : ticket)), duplicateRecord],
+            logs: [...current.logs, eyeLog, ...merged.logs],
+          }));
+
+          if (persistenceEnabledRef.current) {
+            persist(persistTicketAction(duplicateRecord));
+            persist(persistTicketAction(merged.ticket));
+            persist(persistSupporterAction(merged.newSupporter));
+            persist(persistAgentLogsAction([eyeLog, ...merged.logs]));
+          }
 
           return {
             success: true,
@@ -427,6 +441,12 @@ export function useCivicloop() {
           logs: [...current.logs, eyeLog, dedupLog, triageLog],
         }));
 
+        if (persistenceEnabledRef.current) {
+          persist(persistTicketAction(ticket));
+          persist(persistRoutingEventAction(ticket.routingHistory[0]));
+          persist(persistAgentLogsAction([eyeLog, dedupLog, triageLog]));
+        }
+
         return {
           success: true,
           ticketId,
@@ -447,29 +467,29 @@ export function useCivicloop() {
   const supportTicket = useCallback(
     (ticketId: string, reporter: PublicReporter, note: string | null, reporterLocation: GeoPoint | null) => {
       const now = clock();
-      setStore((current) => {
-        const master = current.tickets.find((ticket) => ticket.id === ticketId);
-        if (!master || isInvolved(master, reporter.id)) return current;
-        const dedup = runDedupCluster({ category: master.category, location: master.location, allTickets: [master], now });
-        const dedupLog = auditLogForDedup(makeId('support'), dedup, 0);
-        const merged = attachSupporter(
-          master,
-          {
-            reporter,
-            note,
-            photos: [],
-            distanceMeters: reporterLocation ? Math.round(haversineMeters(reporterLocation, master.location)) : 0,
-          },
-          dedup.decision,
-          dedup.escalatedSeverity,
-          dedupLog,
-          now,
-        );
-        return {
-          tickets: current.tickets.map((ticket) => (ticket.id === ticketId ? merged.ticket : ticket)),
-          logs: [...current.logs, ...merged.logs],
-        };
-      });
+      const master = storeRef.current.tickets.find((ticket) => ticket.id === ticketId);
+      if (!master || isInvolved(master, reporter.id)) return;
+
+      const dedup = runDedupCluster({ category: master.category, location: master.location, allTickets: [master], now });
+      const dedupLog = auditLogForDedup(makeId('support'), dedup, 0);
+      const merged = attachSupporter(
+        master,
+        { reporter, note, photos: [], distanceMeters: reporterLocation ? Math.round(haversineMeters(reporterLocation, master.location)) : 0 },
+        dedup.decision,
+        dedup.escalatedSeverity,
+        dedupLog,
+        now,
+      );
+      setStore((current) => ({
+        tickets: current.tickets.map((ticket) => (ticket.id === ticketId ? merged.ticket : ticket)),
+        logs: [...current.logs, ...merged.logs],
+      }));
+
+      if (persistenceEnabledRef.current) {
+        persist(persistTicketAction(merged.ticket));
+        persist(persistSupporterAction(merged.newSupporter));
+        persist(persistAgentLogsAction(merged.logs));
+      }
     },
     [clock],
   );
@@ -478,39 +498,43 @@ export function useCivicloop() {
     (ticketId: string, input: CitizenConfirmationInput, confirmedBy: string) => {
       const now = clock();
       const nowIso = now.toISOString();
-      setStore((current) => {
-        const ticket = current.tickets.find((entry) => entry.id === ticketId);
-        if (!ticket) return current;
-        const approved = input.decision === 'approved';
-        const log = agentLog(
-          ticketId,
-          'CivicProof',
-          approved ? 'citizen.approve' : 'citizen.reject',
-          approved
-            ? `${ticket.referenceCode} closed — citizen confirmed the fix${input.rating ? ` (${input.rating}★)` : ''}.`
-            : `${ticket.referenceCode} reopened — citizen says it is not fixed. SLA clock resumed.`,
-          approved ? 'success' : 'warning',
-          { decision: input.decision, rating: input.rating },
-          now,
-        );
-        const reopenedSla = tickSla(
-          { ...ticket.sla, metAt: null },
-          { referenceCode: ticket.referenceCode, department: ticket.assignedDepartment, impactCount: ticket.impactCount, now },
-        ).state;
-        const updated: CivicTicket = {
-          ...ticket,
-          status: approved ? 'Resolved' : 'Reopened',
-          resolvedAt: approved ? nowIso : null,
-          sla: approved ? (ticket.sla.metAt ? ticket.sla : markSlaResolved(ticket.sla, nowIso)) : reopenedSla,
-          citizenConfirmation: { ...input, confirmedBy, confirmedAt: nowIso },
-          updatedAt: nowIso,
-          auditLog: [...ticket.auditLog, log],
-        };
-        return {
-          tickets: current.tickets.map((entry) => (entry.id === ticketId ? updated : entry)),
-          logs: [...current.logs, log],
-        };
-      });
+      const ticket = storeRef.current.tickets.find((entry) => entry.id === ticketId);
+      if (!ticket) return;
+
+      const approved = input.decision === 'approved';
+      const log = agentLog(
+        ticketId,
+        'CivicProof',
+        approved ? 'citizen.approve' : 'citizen.reject',
+        approved
+          ? `${ticket.referenceCode} closed — citizen confirmed the fix${input.rating ? ` (${input.rating}★)` : ''}.`
+          : `${ticket.referenceCode} reopened — citizen says it is not fixed. SLA clock resumed.`,
+        approved ? 'success' : 'warning',
+        { decision: input.decision, rating: input.rating },
+        now,
+      );
+      const reopenedSla = tickSla(
+        { ...ticket.sla, metAt: null },
+        { referenceCode: ticket.referenceCode, department: ticket.assignedDepartment, impactCount: ticket.impactCount, now },
+      ).state;
+      const updated: CivicTicket = {
+        ...ticket,
+        status: approved ? 'Resolved' : 'Reopened',
+        resolvedAt: approved ? nowIso : null,
+        sla: approved ? (ticket.sla.metAt ? ticket.sla : markSlaResolved(ticket.sla, nowIso)) : reopenedSla,
+        citizenConfirmation: { ...input, confirmedBy, confirmedAt: nowIso },
+        updatedAt: nowIso,
+        auditLog: [...ticket.auditLog, log],
+      };
+      setStore((current) => ({
+        tickets: current.tickets.map((entry) => (entry.id === ticketId ? updated : entry)),
+        logs: [...current.logs, log],
+      }));
+
+      if (persistenceEnabledRef.current) {
+        persist(persistTicketAction(updated));
+        persist(persistAgentLogsAction([log]));
+      }
     },
     [clock],
   );
@@ -518,12 +542,16 @@ export function useCivicloop() {
   const startWork = useCallback(
     (ticketId: string, officerId: string) => {
       const nowIso = clock().toISOString();
+      const ticket = storeRef.current.tickets.find((entry) => entry.id === ticketId);
+      if (!ticket) return;
+
+      const updated: CivicTicket = { ...ticket, status: 'In Progress', assignedOfficer: officerId, updatedAt: nowIso };
       setStore((current) => ({
         ...current,
-        tickets: current.tickets.map((ticket) =>
-          ticket.id === ticketId ? { ...ticket, status: 'In Progress', assignedOfficer: officerId, updatedAt: nowIso } : ticket,
-        ),
+        tickets: current.tickets.map((entry) => (entry.id === ticketId ? updated : entry)),
       }));
+
+      if (persistenceEnabledRef.current) persist(persistTicketAction(updated));
     },
     [clock],
   );
@@ -545,36 +573,37 @@ export function useCivicloop() {
       setOverrides(latestOverrides);
 
       const nowIso = clock().toISOString();
+      const routingEvent = {
+        id: makeId(`${ticketId}-route`),
+        ticketId,
+        fromDepartment: ticket.assignedDepartment,
+        toDepartment,
+        trigger: 'authority-reroute' as const,
+        reason,
+        actor: `${authority.name} (${authority.officialId})`,
+        createdAt: nowIso,
+      };
+      const updated: CivicTicket = {
+        ...ticket,
+        assignedDepartment: toDepartment,
+        assignedOfficer: null,
+        status: 'Assigned',
+        triage: ticket.triage ? { ...ticket.triage, department: toDepartment } : ticket.triage,
+        routingHistory: [...ticket.routingHistory, routingEvent],
+        tags: Array.from(new Set([...ticket.tags, 'rerouted'])),
+        updatedAt: nowIso,
+        auditLog: [...ticket.auditLog, log],
+      };
       setStore((current) => ({
-        tickets: current.tickets.map((entry) =>
-          entry.id !== ticketId
-            ? entry
-            : {
-                ...entry,
-                assignedDepartment: toDepartment,
-                assignedOfficer: null,
-                status: 'Assigned',
-                triage: entry.triage ? { ...entry.triage, department: toDepartment } : entry.triage,
-                routingHistory: [
-                  ...entry.routingHistory,
-                  {
-                    id: makeId(`${ticketId}-route`),
-                    ticketId,
-                    fromDepartment: entry.assignedDepartment,
-                    toDepartment,
-                    trigger: 'authority-reroute',
-                    reason,
-                    actor: `${authority.name} (${authority.officialId})`,
-                    createdAt: nowIso,
-                  },
-                ],
-                tags: Array.from(new Set([...entry.tags, 'rerouted'])),
-                updatedAt: nowIso,
-                auditLog: [...entry.auditLog, log],
-              },
-        ),
+        tickets: current.tickets.map((entry) => (entry.id === ticketId ? updated : entry)),
         logs: [...current.logs, log],
       }));
+
+      if (persistenceEnabledRef.current) {
+        persist(persistTicketAction(updated));
+        persist(persistRoutingEventAction(routingEvent));
+        persist(persistAgentLogsAction([log]));
+      }
     },
     [clock],
   );
@@ -600,24 +629,28 @@ export function useCivicloop() {
           submittedBy: authority.officialId,
         });
         const nowIso = clock().toISOString();
+        // Rejected proof keeps the ticket open; verified or human-review proof hands it to the citizen.
+        const handedToCitizen = verification.verdict !== 'rejected';
+        const updated: CivicTicket = {
+          ...ticket,
+          status: handedToCitizen ? 'Pending Citizen Confirmation' : 'In Progress',
+          afterPhotos: [...ticket.afterPhotos, afterPhoto],
+          proof: verification,
+          sla: handedToCitizen && !ticket.sla.metAt ? markSlaResolved(ticket.sla, nowIso) : ticket.sla,
+          tags: verification.verdict === 'rejected' ? Array.from(new Set([...ticket.tags, 'proof-rejected'])) : ticket.tags,
+          updatedAt: nowIso,
+          auditLog: [...ticket.auditLog, log],
+        };
 
         setStore((current) => ({
-          tickets: current.tickets.map((entry) => {
-            if (entry.id !== ticketId) return entry;
-            // Rejected proof keeps the ticket open; verified or human-review proof hands it to the citizen.
-            const handedToCitizen = verification.verdict !== 'rejected';
-            return {
-              ...entry,
-              status: handedToCitizen ? 'Pending Citizen Confirmation' : 'In Progress',
-              proof: verification,
-              sla: handedToCitizen && !entry.sla.metAt ? markSlaResolved(entry.sla, nowIso) : entry.sla,
-              tags: verification.verdict === 'rejected' ? Array.from(new Set([...entry.tags, 'proof-rejected'])) : entry.tags,
-              updatedAt: nowIso,
-              auditLog: [...entry.auditLog, log],
-            };
-          }),
+          tickets: current.tickets.map((entry) => (entry.id === ticketId ? updated : entry)),
           logs: [...current.logs, log],
         }));
+
+        if (persistenceEnabledRef.current) {
+          persist(persistTicketAction(updated));
+          persist(persistAgentLogsAction([log]));
+        }
         return verification;
       } catch (error) {
         setStore((current) => ({
@@ -646,13 +679,18 @@ export function useCivicloop() {
   const resetDemo = useCallback(async () => {
     offsetRef.current = 0;
     setClockOffsetHours(0);
-    setStore(freshStore(new Date()));
-    setNowMs(Date.now());
     try {
-      setOverrides(await resetRoutingGraphAction());
-    } catch {
+      const state = await resetDemoAction();
+      persistenceEnabledRef.current = state.persistenceEnabled;
+      setStore({ tickets: state.tickets, logs: state.logs });
+      setOverrides(state.overrides);
+      setLiveAi(state.liveAi);
+    } catch (error) {
+      console.error('Civicloop: reset failed', error);
+      setStore({ tickets: SEED_DATA.tickets, logs: SEED_DATA.agentLogs });
       setOverrides(SEED_DATA.routingOverrides);
     }
+    setNowMs(Date.now());
   }, []);
 
   return {
