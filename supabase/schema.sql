@@ -17,8 +17,18 @@ create extension if not exists "postgis";    -- geography(Point, 4326) + ST_DWit
 -- -------------------------------------------------------------------------
 
 do $$ begin
-  create type civic_role as enum ('citizen', 'authority', 'admin');
-exception when duplicate_object then null; end $$;
+  create type civic_role as enum ('citizen', 'volunteer', 'admin');
+exception when duplicate_object then
+  if exists (
+    select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid
+    where t.typname = 'civic_role' and e.enumlabel = 'authority'
+  ) and not exists (
+    select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid
+    where t.typname = 'civic_role' and e.enumlabel = 'volunteer'
+  ) then
+    alter type civic_role rename value 'authority' to 'volunteer';
+  end if;
+end $$;
 
 do $$ begin
   create type civic_department as enum (
@@ -83,14 +93,24 @@ exception when duplicate_object then null; end $$;
 do $$ begin
   create type civic_routing_trigger as enum (
     'initial-triage',
-    'authority-reroute',
+    'cov-reroute',
     'self-healing',
     'escalation'
   );
-exception when duplicate_object then null; end $$;
+exception when duplicate_object then
+  if exists (
+    select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid
+    where t.typname = 'civic_routing_trigger' and e.enumlabel = 'authority-reroute'
+  ) and not exists (
+    select 1 from pg_enum e join pg_type t on t.oid = e.enumtypid
+    where t.typname = 'civic_routing_trigger' and e.enumlabel = 'cov-reroute'
+  ) then
+    alter type civic_routing_trigger rename value 'authority-reroute' to 'cov-reroute';
+  end if;
+end $$;
 
 -- -------------------------------------------------------------------------
--- profiles — citizens, authorities and admins
+-- profiles — citizens, CoVs and admins
 --
 -- `phone` is the only PII stored. Nothing public ever reads this column; the
 -- API surfaces `display_name` and `masked_phone` instead.
@@ -106,16 +126,33 @@ create table if not exists public.profiles (
   verified       boolean not null default false,
   ward           text,
   zone           text,
-  official_id    text,
+  cov_id         text,
   department     civic_department,
   designation    text,
   created_at     timestamptz not null default now()
 );
 
+do $$ begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'official_id'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'cov_id'
+  ) then
+    alter table public.profiles rename column official_id to cov_id;
+  end if;
+
+  if to_regclass('public.profiles_official_id_key') is not null
+     and to_regclass('public.profiles_cov_id_key') is null then
+    alter index public.profiles_official_id_key rename to profiles_cov_id_key;
+  end if;
+end $$;
+
 create unique index if not exists profiles_phone_key on public.profiles (phone)
   where phone is not null;
-create unique index if not exists profiles_official_id_key on public.profiles (official_id)
-  where official_id is not null;
+create unique index if not exists profiles_cov_id_key on public.profiles (cov_id)
+  where cov_id is not null;
 
 -- -------------------------------------------------------------------------
 -- tickets — the master civic issue table
@@ -251,7 +288,7 @@ create trigger ticket_supporters_impact_sync
 -- -------------------------------------------------------------------------
 -- routing_overrides — the self-healing routing graph
 --
--- Every time an authority flags "Wrong Department" the correction lands here.
+-- Every time a CoV flags "Wrong Department" the correction lands here.
 -- Agent 3 reads this table before it routes, so the next complaint of the same
 -- category in the same zone goes to the right desk without a human touching it.
 -- -------------------------------------------------------------------------
@@ -471,7 +508,7 @@ as $$
   limit 1;
 $$;
 
--- Records an authority's "Wrong Department" correction and strengthens the
+-- Records a CoV's "Wrong Department" correction and strengthens the
 -- learned rule. Weight grows with corroboration and saturates just below 1.0.
 create or replace function public.record_routing_correction(
   p_category        civic_category,
@@ -577,7 +614,7 @@ create or replace view public.brain_telemetry as
 -- =========================================================================
 -- Row Level Security
 --
--- Citizens read the public feed and write their own reports. Authorities work
+-- Citizens read the public feed and write their own reports. CoVs work
 -- their own department's queue. Admins see everything. PII in `profiles.phone`
 -- is never exposed by any of these policies.
 -- =========================================================================
@@ -625,10 +662,11 @@ create policy tickets_citizen_insert on public.tickets
   for insert with check (reporter_id = auth.uid());
 
 drop policy if exists tickets_authority_update on public.tickets;
-create policy tickets_authority_update on public.tickets
+drop policy if exists tickets_cov_update on public.tickets;
+create policy tickets_cov_update on public.tickets
   for update using (
     public.current_role_is('admin')
-    or (public.current_role_is('authority') and assigned_department = public.current_department())
+    or (public.current_role_is('volunteer') and assigned_department = public.current_department())
   );
 
 drop policy if exists supporters_read on public.ticket_supporters;
@@ -642,7 +680,7 @@ create policy supporters_insert on public.ticket_supporters
 drop policy if exists routing_overrides_read on public.routing_overrides;
 create policy routing_overrides_read on public.routing_overrides
   for select using (
-    public.current_role_is('admin') or public.current_role_is('authority')
+    public.current_role_is('admin') or public.current_role_is('volunteer')
   );
 
 drop policy if exists routing_events_read on public.routing_events;
@@ -652,5 +690,5 @@ create policy routing_events_read on public.routing_events
 drop policy if exists agent_logs_read on public.agent_audit_logs;
 create policy agent_logs_read on public.agent_audit_logs
   for select using (
-    public.current_role_is('admin') or public.current_role_is('authority')
+    public.current_role_is('admin') or public.current_role_is('volunteer')
   );

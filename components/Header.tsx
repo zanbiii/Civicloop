@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, Building, Globe, HardHat, LogOut, Phone, Rocket, ShieldCheck, Siren, User, X } from 'lucide-react';
+import { Bot, Globe, HardHat, LogOut, Phone, Rocket, ShieldCheck, Siren, User, X } from 'lucide-react';
 import type { SessionUser, UserRole } from '@/types/civic';
 import { cn } from '@/lib/cn';
 
@@ -11,24 +11,21 @@ const LANGUAGE_LABELS: Record<AppLanguage, string> = { en: 'English', kn: 'ಕ�
 
 const ROLE_META: Record<SessionUser['role'], { label: string; icon: typeof User }> = {
   citizen: { label: 'Citizen', icon: User },
-  authority: { label: 'Authority', icon: Building },
   volunteer: { label: 'CoV', icon: HardHat },
   admin: { label: 'Admin', icon: Bot },
 };
 
-/** Roles offered in the demo-mode quick-switcher — Authority stays reachable via real sign-in, just not this shortcut. */
+/** Roles offered in the demo-mode quick-switcher. */
 const QUICK_SWITCH_ROLES: UserRole[] = ['citizen', 'volunteer', 'admin'];
 
 function sessionDisplayName(user: SessionUser): string {
   if (user.role === 'citizen') return user.profile.displayName;
-  if (user.role === 'authority') return user.profile.name;
   if (user.role === 'volunteer') return user.profile.name;
   return user.profile.name;
 }
 
 function sessionSubline(user: SessionUser): string {
   if (user.role === 'citizen') return user.profile.maskedPhone;
-  if (user.role === 'authority') return `${user.profile.department} · ${user.profile.zone}`;
   if (user.role === 'volunteer') return `${user.profile.badge} · ${user.profile.zone}`;
   return 'Super-admin clearance';
 }
@@ -149,7 +146,7 @@ export default function Header({
 
             <span
               className="hidden items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700 md:flex"
-              title="Personal phone numbers and identities are scrubbed from public view — only issue location and category are shared with authorities."
+              title="Personal phone numbers and identities are scrubbed from public view — only issue location and category are shared with CoVs."
             >
               <ShieldCheck className="h-3.5 w-3.5" /> Privacy-first
             </span>

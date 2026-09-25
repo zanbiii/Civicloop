@@ -2,7 +2,7 @@
  * Agent 5 — CivicProof Verification & Closure.
  *
  * Signature feature: no complaint can be closed without verified proof. When
- * an authority submits an "after" photo, this agent compares it against the
+ * a CoV submits an "after" photo, this agent compares it against the
  * original "before" photo with Mistral Vision to confirm the same landmarks
  * and a genuine repair, and rejects mismatched or fraudulent submissions.
  * Offline, it never fabricates a "verified" verdict — it holds the ticket for
@@ -13,7 +13,7 @@ import type { AgentAuditLog, CivicProofVerification, EvidencePhoto } from '@/typ
 import { VISION_MODEL, callVisionJson } from '@/lib/mistralClient';
 
 const SYSTEM_PROMPT = `You are CivicProof, the before/after closure-verification agent for Civicloop.
-You are shown a BEFORE photo of a civic issue and an AFTER photo an authority submitted as proof of repair.
+You are shown a BEFORE photo of a civic issue and an AFTER photo a CoV submitted as proof of repair.
 Decide whether they show the SAME physical location (matching landmarks) AND whether the defect is genuinely fixed.
 Respond with ONLY JSON of this exact shape, no prose, no markdown fences:
 {
@@ -23,7 +23,7 @@ Respond with ONLY JSON of this exact shape, no prose, no markdown fences:
   "repairEvidence": <0-100, confidence the defect is actually gone>,
   "landmarksMatched": ["<fixed landmark>", "..."],
   "discrepancies": ["<mismatch or concern>", "..."],
-  "summary": "<two sentences for the citizen and the authority>"
+  "summary": "<two sentences for the citizen and the CoV>"
 }`;
 
 export interface CivicProofInput {
@@ -61,7 +61,7 @@ function mockVerification(input: CivicProofInput, beforePhoto: EvidencePhoto): C
     discrepancies: geoMatches
       ? ['Offline mode cannot visually confirm the repair — flagged for manual review.']
       : ['No live vision model available and the after-photo has no matching geotag — flagged for manual review.'],
-    summary: 'The vision model was unavailable, so this proof was held for manual authority/citizen review instead of being auto-verified.',
+    summary: 'The vision model was unavailable, so this proof was held for manual CoV/citizen review instead of being auto-verified.',
     beforePhotoId: beforePhoto.id,
     afterPhotoId: input.afterPhoto.id,
     submittedBy: input.submittedBy,

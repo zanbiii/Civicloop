@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    // Seed evidence photos come from Unsplash; authority-submitted proof lands
+    // Seed evidence photos come from Unsplash; CoV-submitted proof lands
     // on Cloudinary when it is configured, and falls back to inline base64.
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },

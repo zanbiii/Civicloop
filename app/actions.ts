@@ -269,8 +269,8 @@ export async function recordRerouteAction(input: {
     location: cleanGeo(input.location),
     fromDepartment: input.fromDepartment,
     toDepartment: input.toDepartment,
-    reason: cleanText(input.reason, 500) || 'Wrong department flagged by authority.',
-    correctedBy: cleanText(input.correctedBy, 120) || 'Authority',
+    reason: cleanText(input.reason, 500) || 'Wrong department flagged by CoV.',
+    correctedBy: cleanText(input.correctedBy, 120) || 'CoV',
   });
 
   if (isSupabaseConfigured()) await repo.upsertRoutingOverride(override);
@@ -295,7 +295,7 @@ export async function verifyProofAction(input: {
   const verification = await verifyProof({
     beforePhoto: cleanPhoto(input.beforePhoto),
     afterPhoto,
-    submittedBy: cleanText(input.submittedBy, 120) || 'Authority',
+    submittedBy: cleanText(input.submittedBy, 120) || 'CoV',
   });
   return { verification, log: auditLogForProof(cleanText(input.ticketId, 120), verification, Date.now() - startedAt) };
 }

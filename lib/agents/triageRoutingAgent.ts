@@ -3,7 +3,7 @@
  *
  * Maps category + location to the correct department, computes severity and
  * the SLA window, and holds the self-healing routing graph: when an
- * authority flags "Wrong Department", the correction is written here as a
+ * CoV flags "Wrong Department", the correction is written here as a
  * learned override so later reports of the same category in the same zone
  * route correctly on the very first hop — no human has to catch it twice.
  */
@@ -55,7 +55,7 @@ function activeOverrideFor(category: ComplaintCategory, zoneKey: string): Routin
   return override && override.weight >= OVERRIDE_ACTIVATION_WEIGHT ? override : null;
 }
 
-/** Called when an authority flags "Wrong Department" and redirects a ticket. */
+/** Called when a CoV flags "Wrong Department" and redirects a ticket. */
 export function recordWrongDepartmentCorrection(input: {
   category: ComplaintCategory;
   location: GeoPoint;
@@ -71,7 +71,7 @@ export function recordWrongDepartmentCorrection(input: {
   const existing = overrideGraph.get(key);
 
   const occurrences = (existing?.occurrences ?? 0) + 1;
-  // A single authority correction already clears the activation threshold; each repeat reinforces it.
+  // A single CoV correction already clears the activation threshold; each repeat reinforces it.
   const weight = Math.min(0.97, 0.45 + occurrences * 0.15);
   const slug = `${zoneKey}-${input.category}`.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
@@ -128,7 +128,7 @@ function buildRationale(department: Department, override: RoutingOverride | null
   if (override) {
     return (
       `Self-healing override active for this zone: ${override.category} reports here now route straight to ` +
-      `${department} (learned from ${override.occurrences} authority correction(s), auto-corrected ` +
+      `${department} (learned from ${override.occurrences} CoV correction(s), auto-corrected ` +
       `${override.autoCorrectedCount} earlier ticket(s)).`
     );
   }
@@ -218,7 +218,7 @@ export function auditLogForCorrection(ticketId: string, override: RoutingOverrid
     agent: 'TriageRouting',
     action: 'selfheal.learn',
     message:
-      `Authority flagged Wrong Department. Correction written to the routing graph: ` +
+      `CoV flagged Wrong Department. Correction written to the routing graph: ` +
       `${override.fromDepartment} → ${override.toDepartment} for ${override.category} in ${override.zoneKey}.`,
     level: 'success',
     payload: {

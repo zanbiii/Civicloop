@@ -182,7 +182,7 @@ export function rowToRoutingOverride(row: RoutingOverrideRow): RoutingOverride {
     occurrences: row.occurrences,
     weight: row.weight,
     reason: row.reason,
-    correctedBy: row.corrected_by ?? 'Authority',
+    correctedBy: row.corrected_by ?? 'CoV',
     createdAt: row.created_at,
     lastAppliedAt: row.last_applied_at,
     autoCorrectedCount: row.auto_corrected_count,

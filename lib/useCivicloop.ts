@@ -18,7 +18,6 @@ import {
   type AgentAuditLog,
   type AgentLogLevel,
   type AgentName,
-  type AuthorityProfile,
   type BountyInfo,
   type BountyPledge,
   type CivicProofVerification,
@@ -578,6 +577,7 @@ export function useCivicloop() {
         ...current,
         tickets: current.tickets.map((entry) => (entry.id === ticketId ? updated : entry)),
       }));
+      setVolunteers((current) => (current.some((entry) => entry.id === volunteer.id) ? current : [...current, volunteer]));
 
       if (persistenceEnabledRef.current) persist(persistTicketAction(updated));
     },
@@ -719,7 +719,7 @@ export function useCivicloop() {
   );
 
   const rerouteTicket = useCallback(
-    async (ticketId: string, toDepartment: Department, reason: string, authority: AuthorityProfile) => {
+    async (ticketId: string, toDepartment: Department, reason: string, cov: VolunteerProfile) => {
       const ticket = storeRef.current.tickets.find((entry) => entry.id === ticketId);
       if (!ticket) throw new Error('Ticket not found.');
 
@@ -730,7 +730,7 @@ export function useCivicloop() {
         fromDepartment: ticket.assignedDepartment,
         toDepartment,
         reason,
-        correctedBy: `${authority.designation}, ${authority.zone}`,
+        correctedBy: `${cov.designation ?? 'Community Volunteer'}, ${cov.zone}`,
       });
       setOverrides(latestOverrides);
 
@@ -740,9 +740,9 @@ export function useCivicloop() {
         ticketId,
         fromDepartment: ticket.assignedDepartment,
         toDepartment,
-        trigger: 'authority-reroute' as const,
+        trigger: 'cov-reroute' as const,
         reason,
-        actor: `${authority.name} (${authority.officialId})`,
+        actor: `${cov.name} (${cov.id})`,
         createdAt: nowIso,
       };
       const updated: CivicTicket = {
@@ -771,8 +771,7 @@ export function useCivicloop() {
   );
 
   const submitProof = useCallback(
-    // Widened past AuthorityProfile so a CoV (VolunteerProfile) can submit fix proof too — only `officialId` is used.
-    async (ticketId: string, afterPhoto: EvidencePhoto, authority: { officialId: string }): Promise<CivicProofVerification> => {
+    async (ticketId: string, afterPhoto: EvidencePhoto, cov: VolunteerProfile): Promise<CivicProofVerification> => {
       const ticket = storeRef.current.tickets.find((entry) => entry.id === ticketId);
       if (!ticket) throw new Error('Ticket not found.');
       const previousStatus = ticket.status;
@@ -789,7 +788,7 @@ export function useCivicloop() {
           ticketId,
           beforePhoto: ticket.beforePhotos[0] ?? null,
           afterPhoto,
-          submittedBy: authority.officialId,
+          submittedBy: cov.id,
         });
         const nowIso = clock().toISOString();
         // Rejected proof keeps the ticket open; verified or human-review proof hands it to the citizen.

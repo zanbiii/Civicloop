@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 
 import {
   ArrowRight,
   Brain,
-  Building,
+  HardHat,
   ChevronDown,
   CircleCheck,
   FastForward,
@@ -24,7 +24,7 @@ import AuthModal from '@/components/AuthModal';
 import OnboardingModal from '@/components/OnboardingModal';
 import CitizenIntakeForm from '@/components/CitizenIntakeForm';
 import CitizenDashboard from '@/components/CitizenDashboard';
-import AuthorityDashboard, { ProofResult } from '@/components/AuthorityDashboard';
+import CoVDashboard, { ProofResult } from '@/components/CoVDashboard';
 import AIBrainDashboard, { computeBrainTelemetry } from '@/components/AIBrainDashboard';
 import AgentTerminal from '@/components/AgentTerminal';
 import BountyDashboard from '@/components/BountyDashboard';
@@ -32,7 +32,7 @@ import UpiReceiptModal from '@/components/UpiReceiptModal';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
 import LeafletMap from '@/components/LeafletMap';
 import { useCivicloop } from '@/lib/useCivicloop';
-import { CSR_FUND, DEMO_AUTHORITIES, DEMO_VOLUNTEER, PLACEHOLDER_IMAGE, SEED_TOOL_DEPOTS } from '@/lib/seedData';
+import { CSR_FUND, DEMO_COVS, DEMO_VOLUNTEER, PLACEHOLDER_IMAGE, SEED_TOOL_DEPOTS } from '@/lib/seedData';
 import { haversineMeters } from '@/lib/haversine';
 import { cn } from '@/lib/cn';
 import {
@@ -44,7 +44,6 @@ import {
   maskPhone,
   pseudonymFor,
   type AdminProfile,
-  type AuthorityProfile,
   type BountyInfo,
   type CivicProofVerification,
   type CivicTicket,
@@ -55,6 +54,7 @@ import {
   type SessionUser,
   type ToolDepot,
   type UserRole,
+  type VolunteerProfile,
 } from '@/types/civic';
 
 /* ------------------------------------------------------------------------- */
@@ -70,15 +70,15 @@ const DEMO_CITIZEN: PublicReporter = {
   ward: 'HSR Layout',
 };
 
-const PWD_AUTHORITY = DEMO_AUTHORITIES.find((account) => account.department === 'PWD/Roads') ?? DEMO_AUTHORITIES[0];
-const DEMO_AUTHORITY: AuthorityProfile = {
-  id: `authority-${PWD_AUTHORITY.officialId.toLowerCase()}`,
-  officialId: PWD_AUTHORITY.officialId,
-  name: PWD_AUTHORITY.name,
-  maskedPhone: maskPhone('9900112233'),
-  department: PWD_AUTHORITY.department,
-  zone: PWD_AUTHORITY.zone,
-  designation: PWD_AUTHORITY.designation,
+const PWD_COV = DEMO_COVS.find((account) => account.department === 'PWD/Roads') ?? DEMO_COVS[0];
+const DEMO_COV: VolunteerProfile = {
+  ...DEMO_VOLUNTEER,
+  id: `cov-${PWD_COV.covId.toLowerCase()}`,
+  name: PWD_COV.name,
+  maskedPhone: maskPhone('9845098450'),
+  department: PWD_COV.department,
+  zone: PWD_COV.zone,
+  designation: 'Community Volunteer',
 };
 
 const DEMO_ADMIN: AdminProfile = {
@@ -476,6 +476,7 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 /* ------------------------------------------------------------------------- */
 
 type CitizenTab = 'bounties' | 'report' | 'reports' | 'map';
+type CoVTab = 'bounties' | 'operations';
 
 export default function Home() {
   const civic = useCivicloop();
@@ -487,6 +488,7 @@ export default function Home() {
   const [demoMode, setDemoMode] = useState(true);
   const [language, setLanguage] = useState<AppLanguage>('en');
   const [citizenTab, setCitizenTab] = useState<CitizenTab>('bounties');
+  const [covTab, setCovTab] = useState<CoVTab>('bounties');
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<GeoPoint | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -508,8 +510,16 @@ export default function Home() {
   const dismissToast = useCallback(() => setToast(null), []);
 
   const citizen = sessionUser?.role === 'citizen' ? sessionUser.profile : null;
-  const authority = sessionUser?.role === 'authority' ? sessionUser.profile : null;
-  const volunteer = sessionUser?.role === 'volunteer' ? sessionUser.profile : null;
+  const signedInVolunteer = sessionUser?.role === 'volunteer' ? sessionUser.profile : null;
+  const volunteer = signedInVolunteer
+    ? volunteers.find((entry) => entry.id === signedInVolunteer.id) ?? signedInVolunteer
+    : null;
+  const activeSessionUser =
+    sessionUser?.role === 'volunteer' && volunteer ? { ...sessionUser, profile: volunteer } : sessionUser;
+  const volunteerRoster = useMemo(
+    () => (volunteer && !volunteers.some((entry) => entry.id === volunteer.id) ? [...volunteers, volunteer] : volunteers),
+    [volunteers, volunteer],
+  );
 
   const myTickets = useMemo(
     () =>
@@ -544,13 +554,13 @@ export default function Home() {
     setSessionUser(user);
     setAuthOpen(false);
     setCitizenTab(tab);
+    setCovTab(user.role === 'volunteer' ? 'operations' : 'bounties');
     setSelectedTicketId(null);
   };
 
   const quickSwitch = (role: UserRole) => {
     if (role === 'citizen') signIn({ role: 'citizen', profile: DEMO_CITIZEN }, 'bounties');
-    else if (role === 'authority') signIn({ role: 'authority', profile: DEMO_AUTHORITY });
-    else if (role === 'volunteer') signIn({ role: 'volunteer', profile: DEMO_VOLUNTEER });
+    else if (role === 'volunteer') signIn({ role: 'volunteer', profile: DEMO_COV });
     else signIn({ role: 'admin', profile: DEMO_ADMIN });
   };
 
@@ -568,7 +578,7 @@ export default function Home() {
 
   const submitMissionProof = (ticketId: string, afterPhoto: EvidencePhoto): Promise<CivicProofVerification> => {
     if (!volunteer) return Promise.reject(new Error('Not signed in as a Community Volunteer.'));
-    return civic.submitProof(ticketId, afterPhoto, { officialId: volunteer.id });
+    return civic.submitProof(ticketId, afterPhoto, volunteer);
   };
 
   const handleIntake = async (draft: IntakeDraft) => {
@@ -599,7 +609,7 @@ export default function Home() {
   return (
     <div className="flex min-h-full flex-1 flex-col bg-slate-50 text-slate-900">
       <Header
-        sessionUser={sessionUser}
+        sessionUser={activeSessionUser}
         demoMode={demoMode}
         onToggleDemoMode={() => setDemoMode((value) => !value)}
         language={language}
@@ -648,10 +658,10 @@ export default function Home() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => openAuth('authority')}
+                    onClick={() => openAuth('volunteer')}
                     className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
                   >
-                    <Building className="h-4 w-4" /> I&apos;m an official
+                    <HardHat className="h-4 w-4" /> I&apos;m a CoV
                   </button>
                 </div>
               </div>
@@ -681,10 +691,10 @@ export default function Home() {
                 sessionUser={null}
                 depots={SEED_TOOL_DEPOTS}
                 onSelectTicket={setSelectedTicketId}
-                onAcceptMission={() => openAuth('citizen')}
+                onAcceptMission={() => openAuth('volunteer')}
                 onBoostBounty={() => openAuth('citizen')}
                 onSubmitProof={submitMissionProof}
-                onSignIn={() => openAuth('citizen')}
+                onSignIn={() => openAuth('volunteer')}
               />
               <MapCard
                 tickets={tickets}
@@ -725,9 +735,9 @@ export default function Home() {
               <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
                 <BountyDashboard
                   csrFund={CSR_FUND}
-                  volunteers={volunteers}
+                  volunteers={volunteerRoster}
                   tickets={tickets}
-                  sessionUser={sessionUser}
+                  sessionUser={activeSessionUser}
                   depots={SEED_TOOL_DEPOTS}
                   onSelectTicket={setSelectedTicketId}
                   onAcceptMission={acceptMission}
@@ -794,57 +804,79 @@ export default function Home() {
         )}
 
         {volunteer && (
-          <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
-            <BountyDashboard
-              csrFund={CSR_FUND}
-              volunteers={volunteers}
-              tickets={tickets}
-              sessionUser={sessionUser}
-              depots={SEED_TOOL_DEPOTS}
-              onSelectTicket={setSelectedTicketId}
-              onAcceptMission={acceptMission}
-              onBoostBounty={boostBounty}
-              onSubmitProof={submitMissionProof}
-              onSignIn={() => openAuth('citizen')}
-            />
-            <MapCard
-              tickets={tickets}
-              selectedTicketId={selectedTicketId}
-              onSelectTicket={setSelectedTicketId}
-              userLocation={userLocation}
-                onLocateMe={setUserLocation}
-              depots={SEED_TOOL_DEPOTS}
-              title="Bounty missions near you"
-              heightClass="h-[600px]"
-            />
-          </div>
-        )}
-
-        {authority && (
-          <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-            <AuthorityDashboard
-              authority={authority}
-              tickets={tickets}
-              nowMs={nowMs}
-              onStartWork={(ticketId) => civic.startWork(ticketId, authority.officialId)}
-              onReroute={async (ticketId, toDepartment, reason) => {
-                await civic.rerouteTicket(ticketId, toDepartment, reason, authority);
-                setToast(`Re-routed to ${toDepartment}. The self-healing graph learned the correction for this zone.`);
-              }}
-              onSubmitProof={(ticketId, afterPhoto) => civic.submitProof(ticketId, afterPhoto, authority)}
-              onSelectTicket={setSelectedTicketId}
-            />
-            <div className="space-y-4 xl:sticky xl:top-28 xl:self-start">
-              <MapCard
-                tickets={tickets.filter((ticket) => ticket.assignedDepartment === authority.department)}
-                selectedTicketId={selectedTicketId}
-                onSelectTicket={setSelectedTicketId}
-                userLocation={userLocation}
-                onLocateMe={setUserLocation}
-                title={`${authority.department} issues`}
-                heightClass="h-[360px]"
-              />
+          <div className="space-y-5">
+            <div className="flex rounded-xl bg-white p-1 text-sm font-semibold shadow-sm ring-1 ring-slate-200">
+              {(
+                [
+                  ['bounties', 'Bounty missions'],
+                  ['operations', 'Department operations'],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setCovTab(id)}
+                  className={cn('flex-1 rounded-lg px-3 py-2', covTab === id ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-800')}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
+
+            {covTab === 'bounties' && (
+              <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
+                <BountyDashboard
+                  csrFund={CSR_FUND}
+                  volunteers={volunteerRoster}
+                  tickets={tickets}
+                  sessionUser={activeSessionUser}
+                  depots={SEED_TOOL_DEPOTS}
+                  onSelectTicket={setSelectedTicketId}
+                  onAcceptMission={acceptMission}
+                  onBoostBounty={boostBounty}
+                  onSubmitProof={submitMissionProof}
+                  onSignIn={() => openAuth('volunteer')}
+                />
+                <MapCard
+                  tickets={tickets}
+                  selectedTicketId={selectedTicketId}
+                  onSelectTicket={setSelectedTicketId}
+                  userLocation={userLocation}
+                  onLocateMe={setUserLocation}
+                  depots={SEED_TOOL_DEPOTS}
+                  title="Bounty missions near you"
+                  heightClass="h-[600px]"
+                />
+              </div>
+            )}
+
+            {covTab === 'operations' && (
+              <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+                <CoVDashboard
+                  cov={volunteer}
+                  tickets={tickets}
+                  nowMs={nowMs}
+                  onStartWork={(ticketId) => civic.startWork(ticketId, volunteer.id)}
+                  onReroute={async (ticketId, toDepartment, reason) => {
+                    await civic.rerouteTicket(ticketId, toDepartment, reason, volunteer);
+                    setToast(`Re-routed to ${toDepartment}. The self-healing graph learned the correction for this zone.`);
+                  }}
+                  onSubmitProof={(ticketId, afterPhoto) => civic.submitProof(ticketId, afterPhoto, volunteer)}
+                  onSelectTicket={setSelectedTicketId}
+                />
+                <div className="space-y-4 xl:sticky xl:top-28 xl:self-start">
+                  <MapCard
+                    tickets={tickets.filter((ticket) => ticket.assignedDepartment === volunteer.department)}
+                    selectedTicketId={selectedTicketId}
+                    onSelectTicket={setSelectedTicketId}
+                    userLocation={userLocation}
+                    onLocateMe={setUserLocation}
+                    title={`${volunteer.department} issues`}
+                    heightClass="h-[360px]"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 

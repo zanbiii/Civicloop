@@ -27,7 +27,7 @@ const TOUR_CARDS: Array<{ icon: typeof Camera; title: string; body: string }> = 
   {
     icon: CheckCheck,
     title: 'Verified fixes only',
-    body: 'A ticket can’t close on a promise. The authority must upload an "after" photo, our CivicProof agent checks it against the original, and then you get the final say.',
+    body: 'A ticket can’t close on a promise. The CoV must upload an "after" photo, our CivicProof agent checks it against the original, and then you get the final say.',
   },
 ];
 
@@ -84,7 +84,7 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
               <h2 className="text-lg font-bold text-slate-900">Your privacy, protected by design</h2>
               <p className="text-sm leading-relaxed text-slate-600">
                 Your phone number and identity are <span className="font-semibold text-slate-900">never shown publicly</span>. Only
-                the issue category and its location are dispatched to the authority responsible for fixing it — you appear to
+                the issue category and its location are dispatched to the CoV responsible for fixing it — you appear to
                 everyone else as an anonymous, pseudonymous citizen.
               </p>
             </div>

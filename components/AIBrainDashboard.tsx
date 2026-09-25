@@ -33,7 +33,7 @@ export function computeBrainTelemetry(tickets: CivicTicket[], overrides: Routing
     ticket.supporters.forEach((supporter) => citizens.add(supporter.reporter.id));
   });
 
-  const rerouted = masters.filter((ticket) => ticket.routingHistory.some((event) => event.trigger === 'authority-reroute')).length;
+  const rerouted = masters.filter((ticket) => ticket.routingHistory.some((event) => event.trigger === 'cov-reroute')).length;
   const resolved = masters.filter((ticket) => ticket.resolvedAt);
   const avgResolutionHours = resolved.length
     ? resolved.reduce((sum, ticket) => sum + (new Date(ticket.resolvedAt!).getTime() - new Date(ticket.createdAt).getTime()), 0) /
@@ -251,7 +251,7 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
 
       <Card
         title="Self-healing routing graph"
-        subtitle={`Corrections learned from authorities. At ≥${Math.round(OVERRIDE_ACTIVATION_WEIGHT * 100)}% weight a rule rewrites routing for every new report in its zone.`}
+        subtitle={`Corrections learned from CoVs. At ≥${Math.round(OVERRIDE_ACTIVATION_WEIGHT * 100)}% weight a rule rewrites routing for every new report in its zone.`}
       >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-xs">

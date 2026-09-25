@@ -22,20 +22,20 @@ import {
   DEPARTMENT_META,
   SEVERITY_META,
   STATUS_META,
-  type AuthorityProfile,
   type CivicProofVerification,
   type CivicTicket,
   type Department,
   type EvidencePhoto,
   type GeoPoint,
   type TicketStatus,
+  type VolunteerProfile,
 } from '@/types/civic';
 import CameraCapture from '@/components/CameraCapture';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
 import { cn } from '@/lib/cn';
 
-interface AuthorityDashboardProps {
-  authority: AuthorityProfile;
+interface CoVDashboardProps {
+  cov: VolunteerProfile;
   tickets: CivicTicket[];
   /** Current clock (including any demo fast-forward), for SLA countdowns. */
   nowMs: number;
@@ -268,12 +268,12 @@ export function ProofResult({ ticket, verification }: { ticket: CivicTicket; ver
 
 function ProofDialog({
   ticket,
-  authority,
+  cov,
   onClose,
   onSubmit,
 }: {
   ticket: CivicTicket;
-  authority: AuthorityProfile;
+  cov: VolunteerProfile;
   onClose: () => void;
   onSubmit: (afterPhoto: EvidencePhoto) => Promise<CivicProofVerification>;
 }) {
@@ -340,7 +340,7 @@ function ProofDialog({
                 photos={photos}
                 onPhotosChange={setPhotos}
                 kind="after"
-                capturedBy={authority.officialId}
+                capturedBy={cov.id}
                 geo={geo}
                 maxPhotos={1}
                 label="After photo"
@@ -397,7 +397,7 @@ function ProofDialog({
 
 function QueueRow({
   ticket,
-  authority,
+  cov,
   nowMs,
   onStartWork,
   onReroute,
@@ -405,7 +405,7 @@ function QueueRow({
   onSelect,
 }: {
   ticket: CivicTicket;
-  authority: AuthorityProfile;
+  cov: VolunteerProfile;
   nowMs: number;
   onStartWork: () => void;
   onReroute: () => void;
@@ -413,7 +413,7 @@ function QueueRow({
   onSelect?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const mine = ticket.assignedDepartment === authority.department;
+  const mine = ticket.assignedDepartment === cov.department;
   const selfHealed = Boolean(ticket.triage?.appliedOverrideId);
   const breached = ticket.sla.health === 'breached' && !ticket.sla.metAt;
 
@@ -528,23 +528,20 @@ function QueueRow({
   );
 }
 
-export default function AuthorityDashboard({
-  authority,
+export default function CoVDashboard({
+  cov,
   tickets,
   nowMs,
   onStartWork,
   onReroute,
   onSubmitProof,
   onSelectTicket,
-}: AuthorityDashboardProps) {
-  const [departmentFilter, setDepartmentFilter] = useState<Department | 'all'>(authority.department);
+}: CoVDashboardProps) {
   const [tab, setTab] = useState<QueueTab>('active');
   const [reroutingId, setReroutingId] = useState<string | null>(null);
   const [proofId, setProofId] = useState<string | null>(null);
 
-  const inDepartment = tickets.filter(
-    (ticket) => ticket.isMaster && (departmentFilter === 'all' || ticket.assignedDepartment === departmentFilter),
-  );
+  const inDepartment = tickets.filter((ticket) => ticket.isMaster && ticket.assignedDepartment === cov.department);
   const queue = inDepartment
     .filter((ticket) => TAB_STATUSES[tab].includes(ticket.status))
     .sort(
@@ -560,10 +557,10 @@ export default function AuthorityDashboard({
     <div className="space-y-5">
       <div>
         <h2 className="text-lg font-bold text-slate-900">
-          {DEPARTMENT_META[authority.department].icon} {authority.department} · Authority Portal
+          {DEPARTMENT_META[cov.department].icon} {cov.department} · CoV Operations
         </h2>
         <p className="text-xs text-slate-500">
-          {authority.name} · {authority.designation} · {authority.zone}
+          {cov.name} · {cov.designation ?? 'Community Volunteer'} · {cov.zone}
         </p>
       </div>
 
@@ -580,18 +577,9 @@ export default function AuthorityDashboard({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={departmentFilter}
-          onChange={(event) => setDepartmentFilter(event.target.value as Department | 'all')}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none"
-        >
-          <option value="all">All departments</option>
-          {DEPARTMENTS.map((dept) => (
-            <option key={dept} value={dept}>
-              {dept}
-            </option>
-          ))}
-        </select>
+        <span className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
+          {cov.department}
+        </span>
         <div className="flex rounded-lg bg-slate-100 p-0.5 text-xs font-semibold">
           {(
             [
@@ -622,7 +610,7 @@ export default function AuthorityDashboard({
             <QueueRow
               key={ticket.id}
               ticket={ticket}
-              authority={authority}
+              cov={cov}
               nowMs={nowMs}
               onStartWork={() => onStartWork(ticket.id)}
               onReroute={() => setReroutingId(ticket.id)}
@@ -643,7 +631,7 @@ export default function AuthorityDashboard({
       {proofTicket && (
         <ProofDialog
           ticket={proofTicket}
-          authority={authority}
+          cov={cov}
           onClose={() => setProofId(null)}
           onSubmit={(afterPhoto) => onSubmitProof(proofTicket.id, afterPhoto)}
         />

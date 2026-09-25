@@ -10,7 +10,7 @@
 /* Roles & identity                                                          */
 /* ------------------------------------------------------------------------- */
 
-export const USER_ROLES = ['citizen', 'authority', 'volunteer', 'admin'] as const;
+export const USER_ROLES = ['citizen', 'volunteer', 'admin'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 export const DEPARTMENTS = [
@@ -24,37 +24,37 @@ export type Department = (typeof DEPARTMENTS)[number];
 
 export const DEPARTMENT_META: Record<
   Department,
-  { shortCode: string; icon: string; accent: string; escalationAuthority: string }
+  { shortCode: string; icon: string; accent: string; escalationContact: string }
 > = {
   Sanitation: {
     shortCode: 'SWM',
     icon: '\u{1F9F9}',
     accent: '#16a34a',
-    escalationAuthority: 'Zonal Commissioner — Solid Waste Management',
+    escalationContact: 'Zonal Commissioner — Solid Waste Management',
   },
   'PWD/Roads': {
     shortCode: 'PWD',
     icon: '\u{1F6E3}\u{FE0F}',
     accent: '#f97316',
-    escalationAuthority: 'Chief Engineer — Roads & Infrastructure',
+    escalationContact: 'Chief Engineer — Roads & Infrastructure',
   },
   'Electricity/BESCOM': {
     shortCode: 'BESCOM',
     icon: '⚡',
     accent: '#eab308',
-    escalationAuthority: 'Executive Engineer — BESCOM Sub-Division',
+    escalationContact: 'Executive Engineer — BESCOM Sub-Division',
   },
   'Water/Jal Board': {
     shortCode: 'BWSSB',
     icon: '\u{1F4A7}',
     accent: '#0ea5e9',
-    escalationAuthority: 'Assistant Executive Engineer — BWSSB',
+    escalationContact: 'Assistant Executive Engineer — BWSSB',
   },
   Traffic: {
     shortCode: 'TRF',
     icon: '\u{1F6A6}',
     accent: '#a855f7',
-    escalationAuthority: 'DCP Traffic — Zonal Command',
+    escalationContact: 'DCP Traffic — Zonal Command',
   },
 };
 
@@ -73,16 +73,6 @@ export interface PublicReporter {
   ward: string | null;
 }
 
-export interface AuthorityProfile {
-  id: string;
-  officialId: string;
-  name: string;
-  maskedPhone: string;
-  department: Department;
-  zone: string;
-  designation: string;
-}
-
 export interface AdminProfile {
   id: string;
   name: string;
@@ -98,9 +88,9 @@ export const GOLD_TIER_RATING_THRESHOLD = 4.8;
 export const SILVER_TIER_RATING_THRESHOLD = 4.2;
 
 /**
- * A Community Volunteer (CoV) — the gig worker who claims a bounty mission,
- * repairs the issue, and gets paid from the sponsoring CSR fund once
- * CivicProof verifies the fix and the citizen confirms it.
+ * A Community Volunteer (CoV) — a civic responder who handles department
+ * tickets and bounty missions, then gets paid from the sponsoring CSR fund
+ * once CivicProof verifies the fix and the citizen confirms it.
  */
 export interface VolunteerProfile {
   id: string;
@@ -115,6 +105,8 @@ export interface VolunteerProfile {
   totalEarnedInr: number;
   completedMissions: number;
   zone: string;
+  department: Department;
+  designation?: string;
   /** Where this CoV is based, for the "N volunteers nearby" distance check. */
   homeBase: GeoPoint;
   /** Flavour title shown on the leaderboard, e.g. "Neighborhood Hero". */
@@ -123,7 +115,6 @@ export interface VolunteerProfile {
 
 export type SessionUser =
   | { role: 'citizen'; profile: PublicReporter }
-  | { role: 'authority'; profile: AuthorityProfile }
   | { role: 'volunteer'; profile: VolunteerProfile }
   | { role: 'admin'; profile: AdminProfile };
 
@@ -279,7 +270,7 @@ export interface SlaState {
   /** 0 = none, 1 = supervisor, 2 = zonal commissioner, 3 = commissioner office. */
   escalationLevel: 0 | 1 | 2 | 3;
   escalatedTo: string | null;
-  /** Auto-generated briefing handed to the escalation authority. */
+  /** Auto-generated briefing handed to the escalation contact. */
   escalationBriefing: string | null;
   metAt: string | null;
 }
@@ -444,7 +435,7 @@ export interface RoutingEvent {
   ticketId: string;
   fromDepartment: Department | null;
   toDepartment: Department;
-  trigger: 'initial-triage' | 'authority-reroute' | 'self-healing' | 'escalation';
+  trigger: 'initial-triage' | 'cov-reroute' | 'self-healing' | 'escalation';
   reason: string;
   actor: string;
   createdAt: string;

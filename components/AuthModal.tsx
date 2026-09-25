@@ -1,17 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, Building, KeyRound, LoaderCircle, Mail, Phone, ShieldCheck, Sparkles, User, X } from 'lucide-react';
+import { Bot, HardHat, KeyRound, LoaderCircle, Mail, Phone, ShieldCheck, Sparkles, User, X } from 'lucide-react';
 import {
   DEPARTMENTS,
   maskPhone,
   pseudonymFor,
   type AdminProfile,
-  type AuthorityProfile,
   type Department,
   type PublicReporter,
   type SessionUser,
   type UserRole,
+  type VolunteerProfile,
 } from '@/types/civic';
 import { cn } from '@/lib/cn';
 
@@ -30,7 +30,7 @@ interface AuthModalProps {
 
 const ROLE_TABS: Array<{ role: UserRole; label: string; icon: typeof User }> = [
   { role: 'citizen', label: 'Citizen', icon: User },
-  { role: 'authority', label: 'Authority', icon: Building },
+  { role: 'volunteer', label: 'CoV', icon: HardHat },
   { role: 'admin', label: 'Administrator', icon: Bot },
 ];
 
@@ -40,7 +40,7 @@ function makeCitizenId(handle: string): string {
   return digits.length >= 4 ? `citizen-${digits.slice(-4)}` : `citizen-${pseudonymFor(handle).replace(/\D/g, '')}`;
 }
 
-/** Shared OTP step for both the Citizen and Authority flows. */
+/** Shared OTP step for both the Citizen and CoV flows. */
 function OtpStep({
   destination,
   demoMode,
@@ -213,7 +213,7 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
 
       <p className="flex items-start gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        Your number and identity are never shown publicly — only your issue and its location reach authorities.
+        Your number and identity are never shown publicly — only your issue and its location reach CoVs.
       </p>
 
       {error && <p className="text-xs font-medium text-red-600">{error}</p>}
@@ -229,10 +229,11 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
   );
 }
 
-function AuthorityAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthenticated: (user: SessionUser) => void }) {
+function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthenticated: (user: SessionUser) => void }) {
   const [name, setName] = useState('');
-  const [officialId, setOfficialId] = useState('');
+  const [covId, setCovId] = useState('');
   const [phone, setPhone] = useState('');
+  const [upiId, setUpiId] = useState('');
   const [department, setDepartment] = useState<Department>(DEPARTMENTS[0]);
   const [zone, setZone] = useState<(typeof ZONES)[number]>(ZONES[0]);
   const [step, setStep] = useState<'details' | 'otp'>('details');
@@ -240,20 +241,25 @@ function AuthorityAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAut
   const [verifying, setVerifying] = useState(false);
 
   const fillDemo = () => {
-    setName('Ravi Kumar');
-    setOfficialId('PWD-KOR-114');
-    setPhone('9900112233');
+    setName('Ramesh K.');
+    setCovId('COV-KOR-114');
+    setPhone('9845098450');
+    setUpiId('ramesh@oksbi');
     setDepartment('PWD/Roads');
     setZone('BBMP-South');
   };
 
   const sendOtp = () => {
-    if (!name.trim() || !officialId.trim()) {
-      setError('Enter your name and official ID.');
+    if (!name.trim() || !covId.trim()) {
+      setError('Enter your name and CoV ID.');
       return;
     }
     if (!/^[6-9]\d{9}$/.test(phone.trim())) {
       setError('Enter a valid 10-digit Indian mobile number.');
+      return;
+    }
+    if (!/^[\w.-]+@[\w.-]+$/.test(upiId.trim())) {
+      setError('Enter a valid UPI ID for bounty payouts.');
       return;
     }
     setError(null);
@@ -266,16 +272,23 @@ function AuthorityAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAut
       return;
     }
     setVerifying(true);
-    const profile: AuthorityProfile = {
-      id: `authority-${officialId.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-      officialId: officialId.trim(),
+    const profile: VolunteerProfile = {
+      id: `cov-${covId.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
       name: name.trim(),
       maskedPhone: maskPhone(phone),
+      upiId: upiId.trim(),
+      rating: 0,
+      ratingCount: 0,
+      tier: 'bronze',
+      totalEarnedInr: 0,
+      completedMissions: 0,
+      badge: 'New CoV',
       department,
       zone,
-      designation: `${department} Field Officer`,
+      designation: 'Community Volunteer',
+      homeBase: { lat: 12.9716, lng: 77.5946, zone },
     };
-    window.setTimeout(() => onAuthenticated({ role: 'authority', profile }), 350);
+    window.setTimeout(() => onAuthenticated({ role: 'volunteer', profile }), 350);
   };
 
   if (step === 'otp') {
@@ -299,7 +312,7 @@ function AuthorityAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAut
           onClick={fillDemo}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100"
         >
-          <Sparkles className="h-3.5 w-3.5" /> Autofill a demo authority (PWD/Roads, Koramangala)
+          <Sparkles className="h-3.5 w-3.5" /> Autofill a demo CoV (PWD/Roads, Koramangala)
         </button>
       )}
 
@@ -308,18 +321,18 @@ function AuthorityAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAut
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Officer name"
+          placeholder="Full name"
           className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">Official ID</label>
+          <label className="mb-1 block text-xs font-semibold text-slate-600">CoV ID</label>
           <input
-            value={officialId}
-            onChange={(event) => setOfficialId(event.target.value)}
-            placeholder="PWD-KOR-114"
+            value={covId}
+            onChange={(event) => setCovId(event.target.value)}
+            placeholder="COV-KOR-114"
             className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
           />
         </div>
@@ -333,6 +346,16 @@ function AuthorityAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAut
             className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
           />
         </div>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-slate-600">UPI ID for bounty payouts</label>
+        <input
+          value={upiId}
+          onChange={(event) => setUpiId(event.target.value)}
+          placeholder="name@bank"
+          className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -519,7 +542,7 @@ export default function AuthModal({ open, onClose, onAuthenticated, demoMode = f
 
         <div className="p-5">
           {role === 'citizen' && <CitizenAuth demoMode={demoMode} onAuthenticated={onAuthenticated} />}
-          {role === 'authority' && <AuthorityAuth demoMode={demoMode} onAuthenticated={onAuthenticated} />}
+          {role === 'volunteer' && <CoVAuth demoMode={demoMode} onAuthenticated={onAuthenticated} />}
           {role === 'admin' && <AdminAuth demoMode={demoMode} onAuthenticated={onAuthenticated} />}
         </div>
       </div>

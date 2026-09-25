@@ -34,7 +34,7 @@ import {
 import { findNearbyVolunteers, formatInr } from '@/lib/bounty';
 import { cn } from '@/lib/cn';
 import CameraCapture from '@/components/CameraCapture';
-import { ProofResult } from '@/components/AuthorityDashboard';
+import { ProofResult } from '@/components/CoVDashboard';
 
 const BOOST_AMOUNT_INR = 50;
 
@@ -433,7 +433,7 @@ function TaskCard({
           }}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
         >
-          Sign in to accept or boost
+          Sign in as a CoV to accept missions
         </button>
       )}
     </motion.div>

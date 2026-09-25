@@ -3,7 +3,7 @@
  *
  * Owns the SLA countdown for every ticket: computes percent-elapsed against
  * the severity's contractual window, fires a one-time 75% warning, and on a
- * breach auto-escalates to the department's zonal authority (climbing to the
+ * breach auto-escalates to the department's zonal escalation contact (climbing to the
  * Commissioner's office the longer it stays breached) with a generated
  * briefing — all without waiting on a human to notice.
  */
@@ -45,11 +45,11 @@ export interface SlaTickResult {
   escalationAdvanced: boolean;
 }
 
-/** Escalation authority for a given breach depth: ward level, then the department's zonal authority, then the Commissioner. */
+/** Escalation contact for a given breach depth: ward level, then the department's zonal contact, then the Commissioner. */
 function escalationTargetFor(department: Department, level: 1 | 2 | 3): string {
   if (level >= 3) return 'Municipal Commissioner — BBMP';
-  if (level === 2) return DEPARTMENT_META[department].escalationAuthority;
-  return `${DEPARTMENT_META[department].escalationAuthority} (ward level)`;
+  if (level === 2) return DEPARTMENT_META[department].escalationContact;
+  return `${DEPARTMENT_META[department].escalationContact} (ward level)`;
 }
 
 function buildBriefing(

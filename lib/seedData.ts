@@ -115,6 +115,7 @@ export const SEED_VOLUNTEERS: VolunteerProfile[] = [
     totalEarnedInr: 9_800,
     completedMissions: 38,
     zone: 'Indiranagar',
+    department: 'Sanitation',
     homeBase: { lat: 12.9719, lng: 77.6412, ward: 'Indiranagar', zone: 'BBMP-East' },
     badge: 'Top Earner',
   },
@@ -129,6 +130,7 @@ export const SEED_VOLUNTEERS: VolunteerProfile[] = [
     totalEarnedInr: 8_450,
     completedMissions: 34,
     zone: 'HSR Layout',
+    department: 'PWD/Roads',
     homeBase: { lat: 12.9121, lng: 77.6446, ward: 'HSR Layout', zone: 'BBMP-Bommanahalli' },
     badge: 'Neighborhood Hero',
   },
@@ -143,6 +145,7 @@ export const SEED_VOLUNTEERS: VolunteerProfile[] = [
     totalEarnedInr: 7_200,
     completedMissions: 29,
     zone: 'Koramangala',
+    department: 'PWD/Roads',
     homeBase: { lat: 12.9352, lng: 77.6245, ward: 'Koramangala', zone: 'BBMP-South' },
     badge: 'Speed Demon',
   },
@@ -157,6 +160,7 @@ export const SEED_VOLUNTEERS: VolunteerProfile[] = [
     totalEarnedInr: 5_600,
     completedMissions: 22,
     zone: 'BTM Layout',
+    department: 'Traffic',
     homeBase: { lat: 12.9169, lng: 77.6165, ward: 'BTM Layout', zone: 'BBMP-Bommanahalli' },
     badge: 'Steady Hand',
   },
@@ -171,6 +175,7 @@ export const SEED_VOLUNTEERS: VolunteerProfile[] = [
     totalEarnedInr: 4_100,
     completedMissions: 16,
     zone: 'Jayanagar',
+    department: 'Water/Jal Board',
     homeBase: { lat: 12.925, lng: 77.5938, ward: 'Jayanagar', zone: 'BBMP-South' },
     badge: 'Rising Star',
   },
@@ -185,13 +190,18 @@ export const SEED_VOLUNTEERS: VolunteerProfile[] = [
     totalEarnedInr: 2_300,
     completedMissions: 9,
     zone: 'Whitefield',
+    department: 'Electricity/BESCOM',
     homeBase: { lat: 12.9698, lng: 77.75, ward: 'Whitefield', zone: 'BBMP-Mahadevapura' },
     badge: 'Newcomer',
   },
 ];
 
-/** The demo "Community Volunteer" quick-switch identity. */
-export const DEMO_VOLUNTEER: VolunteerProfile = SEED_VOLUNTEERS[1];
+/** The demo CoV quick-switch identity, enabled for both mission and queue work. */
+export const DEMO_VOLUNTEER: VolunteerProfile = {
+  ...SEED_VOLUNTEERS[1],
+  department: 'PWD/Roads',
+  designation: 'Community Volunteer',
+};
 
 /** Free CSR-funded materials pickup points shown on the map's Tool Depot layer. */
 export const SEED_TOOL_DEPOTS: ToolDepot[] = [
@@ -941,7 +951,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
 
   /* ----------------------------------------------------------------------- */
   /* 4. HSR drain — the self-healing routing story.                          */
-  /*    Mis-routed to Sanitation, corrected by the authority to BWSSB.       */
+  /*    Mis-routed to Sanitation, corrected by the CoV to BWSSB.             */
   /* ----------------------------------------------------------------------- */
 
   const drainId = 'tkt-hsr-drain';
@@ -1012,7 +1022,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
         drainId,
         'Sanitation',
         'Water/Jal Board',
-        'authority-reroute',
+        'cov-reroute',
         'Wrong Department: sewage ingress into the storm-water line is a BWSSB subject, not SWM.',
         'SWM Ward Marshal, HSR Layout',
         ago(now, 69.4),
@@ -2175,7 +2185,7 @@ export function buildSeedData(now: Date = new Date(SEED_EPOCH)): SeedData {
       drainId,
       'TriageRouting',
       'selfheal.learn',
-      'Authority flagged Wrong Department. Correction written to the routing graph: Sanitation → Water/Jal Board for Overflowing drain in HSR Layout.',
+      'CoV flagged Wrong Department. Correction written to the routing graph: Sanitation → Water/Jal Board for Overflowing drain in HSR Layout.',
       'success',
       {
         overrideId: 'override-hsr-drain',
@@ -2307,48 +2317,48 @@ export const BANGALORE_CENTER: GeoPoint = {
   zone: 'BBMP',
 };
 
-/** Demo authority accounts, one per department, for the Phase 4 auth modal. */
-export const DEMO_AUTHORITIES: Array<{
-  officialId: string;
+/** Demo CoV accounts, one per department, for the Phase 4 auth modal. */
+export const DEMO_COVS: Array<{
+  covId: string;
   name: string;
   department: Department;
   zone: string;
   designation: string;
 }> = [
   {
-    officialId: 'BBMP-SWM-1148',
-    name: 'Ward Marshal, Ejipura',
+    covId: 'COV-SWM-1148',
+    name: 'Sanitation CoV, Ejipura',
     department: 'Sanitation',
     zone: 'BBMP-South',
-    designation: 'Ward Marshal',
+    designation: 'Community Volunteer',
   },
   {
-    officialId: 'BBMP-PWD-0114',
-    name: 'Assistant Engineer, Koramangala',
+    covId: 'COV-PWD-0114',
+    name: 'Roads CoV, Koramangala',
     department: 'PWD/Roads',
     zone: 'BBMP-South',
-    designation: 'Assistant Engineer',
+    designation: 'Community Volunteer',
   },
   {
-    officialId: 'BESCOM-EE-0207',
-    name: 'Executive Engineer, BTM Sub-Division',
+    covId: 'COV-BESCOM-0207',
+    name: 'Electricity CoV, BTM',
     department: 'Electricity/BESCOM',
     zone: 'BBMP-South',
-    designation: 'Executive Engineer',
+    designation: 'Community Volunteer',
   },
   {
-    officialId: 'BWSSB-AEE-0322',
-    name: 'Assistant Executive Engineer, HSR',
+    covId: 'COV-WATER-0322',
+    name: 'Water CoV, HSR',
     department: 'Water/Jal Board',
     zone: 'BBMP-Bommanahalli',
-    designation: 'Assistant Executive Engineer',
+    designation: 'Community Volunteer',
   },
   {
-    officialId: 'BTP-INSP-0519',
-    name: 'Traffic Inspector, Silk Board',
+    covId: 'COV-TRAFFIC-0519',
+    name: 'Traffic CoV, Silk Board',
     department: 'Traffic',
     zone: 'BBMP-Bommanahalli',
-    designation: 'Traffic Inspector',
+    designation: 'Community Volunteer',
   },
 ];
 

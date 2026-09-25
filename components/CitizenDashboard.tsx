@@ -178,7 +178,7 @@ function TicketCard({
       {afterPhoto && (
         <div className="mt-3 flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 text-xs text-slate-600">
           <Camera className="h-3.5 w-3.5 shrink-0" />
-          Authority submitted proof of repair {timeAgo(afterPhoto.capturedAt)}.
+          CoV submitted proof of repair {timeAgo(afterPhoto.capturedAt)}.
         </div>
       )}
 
@@ -302,7 +302,7 @@ function ConfirmationDialog({
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               rows={3}
-              placeholder="Anything the authority or other citizens should know?"
+              placeholder="Anything the CoV or other citizens should know?"
               className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
             />
           </div>
