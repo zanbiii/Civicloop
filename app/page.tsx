@@ -269,6 +269,7 @@ function MapCard({
   onLocateMe,
   title = 'Live civic map',
   heightClass = 'h-[440px]',
+  stretchToColumn = false,
   depots,
   showingDemoReports = false,
 }: {
@@ -279,12 +280,13 @@ function MapCard({
   onLocateMe?: (point: GeoPoint) => void;
   title?: string;
   heightClass?: string;
+  stretchToColumn?: boolean;
   depots?: ToolDepot[];
   showingDemoReports?: boolean;
 }) {
   const t = useTranslate();
   return (
-    <section className="surface-card overflow-hidden p-3 sm:p-4">
+    <section className={cn('surface-card overflow-hidden p-3 sm:p-4', stretchToColumn && 'lg:flex lg:h-full lg:flex-col')}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
         <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
           <MapIcon className="h-4 w-4" /> {t(title)}
@@ -318,7 +320,7 @@ function MapCard({
         onSelectTicket={onSelectTicket}
         userLocation={userLocation}
         onLocateMe={onLocateMe}
-        containerClassName={heightClass}
+        containerClassName={cn(heightClass, stretchToColumn && 'lg:min-h-[600px] lg:flex-1')}
         depots={depots}
       />
     </section>
@@ -944,6 +946,7 @@ export default function Home() {
                   depots={SEED_TOOL_DEPOTS}
                   title="Bounty missions near you"
                   heightClass="h-[380px] sm:h-[480px] lg:h-[600px]"
+                  stretchToColumn
                 />
               </div>
             )}
