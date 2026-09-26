@@ -34,6 +34,7 @@ import GlideTabs from '@/components/GlideTabs';
 import UpiReceiptModal from '@/components/UpiReceiptModal';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
 import LeafletMap from '@/components/LeafletMap';
+import CsrFundingSection from '@/components/CsrFundingSection';
 import { useCivicloop } from '@/lib/useCivicloop';
 import { CSR_FUND, DEMO_COVS, DEMO_VOLUNTEER, PLACEHOLDER_IMAGE, SEED_TOOL_DEPOTS, TKR_COLLEGE_CENTER } from '@/lib/seedData';
 import { haversineMeters } from '@/lib/haversine';
@@ -817,6 +818,8 @@ export default function Home() {
                 heightClass="h-[380px] sm:h-[480px] lg:h-[600px]"
               />
             </div>
+
+            <CsrFundingSection />
           </>
         )}
 
