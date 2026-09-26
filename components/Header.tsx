@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, Globe, HardHat, LogOut, Phone, Repeat2, Rocket, ShieldCheck, Siren, User, X } from 'lucide-react';
+import { Bot, Globe, HardHat, LogOut, Moon, Phone, Repeat2, Rocket, ShieldCheck, Siren, Sun, User, X } from 'lucide-react';
 import type { SessionUser, UserRole } from '@/types/civic';
 import { cn } from '@/lib/cn';
 import type { AppLanguage } from '@/lib/i18n';
 import { useTranslate } from '@/components/AppLanguageProvider';
+import { useAppTheme } from '@/components/AppThemeProvider';
 
 const LANGUAGE_LABELS: Record<AppLanguage, string> = { en: 'English', kn: 'ಕನ್ನಡ', hi: 'हिन्दी' };
 
@@ -53,6 +54,7 @@ export default function Header({
   onQuickSwitchRole,
 }: HeaderProps) {
   const t = useTranslate();
+  const { theme, toggleTheme } = useAppTheme();
   const [sosDismissed, setSosDismissed] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
 
@@ -153,6 +155,18 @@ export default function Header({
             >
               <ShieldCheck className="h-3.5 w-3.5" /> {t('Privacy-first')}
             </span>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                aria-label={t(theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode')}
+                title={t(theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode')}
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+            </div>
 
             <div className="relative">
               <button

@@ -416,6 +416,7 @@ function QueueRow({
   onReroute,
   onProof,
   onSelect,
+  readOnly = false,
 }: {
   ticket: CivicTicket;
   cov: VolunteerProfile;
@@ -424,6 +425,7 @@ function QueueRow({
   onReroute: () => void;
   onProof: () => void;
   onSelect?: () => void;
+  readOnly?: boolean;
 }) {
   const t = useTranslate();
   const [expanded, setExpanded] = useState(false);
@@ -440,6 +442,11 @@ function QueueRow({
             <button type="button" onClick={onSelect} className="text-left text-sm font-semibold text-slate-900 hover:underline">
               {CATEGORY_META[ticket.category].icon} {ticket.title}
             </button>
+            {readOnly && (
+              <span className="mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-bold text-amber-800">
+                {t('Illustrative sample · read-only')}
+              </span>
+            )}
             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-slate-500">
               <span>{ticket.referenceCode}</span>
               <span className="flex items-center gap-0.5">
@@ -484,7 +491,7 @@ function QueueRow({
           )}
         </div>
 
-        {mine && (
+        {mine && !readOnly && (
           <div className="mt-3 flex flex-wrap gap-2">
             {STARTABLE.includes(ticket.status) && (
               <button
@@ -559,7 +566,12 @@ export default function CoVDashboard({
   const inDepartment = tickets.filter(
     (ticket) => ticket.isMaster && !isDemoTicket(ticket) && ticket.assignedDepartment === cov.department,
   );
-  const queue = inDepartment
+  const sampleTickets = tickets.filter(
+    (ticket) => ticket.isMaster && isDemoTicket(ticket) && ticket.assignedDepartment === cov.department,
+  );
+  const showingReadOnlySamples = inDepartment.length === 0 && sampleTickets.length > 0 && tab === 'active';
+  const displayedTickets = showingReadOnlySamples ? sampleTickets : inDepartment;
+  const queue = displayedTickets
     .filter((ticket) => TAB_STATUSES[tab].includes(ticket.status))
     .sort(
       (a, b) =>
@@ -610,9 +622,15 @@ export default function CoVDashboard({
         />
       </div>
 
+      {showingReadOnlySamples && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
+          {t('No live reports are assigned to this department. Showing illustrative examples for preview only; they cannot be acted on.')}
+        </div>
+      )}
+
       {queue.length === 0 ? (
         <div className="surface-card p-8 text-center text-sm text-slate-500">
-          {t('Nothing here right now.')}
+          {t(inDepartment.length === 0 ? 'No live reports in this queue.' : 'Nothing here right now.')}
         </div>
       ) : (
         <div className="space-y-3">
@@ -626,6 +644,7 @@ export default function CoVDashboard({
               onReroute={() => setReroutingId(ticket.id)}
               onProof={() => setProofId(ticket.id)}
               onSelect={onSelectTicket ? () => onSelectTicket(ticket.id) : undefined}
+              readOnly={showingReadOnlySamples}
             />
           ))}
         </div>

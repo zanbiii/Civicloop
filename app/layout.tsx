@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { AppLanguageProvider } from '@/components/AppLanguageProvider';
+import { AppThemeProvider } from '@/components/AppThemeProvider';
 import './globals.css';
 
 const geistSans = Geist({
@@ -47,7 +48,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <AppLanguageProvider>{children}</AppLanguageProvider>
+        <AppThemeProvider>
+          <AppLanguageProvider>{children}</AppLanguageProvider>
+        </AppThemeProvider>
       </body>
     </html>
   );

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import {
   CATEGORY_META,
+  DEPARTMENT_META,
   bountyTotal,
   type BountyStatus,
   type CivicProofVerification,
@@ -30,8 +31,11 @@ import {
   type SessionUser,
   type ToolDepot,
   type VolunteerProfile,
+  SEVERITY_META,
+  STATUS_META,
 } from '@/types/civic';
 import { findNearbyVolunteers, formatInr } from '@/lib/bounty';
+import { PLACEHOLDER_IMAGE } from '@/lib/seedData';
 import { cn } from '@/lib/cn';
 import CameraCapture from '@/components/CameraCapture';
 import { ProofResult } from '@/components/CoVDashboard';
@@ -341,62 +345,115 @@ function TaskCard({
   const bounty = ticket.bounty!;
   const total = bountyTotal(bounty);
   const locationLabel = ticket.location.address ?? ticket.location.ward ?? 'Location on file';
+  const photo = ticket.beforePhotos[0];
+  const slaLabel = {
+    on_track: 'On track',
+    warning: 'Warning (≥75%)',
+    breached: 'Breached',
+    met: 'SLA met',
+  }[ticket.sla.health];
+  const slaColor = {
+    on_track: 'bg-emerald-500',
+    warning: 'bg-amber-500',
+    breached: 'bg-red-500',
+    met: 'bg-emerald-500',
+  }[ticket.sla.health];
 
   return (
     <motion.div
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.99 }}
-      className="cursor-pointer rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_6px_22px_-18px_rgb(15_23_42_/30%)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg"
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.995 }}
+      className="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:border-emerald-200 hover:shadow-md sm:flex-row"
       onClick={onSelect}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
-            {CATEGORY_META[ticket.category].icon} {t(ticket.category)}
-          </div>
-          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-500">
-            <MapPin className="h-3 w-3" /> {demoSample ? t(locationLabel) : locationLabel}
-          </div>
-          {ticket.impactCount > 1 && (
-            <div className="mt-1 flex items-center gap-1 text-[11px] font-medium text-slate-600">
-              <Users className="h-3 w-3" /> {ticket.impactCount} {t('Neighbors Supported')}
-            </div>
+      <div className="h-1.5 w-full shrink-0 sm:h-auto sm:w-1.5" style={{ backgroundColor: SEVERITY_META[ticket.severity].pin }} />
+      {photo ? (
+        <div className="relative aspect-[4/3] w-full shrink-0 bg-slate-100 sm:aspect-auto sm:min-h-52 sm:w-48">
+          {/* eslint-disable-next-line @next/next/no-img-element -- evidence may be a data URL or remote upload */}
+          <img
+            src={photo.url}
+            alt={ticket.title}
+            className="absolute inset-0 h-full w-full object-contain"
+            onError={(event) => {
+              event.currentTarget.src = PLACEHOLDER_IMAGE;
+            }}
+          />
+          {demoSample && (
+            <span className="absolute bottom-1 left-1 rounded bg-slate-950/75 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+              {t('Sample')}
+            </span>
           )}
         </div>
-        <motion.span
-          className="shrink-0 whitespace-nowrap rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-1.5 text-right text-xs font-bold text-white shadow-[0_0_14px_rgba(16,185,129,0.55)]"
-          animate={{ boxShadow: ['0 0 8px rgba(16,185,129,0.4)', '0 0 16px rgba(16,185,129,0.7)', '0 0 8px rgba(16,185,129,0.4)'] }}
-          transition={{ duration: 2.2, repeat: Infinity }}
-        >
-          {formatInr(total)}
-        </motion.span>
-      </div>
+      ) : (
+        <div className="flex aspect-[4/3] w-full shrink-0 items-center justify-center bg-slate-50 text-3xl sm:aspect-auto sm:min-h-52 sm:w-48" aria-hidden="true">
+          {CATEGORY_META[ticket.category].icon}
+        </div>
+      )}
+      <div className="min-w-0 flex-1 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+              <span>{CATEGORY_META[ticket.category].icon} {t(ticket.category)}</span>
+              <span>·</span>
+              <span>{ticket.referenceCode}</span>
+            </div>
+            <h3 className="mt-1 text-sm font-bold leading-snug text-slate-900">{ticket.title}</h3>
+          </div>
+          <div className="shrink-0 rounded-lg bg-emerald-50 px-3 py-1.5 text-right">
+            <div className="text-[9px] font-bold uppercase tracking-wide text-emerald-700">{t('Bounty')}</div>
+            <div className="text-sm font-extrabold text-emerald-800">{formatInr(total)}</div>
+          </div>
+        </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
-        {demoSample && (
-          <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-bold text-amber-800">
-            {t('Illustrative sample — not a real report')}
-          </span>
-        )}
-        <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-semibold text-slate-500">
-          {t(STATUS_LABEL[bounty.status])}
-        </span>
-        {bounty.communityBonus > 0 && (
-          <span className="flex items-center gap-0.5 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-semibold text-emerald-700">
-            <Sparkles className="h-3 w-3" /> +{formatInr(bounty.communityBonus)} {t('boosted')}
-          </span>
-        )}
-        {bounty.status === 'open' && nearbyCount > 0 && (
-          <span className="flex items-center gap-0.5 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 font-semibold text-blue-700">
-            <HardHat className="h-3 w-3" /> {nearbyCount} CoV {t('nearby')}
-          </span>
-        )}
-        {bounty.claimedByName && bounty.status !== 'paid' && (
-          <span className="text-slate-400">{t('Claimed by')} {bounty.claimedByName}</span>
-        )}
-      </div>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {demoSample ? t(locationLabel) : locationLabel}</span>
+          <span>{DEPARTMENT_META[ticket.assignedDepartment]?.icon} {t(ticket.assignedDepartment)}</span>
+          {ticket.impactCount > 1 && (
+            <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {t('Reported by')} {ticket.impactCount} {t('citizens')}</span>
+          )}
+        </div>
+        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-600">{ticket.description}</p>
 
-      {!demoSample && role === 'volunteer' && bounty.status === 'open' && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+          <span className={cn('rounded border px-1.5 py-0.5 text-[10px] font-semibold', SEVERITY_META[ticket.severity].badgeClass)}>
+            {t(SEVERITY_META[ticket.severity].label)}
+          </span>
+          <span className={cn('rounded border px-1.5 py-0.5 text-[10px] font-semibold', STATUS_META[ticket.status].badgeClass)}>
+            {t(ticket.status)}
+          </span>
+          <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+            {t(STATUS_LABEL[bounty.status])}
+          </span>
+          {demoSample && (
+            <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+              {t('Illustrative sample — not a real report')}
+            </span>
+          )}
+          {bounty.communityBonus > 0 && (
+            <span className="flex items-center gap-0.5 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+              <Sparkles className="h-3 w-3" /> +{formatInr(bounty.communityBonus)} {t('boosted')}
+            </span>
+          )}
+          {bounty.status === 'open' && nearbyCount > 0 && (
+            <span className="flex items-center gap-0.5 rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
+              <HardHat className="h-3 w-3" /> {nearbyCount} CoV {t('nearby')}
+            </span>
+          )}
+          {bounty.claimedByName && bounty.status !== 'paid' && (
+            <span className="text-[10px] text-slate-400">{t('Claimed by')} {bounty.claimedByName}</span>
+          )}
+        </div>
+
+        <div className="mt-3 flex items-center gap-2">
+          <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', slaColor)} />
+          <span className="shrink-0 text-[10px] font-semibold text-slate-600">SLA · {t(slaLabel)}</span>
+          <div className="h-1.5 min-w-12 flex-1 overflow-hidden rounded-full bg-slate-100">
+            <div className={cn('h-full rounded-full', slaColor)} style={{ width: `${Math.min(100, ticket.sla.percentElapsed)}%` }} />
+          </div>
+          <span className="shrink-0 text-[10px] tabular-nums text-slate-500">{Math.min(100, ticket.sla.percentElapsed)}%</span>
+        </div>
+
+        {!demoSample && role === 'volunteer' && bounty.status === 'open' && (
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}
@@ -410,7 +467,7 @@ function TaskCard({
         </motion.button>
       )}
 
-      {canSubmitProof && (
+        {canSubmitProof && (
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}
@@ -424,7 +481,7 @@ function TaskCard({
         </motion.button>
       )}
 
-      {!demoSample && role === 'citizen' && bounty.status !== 'paid' && (
+        {!demoSample && role === 'citizen' && bounty.status !== 'paid' && (
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}
@@ -438,7 +495,7 @@ function TaskCard({
         </motion.button>
       )}
 
-      {!demoSample && !role && (
+        {!demoSample && !role && (
         <button
           type="button"
           onClick={(event) => {
@@ -450,7 +507,8 @@ function TaskCard({
           {t('Sign in or join to report, contribute or volunteer')}
         </button>
       )}
-      {demoSample && <p className="mt-3 text-center text-[11px] font-medium text-amber-800">{t('Sample data · read-only')}</p>}
+        {demoSample && <p className="mt-2 text-[10px] font-medium text-amber-800">{t('Sample data · read-only — mission actions are disabled.')}</p>}
+      </div>
     </motion.div>
   );
 }
