@@ -938,13 +938,14 @@ export default function Home() {
                   onSignIn={() => openAuth('volunteer')}
                 />
                 <MapCard
-                  tickets={tickets.filter((ticket) => !isDemoTicket(ticket))}
+                  tickets={localAreaTickets}
                   selectedTicketId={selectedTicketId}
                   onSelectTicket={setSelectedTicketId}
                   userLocation={userLocation}
                   onLocateMe={setUserLocation}
                   depots={SEED_TOOL_DEPOTS}
                   title="Bounty missions near you"
+                  showingDemoReports={showingDemoReports}
                   heightClass="h-[380px] sm:h-[480px] lg:h-[600px]"
                   stretchToColumn
                 />
