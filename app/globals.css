@@ -351,7 +351,9 @@
     box-shadow: 0 14px 34px -22px rgb(6 78 59 / 45%);
   }
 
-  .interactive-card:active {
+  /* Don't nudge a card while the user is typing or pressing inside it. */
+  .interactive-card:active,
+  .interactive-card:focus-within {
     transform: translateY(0);
   }
 
@@ -811,6 +813,33 @@ button {
 :root[data-theme="dark"] [class~="border-violet-200"],
 :root[data-theme="dark"] [class~="border-violet-300"] {
   border-color: #584477;
+}
+
+/* Light hover tints would flash bright in dark mode; map them to the dark palette. */
+:root[data-theme="dark"] [class*="hover:bg-slate-50"]:hover,
+:root[data-theme="dark"] [class*="hover:bg-slate-100"]:hover {
+  background-color: #263631;
+}
+
+:root[data-theme="dark"] [class*="hover:bg-violet-100"]:hover,
+:root[data-theme="dark"] [class*="hover:bg-violet-200"]:hover {
+  background-color: #3a2d54;
+}
+
+:root[data-theme="dark"] [class*="hover:border-slate-2"]:hover,
+:root[data-theme="dark"] [class*="hover:border-slate-3"]:hover,
+:root[data-theme="dark"] [class*="hover:border-slate-4"]:hover {
+  border-color: #52635b;
+}
+
+:root[data-theme="dark"] [class*="hover:border-violet-4"]:hover {
+  border-color: #6d5a91;
+}
+
+:root[data-theme="dark"] [class*="hover:text-slate-7"]:hover,
+:root[data-theme="dark"] [class*="hover:text-slate-8"]:hover,
+:root[data-theme="dark"] [class*="hover:text-slate-9"]:hover {
+  color: #f1f5f3;
 }
 
 :root[data-theme="dark"] .soft-scrollbar {
