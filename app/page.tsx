@@ -236,9 +236,9 @@ function DemoBar({
 }) {
   const t = useTranslate();
   const button =
-    'flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-900/10 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-sm transition hover:border-emerald-700/20 hover:bg-emerald-50 disabled:opacity-50';
+    'demo-bar-action flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-900/10 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-sm transition hover:border-emerald-700/20 hover:bg-emerald-50 disabled:opacity-50';
   return (
-    <div className="border-b border-emerald-900/10 bg-[#e8f4ef]">
+    <div className="demo-bar border-b border-emerald-900/10 bg-[#e8f4ef]">
       <div className="soft-scrollbar mx-auto flex max-w-[90rem] items-center gap-2 overflow-x-auto px-3 py-2 sm:px-5 lg:px-8">
         <span className="shrink-0 rounded-full bg-emerald-800 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">{t('Demo lab')}</span>
         <button type="button" disabled={busy} onClick={() => onScenario('pothole')} className={button}>

@@ -265,6 +265,23 @@ button {
   color: #f1f5f3;
 }
 
+:root[data-theme="dark"] .demo-bar {
+  border-color: #28523f;
+  background: #14271f;
+}
+
+:root[data-theme="dark"] .demo-bar-action {
+  border-color: #32634c;
+  background: #1b3429;
+  color: #86efc0;
+}
+
+:root[data-theme="dark"] .demo-bar-action:hover:not(:disabled) {
+  border-color: #438661;
+  background: #234333;
+  color: #b7f7d7;
+}
+
 .soft-scrollbar {
   scrollbar-color: #cbd5e1 transparent;
   scrollbar-width: thin;
