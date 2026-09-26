@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Camera, CheckCheck, Clock, MapPin, Plus, Star, ThumbsDown, ThumbsUp, Users, X } from 'lucide-react';
 import { CATEGORY_META, PRAISE_CHIPS, SEVERITY_META, STATUS_META, type CivicTicket, type PublicReporter } from '@/types/civic';
 import { PLACEHOLDER_IMAGE } from '@/lib/seedData';
 import { cn } from '@/lib/cn';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 import { useTranslate } from '@/components/AppLanguageProvider';
 import { isDemoTicket } from '@/lib/demo';
 
@@ -53,18 +54,18 @@ function SlaStatusLine({ ticket }: { ticket: CivicTicket }) {
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
         <span className="flex items-center gap-1 text-slate-500">
-          <Clock className="h-3.5 w-3.5" /> {sla.slaHours}h           {t(ticket.severity)} SLA
+          <Clock className="h-3.5 w-3.5" aria-hidden="true" /> {sla.slaHours}h {t(ticket.severity)} SLA
         </span>
         {sla.health === 'breached' ? (
           <span className="rounded border border-red-400 bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
             {t('SLA Breached · Auto-Escalated')}
           </span>
         ) : (
-          <span className="font-semibold text-slate-600">{Math.min(100, sla.percentElapsed)}% elapsed</span>
+          <span className="font-semibold tabular-nums text-slate-600">{Math.min(100, sla.percentElapsed)}% elapsed</span>
         )}
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-        <div className={cn('h-full rounded-full', SLA_BAR_COLOR[sla.health])} style={{ width: `${Math.min(100, sla.percentElapsed)}%` }} />
+        <div className={cn('h-full rounded-full transition-[width] duration-500 ease-out', SLA_BAR_COLOR[sla.health])} style={{ width: `${Math.min(100, sla.percentElapsed)}%` }} />
       </div>
     </div>
   );
@@ -78,8 +79,8 @@ function SupportRow({ onSupport }: { onSupport: (note: string | null) => void })
 
   if (supported) {
     return (
-      <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-        <CheckCheck className="h-3.5 w-3.5" /> {t('Added — thanks for confirming')}
+      <span role="status" className="flex w-fit animate-fade-in items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+        <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" /> {t('Added — thanks for confirming')}
       </span>
     );
   }
@@ -89,20 +90,22 @@ function SupportRow({ onSupport }: { onSupport: (note: string | null) => void })
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+        className="btn btn-secondary btn-sm"
       >
-        <ThumbsUp className="h-3.5 w-3.5" /> {t('I see this too')}
+        <ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" /> {t('I see this too')}
       </button>
     );
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex animate-fade-in items-center gap-2">
       <input
         value={note}
         onChange={(event) => setNote(event.target.value)}
         placeholder={t('Optional note (e.g. worse after rain)')}
-        className="w-full min-w-0 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-slate-500"
+        aria-label={t('Optional note (e.g. worse after rain)')}
+        autoFocus
+        className="field min-w-0 rounded-[0.625rem] px-2.5 py-1.5 text-xs"
       />
       <button
         type="button"
@@ -110,7 +113,7 @@ function SupportRow({ onSupport }: { onSupport: (note: string | null) => void })
           onSupport(note.trim() || null);
           setSupported(true);
         }}
-        className="shrink-0 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+        className="btn btn-primary btn-sm shrink-0"
       >
         {t('Confirm')}
       </button>
@@ -134,7 +137,7 @@ function TicketCard({
   const afterPhoto = ticket.afterPhotos[0];
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_6px_22px_-18px_rgb(15_23_42_/30%)] transition hover:border-emerald-200">
+    <div className="interactive-card animate-slide-up rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_6px_22px_-18px_rgb(15_23_42_/30%)]">
       <div className="flex gap-3">
         {photo && (
           <div className="relative h-16 w-16 shrink-0">
@@ -158,7 +161,7 @@ function TicketCard({
           <button
             type="button"
             onClick={() => onSelect?.(ticket.id)}
-            className="text-left text-sm font-semibold text-slate-900 hover:underline"
+            className="rounded text-left text-sm font-semibold text-slate-900 underline-offset-2 transition hover:text-emerald-800 hover:underline dark:hover:text-[#86efc0]"
           >
             {CATEGORY_META[ticket.category].icon} {ticket.title}
           </button>
@@ -205,9 +208,9 @@ function TicketCard({
         <button
           type="button"
           onClick={onConfirmClick}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-600"
+          className="btn btn-attention btn-block btn-wrap mt-3"
         >
-          <CheckCheck className="h-4 w-4" /> {t('Was this actually fixed?')}
+          <CheckCheck className="h-4 w-4" aria-hidden="true" /> {t('Was this actually fixed?')}
         </button>
       )}
 
@@ -236,21 +239,24 @@ function ConfirmationDialog({
   const [comment, setComment] = useState('');
   const afterPhoto = ticket.afterPhotos[0];
   const beforePhoto = ticket.beforePhotos[0];
+  const titleId = useId();
+  const commentId = useId();
+  useEscapeKey(onClose);
 
   const toggleChip = (chip: string) =>
     setPraiseChips((current) => (current.includes(chip) ? current.filter((c) => c !== chip) : [...current, chip]));
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h3 className="text-base font-bold text-slate-900">{t('Confirm the fix')}</h3>
-          <button type="button" onClick={onClose} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+    <div className="modal-backdrop z-[2000]">
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="modal-panel max-w-md">
+        <div className="modal-header">
+          <h3 id={titleId} className="text-base font-bold text-slate-900">{t('Confirm the fix')}</h3>
+          <button type="button" onClick={onClose} className="btn btn-ghost btn-icon text-slate-400" aria-label={t('Close')}>
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto p-5">
+        <div className="soft-scrollbar max-h-[70vh] overflow-y-auto p-5">
           <p className="text-sm text-slate-600">{ticket.title}</p>
 
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -285,11 +291,23 @@ function ConfirmationDialog({
           </div>
 
           <div className="mt-4">
-            <span className="mb-1.5 block text-xs font-semibold text-slate-600">{t('How would you rate the fix?')}</span>
-            <div className="flex gap-1.5">
+            <span className="field-label">{t('How would you rate the fix?')}</span>
+            <div className="flex gap-1" role="group" aria-label={t('How would you rate the fix?')}>
               {([1, 2, 3, 4, 5] as const).map((value) => (
-                <button key={value} type="button" onClick={() => setRating(value)} aria-label={`${value} stars`}>
-                  <Star className={cn('h-7 w-7', rating && value <= rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300')} />
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setRating(value)}
+                  aria-label={`${value} stars`}
+                  aria-pressed={rating === value}
+                  className="rounded-lg p-0.5 transition duration-150 hover:scale-110 active:scale-95"
+                >
+                  <Star
+                    className={cn(
+                      'h-7 w-7 transition-colors',
+                      rating && value <= rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 hover:text-amber-300',
+                    )}
+                  />
                 </button>
               ))}
             </div>
@@ -301,18 +319,19 @@ function ConfirmationDialog({
           </div>
 
           <div className="mt-4">
-            <span className="mb-1.5 block text-xs font-semibold text-slate-600">{t('One-tap praise (optional)')}</span>
+            <span className="field-label">{t('One-tap praise (optional)')}</span>
             <div className="flex flex-wrap gap-1.5">
               {PRAISE_CHIPS.map((chip) => (
                 <button
                   key={chip}
                   type="button"
                   onClick={() => toggleChip(chip)}
+                  aria-pressed={praiseChips.includes(chip)}
                   className={cn(
-                    'rounded-full border px-3 py-1.5 text-xs font-semibold transition',
+                    'rounded-full border px-3 py-1.5 text-xs font-semibold transition duration-150 active:scale-95',
                     praiseChips.includes(chip)
-                      ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                      : 'border-slate-200 text-slate-600 hover:bg-slate-50',
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                      : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-100 dark:hover:bg-[#263631]',
                   )}
                 >
                   {t(chip)}
@@ -322,31 +341,32 @@ function ConfirmationDialog({
           </div>
 
           <div className="mt-4">
-            <span className="mb-1.5 block text-xs font-semibold text-slate-600">{t('Comment (optional)')}</span>
+            <label htmlFor={commentId} className="field-label">{t('Comment (optional)')}</label>
             <textarea
+              id={commentId}
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               rows={3}
               placeholder={t('Anything the CoV or other citizens should know?')}
-              className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+              className="field resize-none px-3"
             />
           </div>
         </div>
 
-        <div className="flex gap-2 border-t border-slate-100 px-5 py-4">
+        <div className="modal-footer">
           <button
             type="button"
             onClick={() => onSubmit({ decision: 'rejected', rating, praiseChips, comment: comment.trim() || null })}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-100"
+            className="btn btn-danger flex-1"
           >
-            <ThumbsDown className="h-4 w-4" /> {t('Not fixed')}
+            <ThumbsDown className="h-4 w-4" aria-hidden="true" /> {t('Not fixed')}
           </button>
           <button
             type="button"
             onClick={() => onSubmit({ decision: 'approved', rating, praiseChips, comment: comment.trim() || null })}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+            className="btn btn-primary flex-1"
           >
-            <ThumbsUp className="h-4 w-4" /> {t('Looks good')}
+            <ThumbsUp className="h-4 w-4" aria-hidden="true" /> {t('Looks good')}
           </button>
         </div>
       </div>
@@ -383,21 +403,21 @@ export default function CitizenDashboard({
           <button
             type="button"
             onClick={onNewReport}
-            className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl bg-emerald-800 px-3.5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-900 sm:px-4 sm:text-sm"
+            className="btn btn-primary shrink-0 px-3.5 text-xs font-bold sm:px-4 sm:text-sm"
           >
-            <Plus className="h-4 w-4" /> {t('Report an issue')}
+            <Plus className="h-4 w-4" aria-hidden="true" /> {t('Report an issue')}
           </button>
         )}
       </div>
 
       {myTickets.length === 0 ? (
-        <div className="surface-card flex flex-col items-center px-5 py-12 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700"><MapPin className="h-6 w-6" /></span>
+        <div className="surface-card flex animate-fade-in flex-col items-center px-5 py-12 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-8 ring-emerald-50/50 dark:ring-[#16382d]/40"><MapPin className="h-6 w-6" aria-hidden="true" /></span>
           <h3 className="mt-4 text-sm font-bold text-slate-900">{t('Your reports will show up here')}</h3>
           <p className="mt-1 max-w-sm text-sm leading-relaxed text-slate-500">{t('Start with a photo or a quick description. We’ll keep you updated all the way to a verified fix.')}</p>
           {onNewReport && (
-            <button type="button" onClick={onNewReport} className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-900">
-              <Plus className="h-4 w-4" /> {t('Report your first issue')}
+            <button type="button" onClick={onNewReport} className="btn btn-primary mt-5">
+              <Plus className="h-4 w-4" aria-hidden="true" /> {t('Report your first issue')}
             </button>
           )}
         </div>

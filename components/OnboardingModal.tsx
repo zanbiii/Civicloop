@@ -66,21 +66,32 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
   };
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center gap-1.5 px-6 pt-5">
+    <div className="modal-backdrop z-[2000]">
+      <div role="dialog" aria-modal="true" aria-label={t('Welcome to Civicloop')} className="modal-panel max-w-md">
+        <div
+          className="flex items-center gap-1.5 px-6 pt-5"
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={STEPS.length}
+          aria-valuenow={stepIndex + 1}
+          aria-label={t('Onboarding progress')}
+        >
           {STEPS.map((s, index) => (
-            <span
-              key={s}
-              className={cn('h-1.5 flex-1 rounded-full transition-colors', index <= stepIndex ? 'bg-slate-900' : 'bg-slate-200')}
-            />
+            <span key={s} className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
+              <span
+                className={cn(
+                  'block h-full rounded-full bg-emerald-600 transition-transform duration-300 ease-out',
+                  index <= stepIndex ? 'translate-x-0' : '-translate-x-full',
+                )}
+              />
+            </span>
           ))}
         </div>
 
-        <div className="px-6 py-6">
+        <div key={step} className="min-h-[17rem] animate-slide-up px-6 py-7">
           {step === 'privacy' && (
             <div className="space-y-4 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 ring-8 ring-emerald-50 dark:ring-[#16382d]/40">
                 <ShieldCheck className="h-7 w-7 text-emerald-600" />
               </div>
               <h2 className="text-lg font-bold text-slate-900">{t('Your privacy, protected by design')}</h2>
@@ -93,7 +104,7 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
 
           {step === 'location' && (
             <div className="space-y-4 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 ring-8 ring-blue-50 dark:ring-[#1d3044]/40">
                 <MapPin className="h-7 w-7 text-blue-600" />
               </div>
               <h2 className="text-lg font-bold text-slate-900">{t('Help us pinpoint civic issues')}</h2>
@@ -102,12 +113,12 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
               </p>
 
               {locationStatus === 'granted' && (
-                <p className="flex items-center justify-center gap-1.5 text-sm font-semibold text-emerald-600">
+                <p role="status" className="mx-auto flex w-fit animate-fade-in items-center justify-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700">
                   <CheckCheck className="h-4 w-4" /> {t('Location ready')}
                 </p>
               )}
               {(locationStatus === 'denied' || locationStatus === 'unsupported') && (
-                <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-amber-600">
+                <p role="status" className="mx-auto flex w-fit animate-fade-in items-center justify-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700">
                   <TriangleAlert className="h-3.5 w-3.5" />
                   {locationStatus === 'unsupported'
                     ? t('Your browser doesn’t support location — you can place the pin manually.')
@@ -120,7 +131,7 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
                   type="button"
                   onClick={requestLocation}
                   disabled={locationStatus === 'requesting'}
-                  className="mx-auto flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
+                  className="btn btn-primary mx-auto"
                 >
                   {locationStatus === 'requesting' && <LoaderCircle className="h-4 w-4 animate-spin" />}
                   {t('Allow location access')}
@@ -134,10 +145,10 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
               const card = TOUR_CARDS[stepIndex - 2];
               return (
                 <div className="space-y-4 text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 ring-8 ring-violet-50 dark:ring-[#302545]/40">
                     <card.icon className="h-7 w-7 text-violet-600" />
                   </div>
-                  <span className="text-xs font-semibold uppercase tracking-wide text-violet-500">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-violet-600">
                     {t('Quick tour')} · {t('Step')} {stepIndex - 1} {t('of')} 3
                   </span>
                   <h2 className="text-lg font-bold text-slate-900">{t(card.title)}</h2>
@@ -147,12 +158,12 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
             })()}
         </div>
 
-        <div className="flex items-center gap-2 border-t border-slate-100 px-6 py-4">
+        <div className="modal-footer justify-start px-6 py-4">
           {stepIndex > 0 ? (
             <button
               type="button"
               onClick={goBack}
-              className="flex items-center gap-1 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+              className="btn btn-ghost px-3"
             >
               <ChevronLeft className="h-4 w-4" /> {t('Back')}
             </button>
@@ -162,17 +173,17 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
 
           <div className="ml-auto flex gap-2">
             {step === 'location' && locationStatus !== 'granted' && (
-              <button type="button" onClick={goNext} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">
+              <button type="button" onClick={goNext} className="btn btn-ghost">
                 {t('Skip for now')}
               </button>
             )}
             <button
               type="button"
               onClick={stepIndex === STEPS.length - 1 ? finish : goNext}
-              className="flex items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+              className="btn btn-primary group px-5"
             >
               {t(stepIndex === STEPS.length - 1 ? 'Get started' : 'Continue')}
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </button>
           </div>
         </div>

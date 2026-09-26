@@ -235,7 +235,7 @@ export default function CameraCapture({
           <button
             type="button"
             onClick={stopCamera}
-            className="rounded-full bg-white/20 p-2 text-white backdrop-blur hover:bg-white/30"
+            className="rounded-full bg-black/40 p-2 text-white backdrop-blur transition hover:bg-black/60 active:scale-90"
             aria-label="Close camera"
           >
             <X className="h-5 w-5" />
@@ -244,13 +244,13 @@ export default function CameraCapture({
             type="button"
             onClick={snap}
             disabled={processing}
-            className="h-16 w-16 rounded-full border-4 border-white bg-white/30 transition hover:bg-white/50 active:scale-95 disabled:opacity-60"
+            className="h-16 w-16 rounded-full border-4 border-white bg-white/30 shadow-lg transition hover:scale-105 hover:bg-white/50 active:scale-90 disabled:opacity-60"
             aria-label="Take photo"
           />
           <button
             type="button"
             onClick={switchCamera}
-            className="rounded-full bg-white/20 p-2 text-white backdrop-blur hover:bg-white/30"
+            className="rounded-full bg-black/40 p-2 text-white backdrop-blur transition hover:bg-black/60 active:scale-90"
             aria-label="Switch camera"
           >
             <SwitchCamera className="h-5 w-5" />
@@ -264,7 +264,8 @@ export default function CameraCapture({
             type="button"
             onClick={() => void startCamera()}
             disabled={full || starting || processing}
-            className="flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-busy={starting}
+            className="btn btn-primary btn-lg"
           >
             {starting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
             Snap photo
@@ -273,7 +274,7 @@ export default function CameraCapture({
             type="button"
             onClick={() => uploadInputRef.current?.click()}
             disabled={full || processing}
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn btn-secondary btn-lg"
           >
             <ImagePlus className="h-4 w-4" />
             Upload
@@ -304,27 +305,27 @@ export default function CameraCapture({
       />
 
       {processing && (
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> Processing photo…
+        <div role="status" className="flex items-center gap-2 text-xs text-slate-500">
+          <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> Processing photo…
         </div>
       )}
 
       {error && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <div role="alert" className="flex animate-slide-down items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {error}
         </div>
       )}
 
-      {photos.length > 0 && (
+      {(photos.length > 0 || processing) && (
         <div className="grid grid-cols-3 gap-2">
           {photos.map((photo) => (
-            <div key={photo.id} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
+            <div key={photo.id} className="group relative aspect-square animate-scale-in overflow-hidden rounded-xl border border-slate-200 shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element -- previews are base64 data: URLs */}
               <img
                 src={photo.url}
                 alt={`${photo.kind} evidence`}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 onError={(event) => {
                   event.currentTarget.src = PLACEHOLDER_IMAGE;
                 }}
@@ -337,13 +338,14 @@ export default function CameraCapture({
               <button
                 type="button"
                 onClick={() => onPhotosChange(photos.filter((existing) => existing.id !== photo.id))}
-                className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+                className="absolute right-1 top-1 rounded-full bg-black/60 p-1.5 text-white transition hover:bg-red-600 active:scale-90"
                 aria-label="Remove photo"
               >
                 <X className="h-3 w-3" />
               </button>
             </div>
           ))}
+          {processing && <div className="skeleton aspect-square rounded-xl" aria-hidden="true" />}
         </div>
       )}
     </div>

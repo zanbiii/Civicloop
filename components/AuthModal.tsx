@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Bot, HardHat, KeyRound, LoaderCircle, Mail, Phone, ShieldCheck, Sparkles, User, X } from 'lucide-react';
+import { useId, useState } from 'react';
+import { Bot, HardHat, KeyRound, LoaderCircle, Mail, Phone, ShieldCheck, Sparkles, TriangleAlert, User, X } from 'lucide-react';
 import {
   DEPARTMENTS,
   maskPhone,
@@ -14,6 +14,7 @@ import {
   type VolunteerProfile,
 } from '@/types/civic';
 import { cn } from '@/lib/cn';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 import { useTranslate } from '@/components/AppLanguageProvider';
 
 const DEMO_OTP = '123456';
@@ -41,6 +42,15 @@ function makeCitizenId(handle: string): string {
   return digits.length >= 4 ? `citizen-${digits.slice(-4)}` : `citizen-${pseudonymFor(handle).replace(/\D/g, '')}`;
 }
 
+function FormError({ id, message }: { id?: string; message: string }) {
+  return (
+    <p id={id} role="alert" className="field-error">
+      <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+      {message}
+    </p>
+  );
+}
+
 /** Shared OTP step for both the Citizen and CoV flows. */
 function OtpStep({
   destination,
@@ -59,6 +69,7 @@ function OtpStep({
 }) {
   const t = useTranslate();
   const [otp, setOtp] = useState('');
+  const otpId = useId();
 
   return (
     <div className="space-y-4">
@@ -70,41 +81,38 @@ function OtpStep({
       </div>
 
       <input
+        id={otpId}
         value={otp}
         onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
         inputMode="numeric"
+        autoComplete="one-time-code"
+        autoFocus
         placeholder="••••••"
-        className="w-full rounded-xl border border-slate-300 px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] text-slate-900 outline-none focus:border-slate-500"
+        aria-label={t('6-digit code')}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${otpId}-error` : undefined}
+        className="field px-4 py-3 text-center text-2xl font-bold tracking-[0.5em]"
       />
 
       <button
         type="button"
         onClick={() => setOtp(DEMO_OTP)}
-        className={cn(
-          'flex w-full items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition',
-          demoMode
-            ? 'border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100'
-            : 'border-slate-200 text-slate-500 hover:bg-slate-50',
-        )}
+        className={cn('btn btn-sm btn-block', demoMode ? 'btn-demo' : 'btn-secondary text-slate-500')}
       >
         <Sparkles className="h-3.5 w-3.5" /> {t('Auto-Fill Demo OTP')} {DEMO_OTP}
       </button>
 
-      {error && <p className="text-xs font-medium text-red-600">{error}</p>}
+      {error && <FormError id={`${otpId}-error`} message={error} />}
 
       <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-        >
+        <button type="button" onClick={onBack} className="btn btn-secondary">
           {t('Back')}
         </button>
         <button
           type="button"
           disabled={otp.length !== 6 || loading}
           onClick={() => onVerify(otp)}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn btn-primary flex-1"
         >
           {loading && <LoaderCircle className="h-4 w-4 animate-spin" />}
           {t('Verify & Continue')}
@@ -122,6 +130,7 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
   const [step, setStep] = useState<'details' | 'otp'>('details');
   const [error, setError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const fieldId = useId();
 
   const destination = method === 'phone' ? maskPhone(phone) : email;
 
@@ -170,62 +179,69 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
 
   return (
     <div className="space-y-4">
-      <div className="flex rounded-lg bg-slate-100 p-1 text-xs font-semibold">
-        <button
-          type="button"
-          onClick={() => setMethod('phone')}
-          className={cn('flex-1 rounded-md py-1.5', method === 'phone' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500')}
-        >
-          <Phone className="mr-1 inline h-3.5 w-3.5" /> {t('Phone + OTP')}
-        </button>
-        <button
-          type="button"
-          onClick={() => setMethod('email')}
-          className={cn('flex-1 rounded-md py-1.5', method === 'email' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500')}
-        >
-          <Mail className="mr-1 inline h-3.5 w-3.5" /> {t('Email')}
-        </button>
+      <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 text-xs font-semibold" role="group" aria-label={t('Sign-in method')}>
+        {([
+          { id: 'phone', label: t('Phone + OTP'), icon: Phone },
+          { id: 'email', label: t('Email'), icon: Mail },
+        ] as const).map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => setMethod(option.id)}
+            aria-pressed={method === option.id}
+            className={cn(
+              'flex min-h-9 items-center justify-center gap-1.5 rounded-lg transition duration-150 active:scale-[0.98]',
+              method === option.id
+                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/70'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-[#f1f5f3]',
+            )}
+          >
+            <option.icon className="h-3.5 w-3.5" aria-hidden="true" /> {option.label}
+          </button>
+        ))}
       </div>
 
       {method === 'phone' ? (
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Mobile number')}</label>
-          <div className="flex items-center rounded-xl border border-slate-300 focus-within:border-slate-500">
-            <span className="pl-3.5 text-sm text-slate-400">+91</span>
+        <div className="animate-fade-in">
+          <label htmlFor={fieldId} className="field-label">{t('Mobile number')}</label>
+          <div className="field-group">
+            <span className="pl-3.5 text-sm font-medium text-slate-400">+91</span>
             <input
+              id={fieldId}
               value={phone}
               onChange={(event) => setPhone(event.target.value.replace(/\D/g, '').slice(0, 10))}
               inputMode="numeric"
+              autoComplete="tel-national"
               placeholder="98451 20337"
-              className="w-full rounded-xl bg-transparent px-2 py-3 text-sm text-slate-900 outline-none"
+              aria-invalid={Boolean(error)}
+              className="w-full rounded-xl bg-transparent px-2 py-3 text-sm outline-none"
             />
           </div>
         </div>
       ) : (
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Email address')}</label>
+        <div className="animate-fade-in">
+          <label htmlFor={fieldId} className="field-label">{t('Email address')}</label>
           <input
+            id={fieldId}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             type="email"
+            autoComplete="email"
             placeholder="you@example.com"
-            className="w-full rounded-xl border border-slate-300 px-3.5 py-3 text-sm text-slate-900 outline-none focus:border-slate-500"
+            aria-invalid={Boolean(error)}
+            className="field py-3"
           />
         </div>
       )}
 
-      <p className="flex items-start gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-[11px] text-emerald-700">
-        <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+      <p className="flex items-start gap-1.5 rounded-xl bg-emerald-50 px-3 py-2.5 text-[11px] leading-relaxed text-emerald-700">
+        <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         {t('Your number and identity are never shown publicly — only your issue and its location reach CoVs.')}
       </p>
 
-      {error && <p className="text-xs font-medium text-red-600">{error}</p>}
+      {error && <FormError message={error} />}
 
-      <button
-        type="button"
-        onClick={sendOtp}
-        className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
-      >
+      <button type="button" onClick={sendOtp} className="btn btn-primary btn-block">
         {t('Send OTP')}
       </button>
     </div>
@@ -242,6 +258,7 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
   const [zone, setZone] = useState<(typeof ZONES)[number]>(ZONES[0]);
   const [step, setStep] = useState<'details' | 'otp'>('details');
   const [error, setError] = useState<string | null>(null);
+  const ids = useId();
   const [verifying, setVerifying] = useState(false);
 
   const fillDemo = () => {
@@ -314,61 +331,66 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
         <button
           type="button"
           onClick={fillDemo}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100"
+          className="btn btn-demo btn-sm btn-block"
         >
           <Sparkles className="h-3.5 w-3.5" /> {t('Autofill a demo CoV (PWD/Roads, Koramangala)')}
         </button>
       )}
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Full name')}</label>
+        <label htmlFor={`${ids}-name`} className="field-label">{t('Full name')}</label>
         <input
+          id={`${ids}-name`}
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder={t('Full name')}
-          className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+          className="field"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('CoV ID')}</label>
+          <label htmlFor={`${ids}-cov`} className="field-label">{t('CoV ID')}</label>
           <input
+            id={`${ids}-cov`}
             value={covId}
             onChange={(event) => setCovId(event.target.value)}
             placeholder="COV-KOR-114"
-            className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+            className="field"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Mobile number')}</label>
+          <label htmlFor={`${ids}-phone`} className="field-label">{t('Mobile number')}</label>
           <input
+            id={`${ids}-phone`}
             value={phone}
             onChange={(event) => setPhone(event.target.value.replace(/\D/g, '').slice(0, 10))}
             inputMode="numeric"
             placeholder="9900112233"
-            className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+            className="field"
           />
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600">{t('UPI ID for bounty payouts')}</label>
+        <label htmlFor={`${ids}-upi`} className="field-label">{t('UPI ID for bounty payouts')}</label>
         <input
+          id={`${ids}-upi`}
           value={upiId}
           onChange={(event) => setUpiId(event.target.value)}
           placeholder="name@bank"
-          className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+          className="field"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Department')}</label>
+          <label htmlFor={`${ids}-dept`} className="field-label">{t('Department')}</label>
           <select
+            id={`${ids}-dept`}
             value={department}
             onChange={(event) => setDepartment(event.target.value as Department)}
-            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+            className="field px-3"
           >
             {DEPARTMENTS.map((dept) => (
               <option key={dept} value={dept}>
@@ -378,11 +400,12 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Zone')}</label>
+          <label htmlFor={`${ids}-zone`} className="field-label">{t('Zone')}</label>
           <select
+            id={`${ids}-zone`}
             value={zone}
             onChange={(event) => setZone(event.target.value as (typeof ZONES)[number])}
-            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+            className="field px-3"
           >
             {ZONES.map((z) => (
               <option key={z} value={z}>
@@ -393,13 +416,9 @@ function CoVAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthentic
         </div>
       </div>
 
-      {error && <p className="text-xs font-medium text-red-600">{error}</p>}
+      {error && <FormError message={error} />}
 
-      <button
-        type="button"
-        onClick={sendOtp}
-        className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
-      >
+      <button type="button" onClick={sendOtp} className="btn btn-primary btn-block">
         {t('Send OTP')}
       </button>
     </div>
@@ -412,6 +431,7 @@ function AdminAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthent
   const [email, setEmail] = useState('');
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const ids = useId();
   const [loading, setLoading] = useState(false);
 
   const fillDemo = () => {
@@ -442,8 +462,8 @@ function AdminAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthent
 
   return (
     <div className="space-y-3">
-      <p className="flex items-start gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-[11px] text-slate-600">
-        <Bot className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+      <p className="flex items-start gap-1.5 rounded-xl bg-slate-100 px-3 py-2.5 text-[11px] leading-relaxed text-slate-600">
+        <Bot className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         {t('Super-admin access to the AI Brain dashboard and self-healing telemetry.')}
       </p>
 
@@ -451,53 +471,56 @@ function AdminAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthent
         <button
           type="button"
           onClick={fillDemo}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100"
+          className="btn btn-demo btn-sm btn-block"
         >
           <Sparkles className="h-3.5 w-3.5" /> {t('Autofill demo admin')}
         </button>
       )}
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Full name')}</label>
+        <label htmlFor={`${ids}-name`} className="field-label">{t('Full name')}</label>
         <input
+          id={`${ids}-name`}
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder={t('Admin name')}
-          className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+          className="field"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Email address')}</label>
+        <label htmlFor={`${ids}-email`} className="field-label">{t('Email address')}</label>
         <input
+          id={`${ids}-email`}
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           type="email"
           placeholder="admin@civicloop.demo"
-          className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+          className="field"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Admin passcode')}</label>
-        <div className="flex items-center rounded-xl border border-slate-300 focus-within:border-slate-500">
-          <KeyRound className="ml-3 h-4 w-4 text-slate-400" />
+        <label htmlFor={`${ids}-pass`} className="field-label">{t('Admin passcode')}</label>
+        <div className="field-group">
+          <KeyRound className="ml-3 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
           <input
+            id={`${ids}-pass`}
             value={passcode}
             onChange={(event) => setPasscode(event.target.value)}
             placeholder={`Demo: ${DEMO_ADMIN_PASSCODE}`}
-            className="w-full rounded-xl bg-transparent px-2.5 py-2.5 text-sm uppercase tracking-wide text-slate-900 outline-none"
+            className="w-full rounded-xl bg-transparent px-2.5 py-2.5 text-sm uppercase tracking-wide outline-none"
           />
         </div>
       </div>
 
-      {error && <p className="text-xs font-medium text-red-600">{error}</p>}
+      {error && <FormError message={error} />}
 
       <button
         type="button"
         disabled={loading}
         onClick={submit}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+        className="btn btn-primary btn-block"
       >
         {loading && <LoaderCircle className="h-4 w-4 animate-spin" />}
         {t('Enter AI Brain')}
@@ -518,22 +541,30 @@ export default function AuthModal({ open, onClose, onAuthenticated, demoMode = f
     if (open) setRole(initialRole);
   }
 
+  useEscapeKey(onClose, open);
+  const titleId = useId();
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-950/55 p-3 backdrop-blur-sm sm:p-4">
-      <div className="soft-scrollbar max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-[1.5rem] border border-white/70 bg-white shadow-[0_28px_100px_-24px_rgb(2_6_23_/55%)]">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+    <div className="modal-backdrop z-[2000] p-3 sm:p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="modal-panel soft-scrollbar max-h-[92dvh] max-w-md overflow-y-auto rounded-[1.5rem]"
+      >
+        <div className="modal-header px-5 py-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">{t('Welcome to Civicloop')}</p>
-              <h2 className="mt-0.5 text-base font-bold text-slate-900">{t('Choose how you’ll take part')}</h2>
+            <p className="eyebrow text-[10px]">{t('Welcome to Civicloop')}</p>
+            <h2 id={titleId} className="mt-0.5 text-base font-bold text-slate-900">{t('Choose how you’ll take part')}</h2>
           </div>
-          <button type="button" onClick={onClose} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" onClick={onClose} className="btn btn-ghost btn-icon text-slate-400" aria-label={t('Close')}>
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex gap-1 border-b border-slate-100 px-5 pt-3">
+        <div className="grid grid-cols-3 gap-1 border-b border-slate-100 px-5 py-3" role="group" aria-label={t('Choose your role')}>
           {ROLE_TABS.map((tab) => (
             <button
               key={tab.role}
@@ -541,16 +572,18 @@ export default function AuthModal({ open, onClose, onAuthenticated, demoMode = f
               onClick={() => setRole(tab.role)}
               aria-pressed={role === tab.role}
               className={cn(
-                'flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold transition',
-                role === tab.role ? 'bg-emerald-50 text-emerald-900 ring-1 ring-emerald-100' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800',
+                'flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold transition duration-150 active:scale-[0.98]',
+                role === tab.role
+                  ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-[#263631] dark:hover:text-[#f1f5f3]',
               )}
             >
-              <tab.icon className="h-3.5 w-3.5" /> {t(tab.label)}
+              <tab.icon className="h-3.5 w-3.5" aria-hidden="true" /> {t(tab.label)}
             </button>
           ))}
         </div>
 
-        <div className="p-5">
+        <div key={role} className="animate-fade-in p-5">
           {role === 'citizen' && <CitizenAuth demoMode={demoMode} onAuthenticated={onAuthenticated} />}
           {role === 'volunteer' && <CoVAuth demoMode={demoMode} onAuthenticated={onAuthenticated} />}
           {role === 'admin' && <AdminAuth demoMode={demoMode} onAuthenticated={onAuthenticated} />}

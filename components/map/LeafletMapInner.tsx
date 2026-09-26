@@ -122,7 +122,7 @@ function DepotToggle({ enabled, onToggle }: { enabled: boolean; onToggle: (next:
   return (
     <label
       ref={wrapRef}
-      className="absolute left-3 top-3 z-[1000] flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-md"
+      className="absolute left-3 top-3 z-[1000] flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-md transition hover:border-slate-300 hover:shadow-lg"
     >
       <input
         type="checkbox"
@@ -218,7 +218,8 @@ function LocateControl({ onPick }: { onPick: (point: GeoPoint) => void }) {
         type="button"
         onClick={locate}
         disabled={locating}
-        className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-md hover:bg-slate-50 disabled:opacity-70"
+        aria-busy={locating}
+        className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-md transition hover:border-slate-300 hover:shadow-lg active:scale-[0.97] disabled:opacity-70"
       >
         {locating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4 text-blue-600" />}
         {locating ? t('Finding your location…') : t('Use my location')}
@@ -282,7 +283,7 @@ function TicketPopup({ ticket, onSelect }: { ticket: CivicTicket; onSelect?: (id
         <button
           type="button"
           onClick={() => onSelect(ticket.id)}
-          className="mt-2 w-full rounded-md bg-slate-900 px-2 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+          className="btn btn-primary btn-sm btn-block mt-2"
         >
           {t('View details')}
         </button>

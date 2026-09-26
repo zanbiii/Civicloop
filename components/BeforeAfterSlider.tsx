@@ -69,7 +69,7 @@ export default function BeforeAfterSlider({
       </span>
 
       <div className="pointer-events-none absolute inset-y-0 w-0.5 bg-white shadow-[0_0_6px_rgba(0,0,0,0.5)]" style={{ left: `${position}%` }}>
-        <div className="absolute left-1/2 top-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-slate-900/80 text-white shadow-lg">
+        <div className={cn('absolute left-1/2 top-1/2 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-slate-900/80 text-white shadow-lg transition-transform duration-150', dragging && 'scale-110')}>
           <ChevronLeft className="-mr-1 h-3.5 w-3.5" />
           <ChevronRight className="-ml-1 h-3.5 w-3.5" />
         </div>
@@ -84,7 +84,7 @@ export default function BeforeAfterSlider({
         aria-label="Compare before and after photos"
         className="peer sr-only"
       />
-      <div className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-transparent peer-focus-visible:ring-blue-500" />
+      <div className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-transparent transition peer-focus-visible:ring-emerald-400" />
     </div>
   );
 }

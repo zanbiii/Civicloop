@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* `dark:` utilities follow the app's own theme toggle, not the OS setting. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   color-scheme: light;
   --background: #f4f7f6;
@@ -25,6 +28,11 @@
 
 @theme {
   --animate-voice-bar: voice-bar 0.9s ease-in-out infinite;
+  --animate-fade-in: fade-in 180ms ease-out both;
+  --animate-scale-in: scale-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-up: slide-up 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-down: slide-down 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-in-right: slide-in-right 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
 
   @keyframes voice-bar {
     0%,
@@ -35,6 +43,578 @@
       transform: scaleY(1);
     }
   }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+
+  @keyframes slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 150% 0;
+    }
+    to {
+      background-position: -50% 0;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Design system primitives                                                  */
+/* Layered as `components` so any Tailwind utility on the same element wins. */
+/* ------------------------------------------------------------------------- */
+
+@layer base {
+  button:not(:disabled),
+  [role="button"],
+  summary,
+  select,
+  label[for],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"] {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer components {
+  /* Buttons ----------------------------------------------------------------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0.625rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    user-select: none;
+    transition:
+      background-color 160ms ease-out,
+      border-color 160ms ease-out,
+      color 160ms ease-out,
+      box-shadow 160ms ease-out,
+      transform 120ms ease-out,
+      opacity 160ms ease-out;
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(1px) scale(0.985);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    box-shadow: none;
+  }
+
+  .btn-sm {
+    gap: 0.375rem;
+    min-height: 2rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.625rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .btn-lg {
+    min-height: 3rem;
+    padding: 0.75rem 1.25rem;
+  }
+
+  .btn-icon {
+    min-height: 0;
+    padding: 0.5rem;
+    border-radius: 9999px;
+  }
+
+  .btn-block {
+    width: 100%;
+  }
+
+  .btn-wrap {
+    white-space: normal;
+    text-align: center;
+  }
+
+  /* Primary: the one affirmative action in a context. */
+  .btn-primary {
+    background-color: #0b6b50;
+    color: #fff;
+    box-shadow:
+      0 1px 2px rgb(6 78 59 / 25%),
+      inset 0 1px 0 rgb(255 255 255 / 12%);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: #075c45;
+    box-shadow:
+      0 6px 16px -8px rgb(6 78 59 / 55%),
+      inset 0 1px 0 rgb(255 255 255 / 12%);
+  }
+
+  /* Neutral strong: a firm action that is not the main CTA. */
+  .btn-neutral {
+    background-color: #17211f;
+    color: #fff;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 20%);
+  }
+
+  .btn-neutral:hover:not(:disabled) {
+    background-color: #2c3a36;
+  }
+
+  /* Secondary: outlined, low emphasis. */
+  .btn-secondary {
+    border-color: #cbd5e1;
+    background-color: #fff;
+    color: #334155;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    border-color: #94a3b8;
+    background-color: #f8fafc;
+    color: #0f172a;
+  }
+
+  /* Ghost: tertiary, no chrome until hovered. */
+  .btn-ghost {
+    background-color: transparent;
+    color: #475569;
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background-color: rgb(241 245 249);
+    color: #0f172a;
+  }
+
+  /* Soft brand: supportive positive action (boost, confirm). */
+  .btn-soft {
+    border-color: #a7f3d0;
+    background-color: #ecfdf5;
+    color: #065f46;
+  }
+
+  .btn-soft:hover:not(:disabled) {
+    border-color: #6ee7b7;
+    background-color: #d1fae5;
+  }
+
+  /* Destructive / negative outcome. */
+  .btn-danger {
+    border-color: #fecaca;
+    background-color: #fef2f2;
+    color: #b91c1c;
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    border-color: #fca5a5;
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+
+  /* Attention: needs the user's decision (AA contrast on white text). */
+  .btn-attention {
+    background-color: #b45309;
+    color: #fff;
+    box-shadow: 0 1px 2px rgb(120 53 15 / 25%);
+  }
+
+  .btn-attention:hover:not(:disabled) {
+    background-color: #92400e;
+  }
+
+  /* Demo helpers (autofill, OTP). */
+  .btn-demo {
+    border-color: #c4b5fd;
+    border-style: dashed;
+    background-color: #f5f3ff;
+    color: #6d28d9;
+  }
+
+  .btn-demo:hover:not(:disabled) {
+    border-style: solid;
+    background-color: #ede9fe;
+  }
+
+  /* Form fields -------------------------------------------------------------- */
+  .field-label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+  }
+
+  .field,
+  .field-group {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.75rem;
+    background-color: #fff;
+    color: #0f172a;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    transition:
+      border-color 150ms ease-out,
+      box-shadow 150ms ease-out,
+      background-color 150ms ease-out;
+  }
+
+  .field {
+    padding: 0.625rem 0.875rem;
+  }
+
+  .field::placeholder,
+  .field-group input::placeholder {
+    color: #94a3b8;
+  }
+
+  .field:hover:not(:disabled):not(:focus),
+  .field-group:hover:not(:focus-within) {
+    border-color: #94a3b8;
+  }
+
+  .field:disabled {
+    background-color: #f1f5f9;
+    color: #64748b;
+    cursor: not-allowed;
+  }
+
+  .field-group {
+    display: flex;
+    align-items: center;
+  }
+
+  .field-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    border: 1px solid #fecaca;
+    border-radius: 0.625rem;
+    background-color: #fef2f2;
+    padding: 0.5rem 0.75rem;
+    color: #b91c1c;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.1rem;
+    animation: var(--animate-slide-down);
+  }
+
+  /* Surfaces ------------------------------------------------------------------ */
+  .interactive-card {
+    transition:
+      transform 180ms ease-out,
+      box-shadow 180ms ease-out,
+      border-color 180ms ease-out;
+  }
+
+  .interactive-card:hover {
+    transform: translateY(-2px);
+    border-color: #a7f3d0;
+    box-shadow: 0 14px 34px -22px rgb(6 78 59 / 45%);
+  }
+
+  .interactive-card:active {
+    transform: translateY(0);
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: rgb(2 6 23 / 55%);
+    backdrop-filter: blur(4px);
+    animation: var(--animate-fade-in);
+  }
+
+  .modal-panel {
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid rgb(226 232 240 / 80%);
+    border-radius: 1.25rem;
+    background-color: #fff;
+    box-shadow: 0 28px 90px -24px rgb(2 6 23 / 55%);
+    animation: var(--animate-scale-in);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1rem 1.25rem;
+  }
+
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    border-top: 1px solid #f1f5f9;
+    background-color: #f8fafc;
+    padding: 0.875rem 1.25rem;
+  }
+
+  .skeleton {
+    border-radius: 0.5rem;
+    background: linear-gradient(90deg, #eef2f1 25%, #f8faf9 45%, #eef2f1 65%) 0 0 / 300% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 1rem;
+    background-color: rgb(248 250 252 / 70%);
+    padding: 2rem 1.25rem;
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    display: flex;
+    height: 3rem;
+    width: 3rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    background-color: #ecfdf5;
+    color: #047857;
+  }
+
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #047857;
+  }
+
+  /* Dark theme ---------------------------------------------------------------- */
+  :root[data-theme="dark"] .btn-primary {
+    background-color: #34d399;
+    color: #052e22;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
+  }
+
+  :root[data-theme="dark"] .btn-primary:hover:not(:disabled) {
+    background-color: #6ee7b7;
+    box-shadow: 0 6px 18px -8px rgb(52 211 153 / 45%);
+  }
+
+  :root[data-theme="dark"] .btn-neutral {
+    background-color: #e5eeea;
+    color: #111c19;
+  }
+
+  :root[data-theme="dark"] .btn-neutral:hover:not(:disabled) {
+    background-color: #ffffff;
+  }
+
+  :root[data-theme="dark"] .btn-secondary {
+    border-color: #3a4b44;
+    background-color: #1b2925;
+    color: #d6e0dc;
+  }
+
+  :root[data-theme="dark"] .btn-secondary:hover:not(:disabled) {
+    border-color: #52635b;
+    background-color: #263631;
+    color: #f1f5f3;
+  }
+
+  :root[data-theme="dark"] .btn-ghost {
+    color: #bac7c1;
+  }
+
+  :root[data-theme="dark"] .btn-ghost:hover:not(:disabled) {
+    background-color: #263631;
+    color: #f1f5f3;
+  }
+
+  :root[data-theme="dark"] .btn-soft {
+    border-color: #28634c;
+    background-color: #16382d;
+    color: #86efc0;
+  }
+
+  :root[data-theme="dark"] .btn-soft:hover:not(:disabled) {
+    border-color: #34805f;
+    background-color: #1c4537;
+  }
+
+  :root[data-theme="dark"] .btn-danger {
+    border-color: #6f373a;
+    background-color: #3b2325;
+    color: #fca5a5;
+  }
+
+  :root[data-theme="dark"] .btn-danger:hover:not(:disabled) {
+    border-color: #8b4448;
+    background-color: #4a2a2d;
+    color: #fecaca;
+  }
+
+  :root[data-theme="dark"] .btn-attention {
+    background-color: #fbbf24;
+    color: #3b2303;
+  }
+
+  :root[data-theme="dark"] .btn-attention:hover:not(:disabled) {
+    background-color: #fcd34d;
+  }
+
+  :root[data-theme="dark"] .btn-demo {
+    border-color: #584477;
+    background-color: #302545;
+    color: #c4b5fd;
+  }
+
+  :root[data-theme="dark"] .btn-demo:hover:not(:disabled) {
+    background-color: #3a2d54;
+  }
+
+  :root[data-theme="dark"] .field-label {
+    color: #bac7c1;
+  }
+
+  :root[data-theme="dark"] .field,
+  :root[data-theme="dark"] .field-group {
+    border-color: #3a4b44;
+    background-color: #15221e;
+    color: #e5eeea;
+  }
+
+  :root[data-theme="dark"] .field::placeholder,
+  :root[data-theme="dark"] .field-group input::placeholder {
+    color: #6f8078;
+  }
+
+  :root[data-theme="dark"] .field:hover:not(:disabled):not(:focus),
+  :root[data-theme="dark"] .field-group:hover:not(:focus-within) {
+    border-color: #52635b;
+  }
+
+  :root[data-theme="dark"] .field:disabled {
+    background-color: #1b2925;
+    color: #85958d;
+  }
+
+  :root[data-theme="dark"] .field-error {
+    border-color: #6f373a;
+    background-color: #3b2325;
+    color: #fca5a5;
+  }
+
+  :root[data-theme="dark"] .interactive-card:hover {
+    border-color: #28634c;
+    box-shadow: 0 14px 34px -22px rgb(0 0 0 / 80%);
+  }
+
+  :root[data-theme="dark"] .modal-panel {
+    border-color: #3a4b44;
+    background-color: #1b2925;
+    color: #e5eeea;
+  }
+
+  :root[data-theme="dark"] .modal-header {
+    border-color: #2c3b36;
+  }
+
+  :root[data-theme="dark"] .modal-footer {
+    border-color: #2c3b36;
+    background-color: #17231f;
+  }
+
+  :root[data-theme="dark"] .skeleton {
+    background-image: linear-gradient(90deg, #22312c 25%, #2d3e38 45%, #22312c 65%);
+  }
+
+  :root[data-theme="dark"] .empty-state {
+    border-color: #3a4b44;
+    background-color: rgb(27 41 37 / 60%);
+  }
+
+  :root[data-theme="dark"] .empty-state-icon {
+    background-color: #16382d;
+    color: #86efc0;
+  }
+
+  :root[data-theme="dark"] .eyebrow {
+    color: #86efc0;
+  }
+}
+
+/*
+ * Field focus sits outside the layer on purpose: the global `:focus-visible`
+ * outline below is unlayered, so a layered rule could never replace it.
+ */
+.field:focus,
+.field:focus-visible,
+.field-group:focus-within {
+  outline: none;
+  border-color: #0e8a64;
+  box-shadow: 0 0 0 3px rgb(16 185 129 / 18%);
+}
+
+.field-group input:focus,
+.field-group input:focus-visible {
+  outline: none;
+}
+
+.field[aria-invalid="true"] {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgb(239 68 68 / 14%);
+}
+
+:root[data-theme="dark"] .field:focus,
+:root[data-theme="dark"] .field:focus-visible,
+:root[data-theme="dark"] .field-group:focus-within {
+  border-color: #34d399;
+  box-shadow: 0 0 0 3px rgb(52 211 153 / 20%);
 }
 
 body {

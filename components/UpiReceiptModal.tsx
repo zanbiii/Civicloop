@@ -6,6 +6,7 @@ import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { Award, Check, Download, X } from 'lucide-react';
 import { type BountyInfo, bountyTotal } from '@/types/civic';
 import { formatInr } from '@/lib/bounty';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 
 interface UpiReceiptModalProps {
   bounty: BountyInfo | null;
@@ -41,6 +42,7 @@ function downloadCertificate(bounty: BountyInfo, ticketTitle: string): void {
 export default function UpiReceiptModal({ bounty, ticketTitle, volunteerUpiId, onClose }: UpiReceiptModalProps) {
   const reduceMotion = useReducedMotion();
   const transactionId = bounty?.transactionId ?? null;
+  useEscapeKey(onClose, Boolean(bounty));
 
   useEffect(() => {
     if (!transactionId || reduceMotion) return;
@@ -56,20 +58,23 @@ export default function UpiReceiptModal({ bounty, ticketTitle, volunteerUpiId, o
     <AnimatePresence>
       {bounty && (
         <motion.div
-          className="fixed inset-0 z-[2200] flex items-center justify-center bg-slate-900/70 p-4"
+          className="fixed inset-0 z-[2200] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="w-full max-w-sm overflow-hidden rounded-3xl bg-gradient-to-b from-emerald-500 to-emerald-600 text-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Payment Successful"
+            className="w-full max-w-sm overflow-hidden rounded-3xl bg-gradient-to-b from-emerald-600 to-emerald-800 text-white shadow-2xl ring-1 ring-inset ring-white/10"
             initial={{ y: 40, opacity: 0, scale: 0.96 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 20, opacity: 0, scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 260, damping: 22 }}
           >
             <div className="flex items-center justify-end px-4 pt-4">
-              <button type="button" onClick={onClose} className="rounded-full p-1.5 text-emerald-100 hover:bg-white/10" aria-label="Close">
+              <button type="button" onClick={onClose} className="rounded-full p-1.5 text-emerald-100 transition hover:bg-emerald-900/40 hover:text-white active:scale-90" aria-label="Close">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -123,7 +128,7 @@ export default function UpiReceiptModal({ bounty, ticketTitle, volunteerUpiId, o
             <button
               type="button"
               onClick={() => downloadCertificate(bounty, ticketTitle)}
-              className="mx-4 mb-5 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/25"
+              className="mx-4 mb-5 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50 active:scale-[0.98] dark:hover:bg-[#263631]"
             >
               <Download className="h-4 w-4" /> Download Digital Certificate of Civic Impact
             </button>

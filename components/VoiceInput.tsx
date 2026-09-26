@@ -172,8 +172,10 @@ export default function VoiceInput({
     <div className={cn('space-y-2', className)}>
       <div
         className={cn(
-          'relative rounded-xl border bg-white transition-colors',
-          listening ? 'border-red-400 ring-2 ring-red-100' : 'border-slate-300 focus-within:border-slate-500',
+          'relative rounded-xl border bg-white transition duration-150',
+          listening
+            ? 'border-red-400 ring-4 ring-red-100 dark:ring-red-950/60'
+            : 'border-slate-300 hover:border-slate-400 focus-within:border-emerald-600 focus-within:ring-4 focus-within:ring-emerald-500/15 dark:focus-within:border-emerald-400',
         )}
       >
         <textarea
@@ -181,7 +183,8 @@ export default function VoiceInput({
           onChange={(event) => onChange(event.target.value)}
           placeholder={t(placeholder)}
           rows={rows}
-          className="block w-full resize-none rounded-xl bg-transparent px-3.5 pb-14 pt-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+          aria-label={t(placeholder)}
+          className="block w-full resize-none rounded-xl bg-transparent px-3.5 pb-14 pt-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus-visible:outline-none"
         />
 
         {interim && (
@@ -218,8 +221,8 @@ export default function VoiceInput({
               onClick={listening ? stop : start}
               aria-label={listening ? 'Stop voice typing' : 'Start voice typing'}
               className={cn(
-                'relative flex h-10 w-10 items-center justify-center rounded-full text-white shadow transition',
-                listening ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-slate-700',
+                'relative flex h-10 w-10 items-center justify-center rounded-full text-white shadow transition active:scale-90',
+                listening ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-700 hover:scale-105 hover:bg-emerald-800',
               )}
             >
               {listening && <span className="absolute inset-0 animate-ping rounded-full bg-red-500 opacity-40" />}
@@ -237,8 +240,8 @@ export default function VoiceInput({
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <div role="alert" className="flex animate-slide-down items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {t(error)}
         </div>
       )}

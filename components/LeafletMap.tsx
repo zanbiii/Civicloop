@@ -9,8 +9,8 @@ import { useTranslate } from '@/components/AppLanguageProvider';
 function MapLoading() {
   const t = useTranslate();
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-100 text-slate-400">
-      <MapPin className="h-8 w-8 animate-bounce" />
+    <div role="status" className="skeleton absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-none text-slate-400">
+      <MapPin className="h-8 w-8 animate-bounce" aria-hidden="true" />
       <span className="text-xs font-medium">{t('Loading OpenStreetMap…')}</span>
     </div>
   );

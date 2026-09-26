@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Building2,
@@ -8,10 +8,12 @@ import {
   Clock,
   Flame,
   HardHat,
+  Inbox,
   LoaderCircle,
   MapPin,
   Sparkles,
   Star,
+  TriangleAlert,
   Trophy,
   Users,
   Wrench,
@@ -37,6 +39,7 @@ import {
 import { findNearbyVolunteers, formatInr } from '@/lib/bounty';
 import { PLACEHOLDER_IMAGE } from '@/lib/seedData';
 import { cn } from '@/lib/cn';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 import CameraCapture from '@/components/CameraCapture';
 import { ProofResult } from '@/components/CoVDashboard';
 import { useTranslate } from '@/components/AppLanguageProvider';
@@ -73,7 +76,7 @@ function CsrWidget({ fund }: { fund: CsrFund }) {
   return (
     <section className="surface-card p-4 sm:p-5">
       <div className="flex items-start gap-2">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-lg">🏢</span>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-lg ring-1 ring-inset ring-emerald-200/60" aria-hidden="true">🏢</span>
         <div className="min-w-0">
           <h3 className="text-sm font-bold text-slate-900">
             {fund.sponsorName} ({fund.zone})
@@ -89,7 +92,7 @@ function CsrWidget({ fund }: { fund: CsrFund }) {
             {formatInr(fund.activeBalanceInr)} <span className="font-normal text-slate-400">/ {formatInr(fund.totalPoolInr)}</span>
           </span>
         </div>
-        <div className="mt-1.5 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="mt-1.5 h-2.5 w-full overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={balancePercent} aria-label={t('Active Bounty Balance')}>
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.6)]"
             initial={{ width: 0 }}
@@ -100,15 +103,15 @@ function CsrWidget({ fund }: { fund: CsrFund }) {
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-xl bg-slate-50 p-2.5">
+        <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5 transition hover:border-slate-200">
           <div className="text-sm font-bold text-emerald-700">💰 {formatInr(fund.disbursedToDateInr)}</div>
           <div className="mt-0.5 text-[10px] leading-tight text-slate-500">{t('Disbursed to Local Youth')}</div>
         </div>
-        <div className="rounded-xl bg-slate-50 p-2.5">
+        <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5 transition hover:border-slate-200">
           <div className="text-sm font-bold text-slate-900">🛠️ {fund.activeVolunteerCount}</div>
           <div className="mt-0.5 text-[10px] leading-tight text-slate-500">{t('Active CoVs on Field')}</div>
         </div>
-        <div className="rounded-xl bg-slate-50 p-2.5">
+        <div className="rounded-xl border border-slate-100 bg-slate-50 p-2.5 transition hover:border-slate-200">
           <div className="text-sm font-bold text-slate-900">⏱️ {fund.avgFixHours}h</div>
           <div className="mt-0.5 text-[10px] leading-tight text-slate-500">{t('vs')} {fund.govtBaselineDays}d {t('govt.')}</div>
         </div>
@@ -160,14 +163,24 @@ function LeaderboardTab({ volunteers, highlightId }: { volunteers: VolunteerProf
   const t = useTranslate();
   const ranked = [...volunteers].sort((a, b) => b.totalEarnedInr - a.totalEarnedInr);
   const medal = ['🥇', '🥈', '🥉'];
+  if (ranked.length === 0) {
+    return (
+      <div className="empty-state">
+        <span className="empty-state-icon"><Trophy className="h-5 w-5" aria-hidden="true" /></span>
+        <p className="text-sm font-semibold text-slate-800">{t('No CoVs on the board yet')}</p>
+        <p className="max-w-xs text-xs text-slate-500">{t('Completed missions will rank volunteers here.')}</p>
+      </div>
+    );
+  }
   return (
-    <div className="space-y-2">
+    <ol className="space-y-2">
       {ranked.map((volunteer, index) => (
-        <div
+        <li
           key={volunteer.id}
+          style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
           className={cn(
-            'flex items-center gap-3 rounded-xl border p-3',
-            volunteer.id === highlightId ? 'border-emerald-300 bg-emerald-50' : 'border-slate-100 bg-white',
+            'flex animate-slide-up items-center gap-3 rounded-xl border p-3 transition hover:shadow-sm',
+            volunteer.id === highlightId ? 'border-emerald-300 bg-emerald-50' : 'border-slate-100 bg-white hover:border-slate-200',
           )}
         >
           <span className="w-6 shrink-0 text-center text-base">{medal[index] ?? `#${index + 1}`}</span>
@@ -190,22 +203,38 @@ function LeaderboardTab({ volunteers, highlightId }: { volunteers: VolunteerProf
               {volunteer.zone}
             </div>
           </div>
-          <span className="shrink-0 text-sm font-bold text-emerald-700">{formatInr(volunteer.totalEarnedInr)}</span>
-        </div>
+          <span className="shrink-0 text-sm font-bold tabular-nums text-emerald-700">{formatInr(volunteer.totalEarnedInr)}</span>
+        </li>
       ))}
-    </div>
+    </ol>
   );
 }
 
 function DepotsTab({ depots }: { depots: ToolDepot[] }) {
+  const t = useTranslate();
+  if (depots.length === 0) {
+    return (
+      <div className="empty-state">
+        <span className="empty-state-icon"><Wrench className="h-5 w-5" aria-hidden="true" /></span>
+        <p className="text-sm font-semibold text-slate-800">{t('No tool depots in this area yet')}</p>
+      </div>
+    );
+  }
   return (
     <div className="space-y-2">
-      {depots.map((depot) => (
-        <div key={depot.id} className="rounded-xl border border-slate-100 bg-white p-3">
+      {depots.map((depot, index) => (
+        <div
+          key={depot.id}
+          style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
+          className="animate-slide-up rounded-xl border border-slate-100 bg-white p-3 transition hover:border-slate-200 hover:shadow-sm"
+        >
           <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
-            <Wrench className="h-4 w-4 text-blue-600" /> {depot.name}
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50" aria-hidden="true">
+              <Wrench className="h-3.5 w-3.5 text-blue-600" />
+            </span>
+            {depot.name}
           </div>
-          <ul className="mt-1.5 space-y-0.5 text-xs text-slate-600">
+          <ul className="mt-2 space-y-1 border-t border-slate-100 pt-2 text-xs text-slate-600">
             {depot.inventory.map((item) => (
               <li key={item.item} className="flex justify-between">
                 <span>{item.item}</span>
@@ -236,6 +265,8 @@ function MissionProofDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CivicProofVerification | null>(null);
+  const titleId = useId();
+  useEscapeKey(onClose);
 
   const attachLocation = () => {
     if (!('geolocation' in navigator)) return;
@@ -261,13 +292,16 @@ function MissionProofDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 p-4">
-      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
-            <Camera className="h-4 w-4" /> {t('Submit fix proof')}
+    <div className="modal-backdrop z-[2000]">
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="modal-panel soft-scrollbar max-h-[92vh] max-w-lg overflow-y-auto">
+        <div className="modal-header">
+          <h3 id={titleId} className="flex items-center gap-2 text-base font-bold text-slate-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700" aria-hidden="true">
+              <Camera className="h-4 w-4" />
+            </span>
+            {t('Submit fix proof')}
           </h3>
-          <button type="button" onClick={onClose} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" onClick={onClose} className="btn btn-ghost btn-icon text-slate-400" aria-label={t('Close')}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -283,29 +317,35 @@ function MissionProofDialog({
               <button
                 type="button"
                 onClick={attachLocation}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className={cn('btn btn-sm', geo ? 'btn-soft' : 'btn-secondary')}
               >
-                <MapPin className="h-3.5 w-3.5" /> {geo ? t('Location attached') : t('Attach my GPS location')}
+                <MapPin className="h-3.5 w-3.5" aria-hidden="true" /> {geo ? t('Location attached') : t('Attach my GPS location')}
               </button>
-              {error && <p className="text-xs font-medium text-red-600">{error}</p>}
+              {error && (
+                <p role="alert" className="field-error">
+                  <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  {error}
+                </p>
+              )}
             </>
           )}
         </div>
-        <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
+        <div className="modal-footer">
           {result ? (
-            <button type="button" onClick={onClose} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+            <button type="button" onClick={onClose} className="btn btn-primary">
               Done
             </button>
           ) : (
             <>
-              <button type="button" onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">
+              <button type="button" onClick={onClose} className="btn btn-ghost">
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={submit}
                 disabled={photos.length === 0 || busy}
-                className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-busy={busy}
+                className="btn btn-primary"
               >
                 {busy && <LoaderCircle className="h-4 w-4 animate-spin" />}
                 {busy ? 'CivicProof is comparing…' : 'Verify & submit'}
@@ -363,8 +403,18 @@ function TaskCard({
     <motion.div
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.995 }}
-      className="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:border-emerald-200 hover:shadow-md"
+      role="button"
+      tabIndex={0}
+      aria-label={`${ticket.title} · ${t('Bounty')} ${formatInr(total)}`}
+      className="flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-emerald-200 hover:shadow-[0_14px_34px_-22px_rgb(6_78_59_/45%)] dark:hover:border-[#28634c]"
       onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
     >
       <div className="h-1.5 w-full shrink-0 sm:h-auto sm:w-1.5" style={{ backgroundColor: SEVERITY_META[ticket.severity].pin }} />
       {photo ? (
@@ -399,7 +449,7 @@ function TaskCard({
             </div>
             <h3 className="mt-1 text-sm font-bold leading-snug text-slate-900">{ticket.title}</h3>
           </div>
-          <div className="shrink-0 rounded-lg bg-emerald-50 px-3 py-1.5 text-right">
+          <div className="shrink-0 rounded-xl bg-emerald-50 px-3 py-1.5 text-right ring-1 ring-inset ring-emerald-200/60">
             <div className="text-[9px] font-bold uppercase tracking-wide text-emerald-700">{t('Bounty')}</div>
             <div className="text-sm font-extrabold text-emerald-800">{formatInr(total)}</div>
           </div>
@@ -461,9 +511,9 @@ function TaskCard({
             event.stopPropagation();
             onAccept();
           }}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700"
+          className="btn btn-primary btn-block btn-wrap mt-3"
         >
-          <Wrench className="h-4 w-4" /> {t('Accept Mission & Claim')} {formatInr(total)}
+          <Wrench className="h-4 w-4" aria-hidden="true" /> {t('Accept Mission & Claim')} {formatInr(total)}
         </motion.button>
       )}
 
@@ -475,9 +525,9 @@ function TaskCard({
             event.stopPropagation();
             onOpenProof();
           }}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+          className="btn btn-primary btn-block btn-wrap mt-3"
         >
-          <Camera className="h-4 w-4" /> {t('Submit Fix Proof')}
+          <Camera className="h-4 w-4" aria-hidden="true" /> {t('Submit Fix Proof')}
         </motion.button>
       )}
 
@@ -489,9 +539,9 @@ function TaskCard({
             event.stopPropagation();
             onBoost();
           }}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+          className="btn btn-soft btn-block btn-wrap mt-3"
         >
-          <Zap className="h-4 w-4" /> {t('Boost Bounty')} (+{formatInr(BOOST_AMOUNT_INR)} {t('Pledge')})
+          <Zap className="h-4 w-4" aria-hidden="true" /> {t('Boost Bounty')} (+{formatInr(BOOST_AMOUNT_INR)} {t('Pledge')})
         </motion.button>
       )}
 
@@ -502,12 +552,12 @@ function TaskCard({
             event.stopPropagation();
             onSignIn();
           }}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+          className="btn btn-secondary btn-block btn-wrap mt-3"
         >
           {t('Sign in or join to report, contribute or volunteer')}
         </button>
       )}
-        {demoSample && <p className="mt-2 text-[10px] font-medium text-amber-800">{t('Sample data · read-only — mission actions are disabled.')}</p>}
+        {demoSample && <p className="mt-3 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[10px] font-medium text-amber-800">{t('Sample data · read-only — mission actions are disabled.')}</p>}
       </div>
     </motion.div>
   );
@@ -569,21 +619,31 @@ export default function BountyDashboard({
                 onClick={() => setTab(id)}
                 aria-pressed={tab === id}
                 className={cn(
-                  'flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold transition lg:w-full',
-                  tab === id ? 'bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+                  'flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold transition duration-150 active:scale-[0.98] lg:w-full',
+                  tab === id
+                    ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-[#263631] dark:hover:text-[#f1f5f3]',
                 )}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span className="flex-1">{label}</span>
-                <span className={cn('rounded-full px-1.5 py-0.5 text-[10px]', tab === id ? 'bg-white/80' : 'bg-slate-100')}>{count}</span>
+                <span className={cn('min-w-6 rounded-full px-1.5 py-0.5 text-center text-[10px] tabular-nums', tab === id ? 'bg-white' : 'bg-slate-100')}>{count}</span>
               </button>
             ))}
           </nav>
 
-          <div className="soft-scrollbar max-h-[560px] space-y-2.5 overflow-y-auto pr-1">
+          <div key={tab} className="soft-scrollbar max-h-[560px] animate-fade-in space-y-2.5 overflow-y-auto pr-1">
           {(tab === 'active' || tab === 'all') &&
             ((tab === 'active' ? activeTasks : allTasks).length === 0 ? (
-              <p className="py-8 text-center text-sm text-slate-400">{t('No open bounties right now — nice and clear out there.')}</p>
+              <div className="empty-state my-2">
+                <span className="empty-state-icon"><Inbox className="h-5 w-5" aria-hidden="true" /></span>
+                <p className="text-sm font-semibold text-slate-800">{t('No open bounties right now — nice and clear out there.')}</p>
+                {!role && (
+                  <button type="button" onClick={onSignIn} className="btn btn-secondary btn-sm mt-2">
+                    {t('Sign in or join to report, contribute or volunteer')}
+                  </button>
+                )}
+              </div>
             ) : (
               (tab === 'active' ? activeTasks : allTasks).map((ticket) => (
                 <TaskCard

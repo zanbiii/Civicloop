@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import {
   Brain,
   Camera,
@@ -8,6 +8,7 @@ import {
   CircleCheck,
   Clock,
   Hammer,
+  Inbox,
   LoaderCircle,
   MapPin,
   Shuffle,
@@ -34,6 +35,7 @@ import CameraCapture from '@/components/CameraCapture';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
 import GlideTabs from '@/components/GlideTabs';
 import { cn } from '@/lib/cn';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 import { useTranslate } from '@/components/AppLanguageProvider';
 import { isDemoTicket } from '@/lib/demo';
 
@@ -97,11 +99,11 @@ function SlaCountdown({ ticket, nowMs }: { ticket: CivicTicket; nowMs: number })
 
 function StatTile({ label, value, tone, icon: Icon }: { label: string; value: number; tone: string; icon: typeof Clock }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3">
+    <div className="surface-card p-3.5 transition hover:-translate-y-0.5">
       <div className={cn('flex items-center gap-1.5 text-[11px] font-semibold', tone)}>
-        <Icon className="h-3.5 w-3.5" /> {label}
+        <Icon className="h-3.5 w-3.5" aria-hidden="true" /> {label}
       </div>
-      <div className="mt-1 text-2xl font-bold text-slate-900">{value}</div>
+      <div className="mt-1.5 text-2xl font-bold tabular-nums tracking-tight text-slate-900">{value}</div>
     </div>
   );
 }
@@ -121,6 +123,8 @@ function RerouteDialog({
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const ids = useId();
+  useEscapeKey(onClose);
 
   const submit = async () => {
     setSaving(true);
@@ -135,13 +139,16 @@ function RerouteDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
-            <Shuffle className="h-4 w-4" /> {t('Flag wrong department')}
+    <div className="modal-backdrop z-[2000]">
+      <div role="dialog" aria-modal="true" aria-labelledby={`${ids}-title`} className="modal-panel max-w-md">
+        <div className="modal-header">
+          <h3 id={`${ids}-title`} className="flex items-center gap-2 text-base font-bold text-slate-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700" aria-hidden="true">
+              <Shuffle className="h-4 w-4" />
+            </span>
+            {t('Flag wrong department')}
           </h3>
-          <button type="button" onClick={onClose} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" onClick={onClose} className="btn btn-ghost btn-icon text-slate-400" aria-label={t('Close')}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -150,11 +157,12 @@ function RerouteDialog({
             {ticket.referenceCode} · {ticket.title}
           </p>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Re-route to')}</label>
+            <label htmlFor={`${ids}-dept`} className="field-label">{t('Re-route to')}</label>
             <select
+              id={`${ids}-dept`}
               value={toDepartment}
               onChange={(event) => setToDepartment(event.target.value as Department)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+              className="field px-3"
             >
               {options.map((dept) => (
                 <option key={dept} value={dept}>
@@ -164,33 +172,40 @@ function RerouteDialog({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-600">{t('Why is this the wrong department?')}</label>
+            <label htmlFor={`${ids}-reason`} className="field-label">{t('Why is this the wrong department?')}</label>
             <textarea
+              id={`${ids}-reason`}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               rows={3}
               placeholder={t('e.g. Sewage ingress into the storm-water line is a BWSSB subject, not SWM.')}
-              className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+              className="field resize-none px-3"
             />
           </div>
-          <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-            <Brain className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs leading-relaxed text-emerald-800">
+            <Brain className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>
               This triggers <strong>self-healing</strong>: the correction is written to the routing graph, so future{' '}
               {ticket.category} reports in {ticket.location.ward ?? 'this zone'} go straight to {toDepartment}.
             </span>
           </div>
-          {error && <p className="text-xs font-medium text-red-600">{error}</p>}
+          {error && (
+            <p role="alert" className="field-error">
+              <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              {error}
+            </p>
+          )}
         </div>
-        <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
-          <button type="button" onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">
+        <div className="modal-footer">
+          <button type="button" onClick={onClose} className="btn btn-ghost">
             {t('Cancel')}
           </button>
           <button
             type="button"
             onClick={submit}
             disabled={saving}
-            className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
+            aria-busy={saving}
+            className="btn btn-primary"
           >
             {saving && <LoaderCircle className="h-4 w-4 animate-spin" />}
             {t('Re-route & teach the system')}
@@ -227,7 +242,7 @@ function ScoreMeter({ label, value }: { label: string; value: number }) {
         <span className="font-semibold text-slate-800">{value}%</span>
       </div>
       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
-        <div className="h-full rounded-full bg-[#2a78d6]" style={{ width: `${value}%` }} />
+        <div className="h-full rounded-full bg-[#2a78d6] transition-[width] duration-700 ease-out" style={{ width: `${value}%` }} />
       </div>
     </div>
   );
@@ -241,8 +256,8 @@ export function ProofResult({ ticket, verification }: { ticket: CivicTicket; ver
 
   return (
     <div className="space-y-3">
-      <div className={cn('flex items-start gap-2 rounded-lg border px-3 py-2 text-sm font-semibold', style.box)}>
-        <style.icon className="mt-0.5 h-4 w-4 shrink-0" /> {t(style.title)}
+      <div role="status" className={cn('flex animate-fade-in items-start gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold', style.box)}>
+        <style.icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {t(style.title)}
       </div>
       {before && after && (
         <BeforeAfterSlider
@@ -297,6 +312,8 @@ function ProofDialog({
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ verification: CivicProofVerification; ticket: CivicTicket } | null>(null);
+  const titleId = useId();
+  useEscapeKey(onClose);
 
   const attachLocation = () => {
     if (!('geolocation' in navigator)) {
@@ -330,13 +347,16 @@ function ProofDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 p-4">
-      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h3 className="flex items-center gap-2 text-base font-bold text-slate-900">
-            <Camera className="h-4 w-4" /> {t('Submit proof of repair')}
+    <div className="modal-backdrop z-[2000]">
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="modal-panel soft-scrollbar max-h-[92vh] max-w-lg overflow-y-auto">
+        <div className="modal-header">
+          <h3 id={titleId} className="flex items-center gap-2 text-base font-bold text-slate-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700" aria-hidden="true">
+              <Camera className="h-4 w-4" />
+            </span>
+            {t('Submit proof of repair')}
           </h3>
-          <button type="button" onClick={onClose} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" onClick={onClose} className="btn btn-ghost btn-icon text-slate-400" aria-label={t('Close')}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -360,15 +380,16 @@ function ProofDialog({
               />
               <div className="flex items-center gap-2 text-xs">
                 {geoStatus === 'ok' ? (
-                  <span className="flex items-center gap-1 font-semibold text-emerald-600">
-                    <MapPin className="h-3.5 w-3.5" /> {t('Geotag attached')}
+                  <span role="status" className="flex animate-fade-in items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">
+                    <MapPin className="h-3.5 w-3.5" aria-hidden="true" /> {t('Geotag attached')}
                   </span>
                 ) : (
                   <button
                     type="button"
                     onClick={attachLocation}
                     disabled={geoStatus === 'locating'}
-                    className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                    aria-busy={geoStatus === 'locating'}
+                    className="btn btn-secondary btn-sm"
                   >
                     {geoStatus === 'locating' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <MapPin className="h-3.5 w-3.5" />}
                     {t('Attach my GPS location')}
@@ -376,26 +397,32 @@ function ProofDialog({
                 )}
                 {geoStatus === 'failed' && <span className="text-amber-600">{t('Location unavailable — proof will carry no geotag.')}</span>}
               </div>
-              {error && <p className="text-xs font-medium text-red-600">{error}</p>}
+              {error && (
+                <p role="alert" className="field-error">
+                  <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  {error}
+                </p>
+              )}
             </>
           )}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
+        <div className="modal-footer">
           {result ? (
-            <button type="button" onClick={onClose} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+            <button type="button" onClick={onClose} className="btn btn-primary">
               {t('Done')}
             </button>
           ) : (
             <>
-              <button type="button" onClick={onClose} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">
+              <button type="button" onClick={onClose} className="btn btn-ghost">
                 {t('Cancel')}
               </button>
               <button
                 type="button"
                 onClick={verify}
                 disabled={photos.length === 0 || verifying}
-                className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-busy={verifying}
+                className="btn btn-primary"
               >
                 {verifying && <LoaderCircle className="h-4 w-4 animate-spin" />}
                 {t(verifying ? 'CivicProof is comparing landmarks…' : 'Verify & resolve')}
@@ -434,12 +461,12 @@ function QueueRow({
   const breached = ticket.sla.health === 'breached' && !ticket.sla.metAt;
 
   return (
-    <div className="flex overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="flex animate-slide-up overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-slate-300 hover:shadow-md">
       <div className="w-1.5 shrink-0" style={{ backgroundColor: SEVERITY_META[ticket.severity].pin }} />
       <div className="min-w-0 flex-1 p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
-            <button type="button" onClick={onSelect} className="text-left text-sm font-semibold text-slate-900 hover:underline">
+            <button type="button" onClick={onSelect} className="rounded text-left text-sm font-semibold text-slate-900 underline-offset-2 transition hover:text-emerald-800 hover:underline dark:hover:text-[#86efc0]">
               {CATEGORY_META[ticket.category].icon} {ticket.title}
             </button>
             {readOnly && (
@@ -497,27 +524,27 @@ function QueueRow({
               <button
                 type="button"
                 onClick={onStartWork}
-                className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
+                className="btn btn-neutral btn-sm"
               >
-                <Hammer className="h-3.5 w-3.5" /> {t('Start work')}
+                <Hammer className="h-3.5 w-3.5" aria-hidden="true" /> {t('Start work')}
               </button>
             )}
             {PROOFABLE.includes(ticket.status) && (
               <button
                 type="button"
                 onClick={onProof}
-                className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                className="btn btn-primary btn-sm"
               >
-                <Camera className="h-3.5 w-3.5" /> {t('Submit proof')}
+                <Camera className="h-3.5 w-3.5" aria-hidden="true" /> {t('Submit proof')}
               </button>
             )}
             {TAB_STATUSES.active.includes(ticket.status) && (
               <button
                 type="button"
                 onClick={onReroute}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="btn btn-secondary btn-sm"
               >
-                <Shuffle className="h-3.5 w-3.5" /> {t('Wrong department? Re-route')}
+                <Shuffle className="h-3.5 w-3.5" aria-hidden="true" /> {t('Wrong department? Re-route')}
               </button>
             )}
           </div>
@@ -527,16 +554,17 @@ function QueueRow({
           <button
             type="button"
             onClick={() => setExpanded((open) => !open)}
-            className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-800"
+            aria-expanded={expanded}
+            className="mt-3 flex items-center gap-1 rounded-md px-1 py-0.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-[#263631] dark:hover:text-[#f1f5f3]"
           >
-            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')} />
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform duration-200', expanded && 'rotate-180')} aria-hidden="true" />
             {t(expanded ? 'Hide details' : 'Escalation briefing & proof')}
           </button>
         )}
         {expanded && (
-          <div className="mt-2 space-y-3">
+          <div className="mt-2 animate-slide-down space-y-3">
             {ticket.sla.escalationBriefing && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+              <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-800">
                 <div className="font-semibold">{t('Escalated to')} {ticket.sla.escalatedTo}</div>
                 <p className="mt-0.5 leading-relaxed">{ticket.sla.escalationBriefing}</p>
               </div>
@@ -606,7 +634,7 @@ export default function CoVDashboard({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
+        <span className="flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm">
           {cov.department}
         </span>
         <GlideTabs
@@ -623,14 +651,23 @@ export default function CoVDashboard({
       </div>
 
       {showingReadOnlySamples && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
+        <div role="status" className="flex animate-fade-in items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-900">
+          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {t('No live reports are assigned to this department. Showing illustrative examples for preview only; they cannot be acted on.')}
         </div>
       )}
 
       {queue.length === 0 ? (
-        <div className="surface-card p-8 text-center text-sm text-slate-500">
-          {t(inDepartment.length === 0 ? 'No live reports in this queue.' : 'Nothing here right now.')}
+        <div className="empty-state animate-fade-in py-10">
+          <span className="empty-state-icon"><Inbox className="h-5 w-5" aria-hidden="true" /></span>
+          <p className="text-sm font-semibold text-slate-800">
+            {t(inDepartment.length === 0 ? 'No live reports in this queue.' : 'Nothing here right now.')}
+          </p>
+          {tab !== 'active' && (
+            <button type="button" onClick={() => setTab('active')} className="btn btn-secondary btn-sm mt-1">
+              {t('Active queue')}
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

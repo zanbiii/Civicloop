@@ -142,25 +142,21 @@ export default function CitizenIntakeForm({
 
   if (submitted) {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100">
-          <PartyPopper className="h-8 w-8 text-emerald-600" />
+      <div role="status" className="flex animate-scale-in flex-col items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 ring-8 ring-emerald-100/40 dark:ring-[#16382d]/40">
+          <PartyPopper className="h-8 w-8 text-emerald-600" aria-hidden="true" />
         </div>
         <h3 className="text-lg font-bold text-slate-900">{t('Report submitted')}</h3>
         <p className="max-w-sm text-sm text-slate-600">
           Civicloop&apos;s agents are already classifying it, checking for duplicates within 75 m, and routing it to the right
           department. You can track its status from &quot;My Reports&quot;.
         </p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={resetForm}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
+        <div className="flex flex-wrap justify-center gap-2">
+          <button type="button" onClick={resetForm} className="btn btn-secondary">
             {t('Report another issue')}
           </button>
           {onCancel && (
-            <button type="button" onClick={onCancel} className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
+            <button type="button" onClick={onCancel} className="btn btn-primary">
               {t('Done')}
             </button>
           )}
@@ -171,31 +167,40 @@ export default function CitizenIntakeForm({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-2">
+      <ol className="flex items-center gap-2" aria-label={t('Report progress')}>
         {STEPS.map((s, index) => (
-          <div key={s.id} className="flex flex-1 items-center gap-2">
+          <li key={s.id} className="flex flex-1 items-center gap-2 last:flex-none" aria-current={index === stepIndex ? 'step' : undefined}>
             <div
               className={cn(
-                'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors',
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition duration-300',
                 index < stepIndex
                   ? 'bg-emerald-600 text-white'
                   : index === stepIndex
-                    ? 'bg-slate-900 text-white'
+                    ? 'bg-emerald-700 text-white ring-4 ring-emerald-100 dark:ring-[#16382d]'
                     : 'bg-slate-100 text-slate-400',
               )}
             >
-              {index < stepIndex ? <Check className="h-3.5 w-3.5" /> : index + 1}
+              {index < stepIndex ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : index + 1}
             </div>
-            <span className={cn('hidden text-xs font-medium sm:inline', index === stepIndex ? 'text-slate-900' : 'text-slate-400')}>
+            <span className={cn('hidden text-xs sm:inline', index === stepIndex ? 'font-semibold text-slate-900' : 'font-medium text-slate-400')}>
               {t(s.label)}
             </span>
-            {index < STEPS.length - 1 && <span className="h-px flex-1 bg-slate-200" />}
-          </div>
+            {index < STEPS.length - 1 && (
+              <span className="h-0.5 flex-1 overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
+                <span
+                  className={cn(
+                    'block h-full rounded-full bg-emerald-600 transition-transform duration-300 ease-out',
+                    index < stepIndex ? 'translate-x-0' : '-translate-x-full',
+                  )}
+                />
+              </span>
+            )}
+          </li>
         ))}
-      </div>
+      </ol>
 
       {step === 'evidence' && (
-        <div className="space-y-3">
+        <div className="animate-slide-up space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
             <Camera className="h-4 w-4" /> {t('Add a photo (optional, but it helps a lot)')}
           </div>
@@ -204,7 +209,7 @@ export default function CitizenIntakeForm({
       )}
 
       {step === 'describe' && (
-        <div className="space-y-3">
+        <div className="animate-slide-up space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
             <Mic className="h-4 w-4" /> {t('What’s the problem?')}
           </div>
@@ -215,12 +220,12 @@ export default function CitizenIntakeForm({
             language={language}
             placeholder={t('e.g. Big pothole near the bus stop, bikes keep skidding...')}
           />
-          {!hasDescription && <p className="text-xs text-slate-400">{t('Type a short description or tap the mic to speak it.')}</p>}
+          {!hasDescription && <p className="text-xs text-slate-500">{t('Type a short description or tap the mic to speak it.')}</p>}
         </div>
       )}
 
       {step === 'location' && (
-        <div className="space-y-3">
+        <div className="animate-slide-up space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
             <MapPin className="h-4 w-4" /> {t('Where exactly is this?')}
           </div>
@@ -236,16 +241,17 @@ export default function CitizenIntakeForm({
             value={landmark}
             onChange={(event) => setLandmark(event.target.value)}
             placeholder={t('Landmark or address note (optional) — e.g. near Sony World Signal')}
-            className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+            aria-label={t('Landmark or address note (optional) — e.g. near Sony World Signal')}
+            className="field"
           />
         </div>
       )}
 
       {step === 'review' && location && (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200 p-4">
+        <div className="animate-slide-up space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-800">{t('Category')}</span>
+              <label htmlFor="intake-category" className="text-sm font-semibold text-slate-800">{t('Category')}</label>
               {categoryOverride === null && (
                 <span className="flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-700">
                   <Sparkles className="h-3 w-3" /> {t('CivicEye decides')}
@@ -253,9 +259,10 @@ export default function CitizenIntakeForm({
               )}
             </div>
             <select
+              id="intake-category"
               value={categoryOverride ?? ''}
               onChange={(event) => setCategoryOverride(event.target.value ? (event.target.value as ComplaintCategory) : null)}
-              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500"
+              className="field mt-2 px-3"
             >
               <option value="">{t('Let AI classify from the photo/description')}</option>
               {COMPLAINT_CATEGORIES.map((category) => (
@@ -266,7 +273,7 @@ export default function CitizenIntakeForm({
             </select>
           </div>
 
-          <div className="grid gap-3 rounded-xl border border-slate-200 p-4 text-sm">
+          <div className="grid gap-3 divide-y divide-slate-100 dark:divide-[#2c3b36] rounded-2xl border border-slate-200 p-4 text-sm [&>div:not(:first-child)]:pt-3">
             <div className="flex justify-between gap-3">
               <span className="shrink-0 font-semibold text-slate-500">{t('Description')}</span>
               <span className="text-right text-slate-800">{description.trim() || <span className="italic text-slate-400">{t('None — voice/photo only')}</span>}</span>
@@ -298,7 +305,7 @@ export default function CitizenIntakeForm({
                   key={photo.id}
                   src={photo.url}
                   alt="Evidence"
-                  className="h-16 w-16 rounded-lg object-cover"
+                  className="h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200"
                   onError={(event) => {
                     event.currentTarget.src = PLACEHOLDER_IMAGE;
                   }}
@@ -308,32 +315,32 @@ export default function CitizenIntakeForm({
           )}
 
           {submitError && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-              <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <div role="alert" className="field-error">
+              <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {submitError}
             </div>
           )}
           {!canSubmitReport && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-800">
               {t('Live report submission is unavailable in this demo. Your report has not been sent or saved.')}
             </div>
           )}
         </div>
       )}
 
-      <div className="flex items-center gap-2 pt-2">
+      <div className="flex items-center gap-2 border-t border-slate-100 pt-4">
         {stepIndex > 0 ? (
           <button
             type="button"
             onClick={goBack}
             disabled={submitting}
-            className="flex items-center gap-1 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+            className="btn btn-ghost px-3"
           >
-            <ChevronLeft className="h-4 w-4" /> Back
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" /> Back
           </button>
         ) : (
           onCancel && (
-            <button type="button" onClick={onCancel} className="rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-50">
+            <button type="button" onClick={onCancel} className="btn btn-ghost px-3">
               {t('Cancel')}
             </button>
           )
@@ -345,7 +352,8 @@ export default function CitizenIntakeForm({
             onClick={handleSubmit}
             disabled={submitting || !canSubmitReport}
             title={!canSubmitReport ? t('Live report submission is unavailable in this demo. Your report has not been sent or saved.') : undefined}
-            className="ml-auto flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
+            aria-busy={submitting}
+            className="btn btn-primary ml-auto px-5"
           >
             {submitting && <LoaderCircle className="h-4 w-4 animate-spin" />}
             {t(canSubmitReport ? 'Submit report' : 'Live submission unavailable')}
@@ -355,9 +363,9 @@ export default function CitizenIntakeForm({
             type="button"
             onClick={goNext}
             disabled={!canAdvance}
-            className="ml-auto flex items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+            className="btn btn-primary group ml-auto px-5"
           >
-            {t('Next')} <ArrowRight className="h-4 w-4" />
+            {t('Next')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
           </button>
         )}
       </div>

@@ -79,11 +79,14 @@ export function computeBrainTelemetry(tickets: CivicTicket[], overrides: Routing
 
 function Kpi({ icon: Icon, label, value, sub }: { icon: typeof Brain; label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="surface-card p-4 transition hover:-translate-y-0.5">
       <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-        <Icon className="h-3.5 w-3.5" /> {label}
+        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-50 text-emerald-700" aria-hidden="true">
+          <Icon className="h-3.5 w-3.5" />
+        </span>
+        {label}
       </div>
-      <div className="mt-1 text-2xl font-bold text-slate-900">{value}</div>
+      <div className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-slate-900">{value}</div>
       {sub && <div className="mt-0.5 text-[11px] text-slate-500">{sub}</div>}
     </div>
   );
@@ -91,7 +94,7 @@ function Kpi({ icon: Icon, label, value, sub }: { icon: typeof Brain; label: str
 
 function Card({ title, subtitle, children, className }: { title: string; subtitle?: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={cn('rounded-xl border border-slate-200 bg-white p-4', className)}>
+    <section className={cn('surface-card p-4 sm:p-5', className)}>
       <h3 className="text-sm font-bold text-slate-900">{title}</h3>
       {subtitle && <p className="mt-0.5 text-[11px] text-slate-500">{subtitle}</p>}
       <div className="mt-3">{children}</div>
@@ -105,7 +108,7 @@ function HBar({ label, value, max, title }: { label: React.ReactNode; value: num
     <div className="grid grid-cols-[minmax(0,9rem)_1fr_2rem] items-center gap-2 text-xs" title={title}>
       <span className="truncate text-slate-600">{label}</span>
       <div className="h-3 rounded-r bg-slate-50">
-        <div className="h-full rounded-r" style={{ width: `${width}%`, backgroundColor: SERIES_1 }} />
+        <div className="h-full rounded-r transition-[width] duration-700 ease-out" style={{ width: `${width}%`, backgroundColor: SERIES_1 }} />
       </div>
       <span className="text-right font-semibold tabular-nums text-slate-800">{value}</span>
     </div>
@@ -139,10 +142,13 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
-            <Brain className="h-5 w-5" /> {tr('CivicSense AI Brain')}
+          <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-slate-900">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white shadow-sm" aria-hidden="true">
+              <Brain className="h-5 w-5" />
+            </span>
+            {tr('CivicSense AI Brain')}
           </h2>
-          <p className="text-xs text-slate-500">{tr('Five agents, one feedback loop — deduplication, self-healing routing, SLA sentinel and proof-gated closure.')}</p>
+          <p className="mt-1 text-xs text-slate-500">{tr('Five agents, one feedback loop — deduplication, self-healing routing, SLA sentinel and proof-gated closure.')}</p>
         </div>
         <span
           className={cn(
@@ -179,7 +185,7 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
                 ))}
             </div>
           ) : (
-            <p className="text-xs text-slate-500">{tr('No open issues.')}</p>
+            <p className="empty-state py-5 text-xs text-slate-500">{tr('No open issues.')}</p>
           )}
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
             {slaSegments.map((segment) => (
@@ -233,11 +239,14 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
 
         <Card title={tr('Auto-escalation log')} subtitle={tr('Issues the SLA Sentinel pushed up the chain, with generated briefings')}>
           {escalated.length === 0 ? (
-            <p className="text-xs text-slate-500">{tr('No open escalations.')}</p>
+            <p className="empty-state py-5 text-xs text-slate-500">
+              <CircleCheck className="h-5 w-5 text-emerald-600" aria-hidden="true" />
+              {tr('No open escalations.')}
+            </p>
           ) : (
-            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+            <div className="soft-scrollbar max-h-64 space-y-2 overflow-y-auto pr-1">
               {escalated.map((ticket) => (
-                <div key={ticket.id} className="rounded-lg border border-red-100 bg-red-50/60 px-3 py-2">
+                <div key={ticket.id} className="rounded-xl border border-red-100 bg-red-50 px-3 py-2.5">
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <span className="font-semibold text-slate-900">{ticket.referenceCode}</span>
                     <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">Level {ticket.sla.escalationLevel}</span>
@@ -255,7 +264,7 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
         title={tr('Self-healing routing graph')}
         subtitle={`${tr('Corrections learned from CoVs. At')} ≥${Math.round(OVERRIDE_ACTIVATION_WEIGHT * 100)}% ${tr('weight a rule rewrites routing for every new report in its zone.')}`}
       >
-        <div className="overflow-x-auto">
+        <div className="soft-scrollbar overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-xs">
             <thead className="text-[11px] text-slate-500">
               <tr className="border-b border-slate-100">
@@ -271,7 +280,7 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
               {sortedOverrides.map((override) => {
                 const active = override.weight >= OVERRIDE_ACTIVATION_WEIGHT;
                 return (
-                  <tr key={override.id} className="border-b border-slate-50 align-top last:border-0" title={override.reason}>
+                  <tr key={override.id} className="border-b border-slate-100 align-top transition-colors last:border-0 hover:bg-slate-50 dark:hover:bg-[#263631]" title={override.reason}>
                     <td className="py-2 pr-3">
                       <div className="font-semibold text-slate-900">
                         {CATEGORY_META[override.category].icon} {tr(override.category)}

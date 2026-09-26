@@ -10,6 +10,7 @@ import {
   CircleCheck,
   FastForward,
   GitMerge,
+  LoaderCircle,
   Map as MapIcon,
   Mic,
   RotateCcw,
@@ -40,6 +41,7 @@ import { CSR_FUND, DEMO_COVS, DEMO_VOLUNTEER, PLACEHOLDER_IMAGE, SEED_TOOL_DEPOT
 import { haversineMeters } from '@/lib/haversine';
 import { isDemoTicket } from '@/lib/demo';
 import { cn } from '@/lib/cn';
+import { useEscapeKey } from '@/lib/useEscapeKey';
 import {
   CATEGORY_META,
   DEPARTMENT_META,
@@ -184,7 +186,13 @@ function PitchBanner() {
   const [open, setOpen] = useState(true);
   return (
     <section className="overflow-hidden rounded-[1.5rem] border border-slate-800 bg-[#102b27] text-white shadow-[0_18px_55px_-38px_rgb(15_23_42_/55%)]">
-      <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} className="flex w-full items-center gap-3 px-4 py-4 text-left sm:px-5">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        aria-controls="pitch-banner-body"
+        className="group flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-emerald-300/[0.04] sm:px-5"
+      >
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-300/10 text-emerald-200">
           <Sparkles className="h-5 w-5" />
         </span>
@@ -192,13 +200,13 @@ function PitchBanner() {
           <h2 className="text-base font-bold">{t('Why Civicloop Wins over CPGRAMS & Sahaaya 2.0')}</h2>
           <p className="text-xs text-emerald-50/55">{t('From a complaint inbox to a self-healing loop that closes on evidence.')}</p>
         </div>
-        <ChevronDown className={cn('ml-auto h-5 w-5 shrink-0 text-slate-400 transition-transform', open && 'rotate-180')} />
+        <ChevronDown className={cn('ml-auto h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-emerald-200', open && 'rotate-180')} aria-hidden="true" />
       </button>
       {open && (
-        <div className="border-t border-slate-800 px-5 pb-5 pt-2">
+        <div id="pitch-banner-body" className="animate-slide-down border-t border-slate-800 px-5 pb-5 pt-2">
           <div className="grid gap-2.5">
             {PITCH_ROWS.map((row) => (
-              <div key={row.topic} className="grid gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.045] p-3.5 md:grid-cols-[8rem_1fr_1.4fr] md:items-start">
+              <div key={row.topic} className="grid gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.045] p-3.5 transition-colors hover:border-emerald-300/20 md:grid-cols-[8rem_1fr_1.4fr] md:items-start">
                 <span className="flex items-center gap-2 text-sm font-semibold text-slate-100">
                   <row.icon className="h-4 w-4 text-emerald-200" /> {t(row.topic)}
                 </span>
@@ -236,17 +244,25 @@ function DemoBar({
   onReset: () => void;
 }) {
   const t = useTranslate();
+  // UI-only: remembers which scenario was clicked so its button can show the spinner while `busy`.
+  const [lastScenario, setLastScenario] = useState<'pothole' | 'obstruction' | null>(null);
+  const runScenario = (kind: 'pothole' | 'obstruction') => {
+    setLastScenario(kind);
+    onScenario(kind);
+  };
   const button =
-    'demo-bar-action flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-900/10 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-sm transition hover:border-emerald-700/20 hover:bg-emerald-50 disabled:opacity-50';
+    'demo-bar-action flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-900/10 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-sm transition duration-150 hover:-translate-y-px hover:border-emerald-700/20 hover:bg-emerald-50 hover:shadow active:translate-y-0 active:scale-[0.97] disabled:opacity-50';
   return (
     <div className="demo-bar border-b border-emerald-900/10 bg-[#e8f4ef]">
       <div className="soft-scrollbar mx-auto flex max-w-[90rem] items-center gap-2 overflow-x-auto px-3 py-2 sm:px-5 lg:px-8">
         <span className="shrink-0 rounded-full bg-emerald-800 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">{t('Demo lab')}</span>
-        <button type="button" disabled={busy} onClick={() => onScenario('pothole')} className={button}>
-          <GitMerge className="h-3.5 w-3.5" /> {t('Duplicate pothole report')}
+        <button type="button" disabled={busy} aria-busy={busy && lastScenario === 'pothole'} onClick={() => runScenario('pothole')} className={button}>
+          {busy && lastScenario === 'pothole' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <GitMerge className="h-3.5 w-3.5" aria-hidden="true" />}
+          {t('Duplicate pothole report')}
         </button>
-        <button type="button" disabled={busy} onClick={() => onScenario('obstruction')} className={button}>
-          <Route className="h-3.5 w-3.5" /> {t('Silk Board obstruction (self-healing)')}
+        <button type="button" disabled={busy} aria-busy={busy && lastScenario === 'obstruction'} onClick={() => runScenario('obstruction')} className={button}>
+          {busy && lastScenario === 'obstruction' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Route className="h-3.5 w-3.5" aria-hidden="true" />}
+          {t('Silk Board obstruction (self-healing)')}
         </button>
         <button type="button" onClick={onFastForward} className={button}>
           <FastForward className="h-3.5 w-3.5" /> {t('Fast-forward SLA +6h')}
@@ -255,7 +271,7 @@ function DemoBar({
           <RotateCcw className="h-3.5 w-3.5" /> {t('Reset')}
         </button>
         {clockOffsetHours > 0 && (
-          <span className="shrink-0 rounded-full bg-emerald-800 px-2 py-0.5 text-[10px] font-bold text-white">Clock +{clockOffsetHours}h</span>
+          <span role="status" className="shrink-0 animate-scale-in rounded-full bg-emerald-800 px-2 py-0.5 text-[10px] font-bold text-white">Clock +{clockOffsetHours}h</span>
         )}
       </div>
     </div>
@@ -330,8 +346,8 @@ function MapCard({
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-1.5">
-      <h4 className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{title}</h4>
+    <section className="space-y-1.5 border-t border-slate-100 pt-4 first:border-0 first:pt-0">
+      <h4 className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{title}</h4>
       <div className="text-sm text-slate-700">{children}</div>
     </section>
   );
@@ -342,13 +358,20 @@ function TicketDrawer({ ticket, logs, onClose }: { ticket: CivicTicket; logs: Ci
   const before = ticket.beforePhotos[0];
   const after = ticket.afterPhotos[ticket.afterPhotos.length - 1];
   const breached = ticket.sla.health === 'breached' && !ticket.sla.metAt;
+  useEscapeKey(onClose);
 
   return (
-    <div className="fixed inset-0 z-[1900] flex justify-end bg-slate-900/40" onClick={onClose}>
-      <aside className="h-full w-full max-w-lg overflow-y-auto bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-3">
-          <span className="text-xs font-semibold text-slate-500">{ticket.referenceCode}</span>
-          <button type="button" onClick={onClose} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+    <div className="fixed inset-0 z-[1900] flex animate-fade-in justify-end bg-slate-950/45 backdrop-blur-[2px]" onClick={onClose}>
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${ticket.referenceCode} · ${ticket.title}`}
+        className="soft-scrollbar h-full w-full max-w-lg animate-slide-in-right overflow-y-auto bg-white shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur">
+          <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] font-semibold text-slate-600">{ticket.referenceCode}</span>
+          <button type="button" onClick={onClose} className="btn btn-ghost btn-icon text-slate-400" aria-label={t('Close')}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -483,11 +506,18 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   }, [message, onClose]);
 
   return (
-    <div className="fixed inset-x-0 bottom-4 z-[2100] flex justify-center px-4">
-      <div className="flex max-w-lg items-start gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm text-white shadow-2xl">
-        <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" />
-        <span>{t(message)}</span>
-        <button type="button" onClick={onClose} className="ml-2 shrink-0 text-slate-400 hover:text-white" aria-label={t('Dismiss')}>
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[2100] flex justify-center px-4">
+      <div
+        key={message}
+        role="status"
+        aria-live="polite"
+        className="pointer-events-auto flex max-w-lg animate-slide-up items-start gap-2.5 rounded-2xl border border-white/10 bg-slate-900/95 px-4 py-3 text-sm text-white shadow-2xl shadow-slate-950/30 backdrop-blur"
+      >
+        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/15">
+          <Sparkles className="h-3 w-3 text-emerald-300" aria-hidden="true" />
+        </span>
+        <span className="leading-relaxed">{t(message)}</span>
+        <button type="button" onClick={onClose} className="-mr-1 ml-2 shrink-0 rounded-full p-1 text-slate-400 transition hover:bg-slate-800 hover:text-white active:scale-90" aria-label={t('Dismiss')}>
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -736,14 +766,14 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => openAuth('citizen')}
-                    className="group flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-300 px-5 py-3 text-sm font-bold text-emerald-950 shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:bg-emerald-200"
+                    className="group flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-300 px-5 py-3 text-sm font-bold text-emerald-950 shadow-lg shadow-black/10 transition duration-150 hover:-translate-y-0.5 hover:bg-emerald-200 hover:shadow-emerald-300/20 active:translate-y-0 active:scale-[0.98]"
                   >
                     {t('Report an issue')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => openAuth('volunteer')}
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition duration-150 hover:border-white/40 hover:bg-white/10 active:scale-[0.98]"
                   >
                     <HardHat className="h-4 w-4 text-emerald-200" /> {t('Join as a CoV')}
                   </button>

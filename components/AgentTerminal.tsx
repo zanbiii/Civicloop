@@ -91,15 +91,16 @@ export default function AgentTerminal({
         )}
       </div>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-slate-800 px-3 py-1.5">
+      <div className="flex gap-1 overflow-x-auto border-b border-slate-800 px-3 py-1.5" role="group" aria-label={t('Filter by agent')}>
         {(['all', ...AGENT_NAMES] as const).map((name) => (
           <button
             key={name}
             type="button"
             onClick={() => setAgentFilter(name)}
+            aria-pressed={agentFilter === name}
             className={cn(
-              'shrink-0 rounded px-2 py-0.5 text-[10px] font-semibold transition',
-              agentFilter === name ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300',
+              'shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold transition duration-150 active:scale-95',
+              agentFilter === name ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200',
             )}
           >
             {name === 'all' ? t('ALL') : `${AGENT_META[name].icon} ${name}`}
@@ -118,13 +119,18 @@ export default function AgentTerminal({
         aria-live="polite"
       >
         {visible.length === 0 ? (
-          <div className="py-6 text-center text-slate-600">{t('No agent activity yet — submit a report to watch the pipeline run.')}</div>
+          <div className="py-10 text-center text-slate-400">{t('No agent activity yet — submit a report to watch the pipeline run.')}</div>
         ) : (
           visible.map((entry) => {
             const open = expanded.has(entry.id);
             return (
               <div key={entry.id} className="border-b border-slate-900 py-1 last:border-0">
-                <button type="button" onClick={() => toggle(entry.id)} className="flex w-full items-start gap-2 text-left hover:bg-slate-900/60">
+                <button
+                  type="button"
+                  onClick={() => toggle(entry.id)}
+                  aria-expanded={open}
+                  className="flex w-full items-start gap-2 rounded text-left transition-colors hover:bg-slate-900"
+                >
                   <ChevronRight className={cn('mt-0.5 h-3 w-3 shrink-0 text-slate-600 transition-transform', open && 'rotate-90')} />
                   <span className="shrink-0 text-slate-600" suppressHydrationWarning>
                     {clock(entry.createdAt)}
@@ -139,7 +145,7 @@ export default function AgentTerminal({
                   </span>
                 </button>
                 {open && (
-                  <div className="ml-5 mt-1 space-y-1">
+                  <div className="ml-5 mt-1 animate-slide-down space-y-1">
                     <div className="flex flex-wrap gap-x-3 text-[10px] text-slate-500">
                       <span>mode: {entry.mode}</span>
                       <span>latency: {entry.latencyMs} ms</span>
