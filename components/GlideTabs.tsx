@@ -37,7 +37,7 @@ export default function GlideTabs<T extends string>({
       role="group"
       aria-label={ariaLabel}
       className={cn(
-        'grid rounded-xl bg-slate-100/80 p-1',
+        'glide-tabs grid rounded-xl bg-slate-100/80 p-1',
         compact ? 'text-[10px] font-semibold sm:text-xs' : 'text-xs font-semibold sm:text-sm',
         className,
       )}

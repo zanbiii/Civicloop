@@ -243,6 +243,28 @@ button {
   color: #e5eeea;
 }
 
+:root[data-theme="dark"] .glide-tabs {
+  background-color: #263631;
+}
+
+:root[data-theme="dark"] .glide-tabs button[aria-pressed="true"] {
+  color: #86efc0;
+}
+
+:root[data-theme="dark"] .glide-tabs button[aria-pressed="true"] > span[aria-hidden="true"] {
+  background-color: #1b2925;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 35%);
+  --tw-ring-color: #52635b;
+}
+
+:root[data-theme="dark"] .glide-tabs button[aria-pressed="false"] {
+  color: #bac7c1;
+}
+
+:root[data-theme="dark"] .glide-tabs button[aria-pressed="false"]:hover {
+  color: #f1f5f3;
+}
+
 .soft-scrollbar {
   scrollbar-color: #cbd5e1 transparent;
   scrollbar-width: thin;
