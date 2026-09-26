@@ -770,7 +770,7 @@ export default function Home() {
                   { label: t('On-time accountability'), value: telemetry.autoEscalations, sub: t('automatic deadline escalations'), icon: Siren },
                   { label: t('Fixes with proof'), value: telemetry.proofVerified, sub: `${telemetry.proofRejected} ${t('proofs reviewed')}`, icon: Check },
                 ].map((stat) => (
-                  <div key={stat.label} className="min-h-[116px] rounded-2xl border border-white/10 bg-[#f7fbf9] p-3.5 text-slate-900 sm:p-4">
+                  <div key={stat.label} className="civic-impact-stat min-h-[116px] rounded-2xl border border-white/10 p-3.5 text-slate-900 sm:p-4">
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-[10px] font-semibold text-slate-500 sm:text-[11px]">{stat.label}</div>
                       <stat.icon className="h-4 w-4 shrink-0 text-emerald-700" />

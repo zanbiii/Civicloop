@@ -86,10 +86,21 @@ button {
   box-shadow: 0 8px 30px -24px rgb(15 23 42 / 36%), 0 1px 2px rgb(15 23 42 / 4%);
 }
 
+.civic-impact-stat {
+  background: #f7fbf9;
+  color: #17211f;
+}
+
 :root[data-theme="dark"] .surface-card {
   border-color: rgb(71 85 79 / 65%);
   background: rgb(27 41 37 / 96%);
   box-shadow: 0 8px 30px -24px rgb(0 0 0 / 70%), 0 1px 2px rgb(0 0 0 / 24%);
+}
+
+:root[data-theme="dark"] .civic-impact-stat {
+  border-color: rgb(148 163 184 / 24%);
+  background: #263631;
+  color: #f1f5f3;
 }
 
 :root[data-theme="dark"] [class~="bg-white"],
