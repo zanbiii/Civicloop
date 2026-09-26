@@ -175,8 +175,7 @@ button {
 
 :root[data-theme="dark"] [class~="text-emerald-600"],
 :root[data-theme="dark"] [class~="text-emerald-700"],
-:root[data-theme="dark"] [class~="text-emerald-800"],
-:root[data-theme="dark"] [class~="text-emerald-950"] {
+:root[data-theme="dark"] [class~="text-emerald-800"] {
   color: #86efc0;
 }
 
