@@ -363,12 +363,12 @@ function TaskCard({
     <motion.div
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.995 }}
-      className="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:border-emerald-200 hover:shadow-md sm:flex-row"
+      className="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:border-emerald-200 hover:shadow-md"
       onClick={onSelect}
     >
       <div className="h-1.5 w-full shrink-0 sm:h-auto sm:w-1.5" style={{ backgroundColor: SEVERITY_META[ticket.severity].pin }} />
       {photo ? (
-        <div className="relative aspect-[4/3] w-full shrink-0 bg-slate-100 sm:aspect-auto sm:min-h-52 sm:w-48">
+        <div className="relative aspect-[4/3] w-full shrink-0 bg-slate-100 sm:aspect-video">
           {/* eslint-disable-next-line @next/next/no-img-element -- evidence may be a data URL or remote upload */}
           <img
             src={photo.url}
@@ -385,7 +385,7 @@ function TaskCard({
           )}
         </div>
       ) : (
-        <div className="flex aspect-[4/3] w-full shrink-0 items-center justify-center bg-slate-50 text-3xl sm:aspect-auto sm:min-h-52 sm:w-48" aria-hidden="true">
+        <div className="flex aspect-[4/3] w-full shrink-0 items-center justify-center bg-slate-50 text-3xl sm:aspect-video" aria-hidden="true">
           {CATEGORY_META[ticket.category].icon}
         </div>
       )}
