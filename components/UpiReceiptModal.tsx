@@ -58,7 +58,7 @@ export default function UpiReceiptModal({ bounty, ticketTitle, volunteerUpiId, o
     <AnimatePresence>
       {bounty && (
         <motion.div
-          className="fixed inset-0 z-[2200] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[2200] flex items-center justify-center bg-slate-950/70 p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -67,7 +67,7 @@ export default function UpiReceiptModal({ bounty, ticketTitle, volunteerUpiId, o
             role="dialog"
             aria-modal="true"
             aria-label="Payment Successful"
-            className="w-full max-w-sm overflow-hidden rounded-3xl bg-gradient-to-b from-emerald-600 to-emerald-800 text-white shadow-2xl ring-1 ring-inset ring-white/10"
+            className="w-full max-w-sm overflow-hidden rounded-xl border-[1.5px] border-ink bg-emerald-700 text-white shadow-[8px_8px_0_var(--ink)]"
             initial={{ y: 40, opacity: 0, scale: 0.96 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 20, opacity: 0, scale: 0.97 }}
@@ -128,7 +128,7 @@ export default function UpiReceiptModal({ bounty, ticketTitle, volunteerUpiId, o
             <button
               type="button"
               onClick={() => downloadCertificate(bounty, ticketTitle)}
-              className="mx-4 mb-5 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50 active:scale-[0.98] dark:hover:bg-[#263631]"
+              className="mx-4 mb-5 flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50 active:scale-[0.98] dark:hover:bg-surface-2"
             >
               <Download className="h-4 w-4" /> Download Digital Certificate of Civic Impact
             </button>

@@ -466,7 +466,7 @@ function QueueRow({
       <div className="min-w-0 flex-1 p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
-            <button type="button" onClick={onSelect} className="rounded text-left text-sm font-semibold text-slate-900 underline-offset-2 transition hover:text-emerald-800 hover:underline dark:hover:text-[#86efc0]">
+            <button type="button" onClick={onSelect} className="rounded text-left text-sm font-semibold text-slate-900 underline-offset-2 transition hover:text-slate-900 hover:underline">
               {CATEGORY_META[ticket.category].icon} {ticket.title}
             </button>
             {readOnly && (
@@ -555,7 +555,7 @@ function QueueRow({
             type="button"
             onClick={() => setExpanded((open) => !open)}
             aria-expanded={expanded}
-            className="mt-3 flex items-center gap-1 rounded-md px-1 py-0.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-[#263631] dark:hover:text-[#f1f5f3]"
+            className="mt-3 flex items-center gap-1 rounded-md px-1 py-0.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-surface-2 dark:hover:text-ink"
           >
             <ChevronDown className={cn('h-3.5 w-3.5 transition-transform duration-200', expanded && 'rotate-180')} aria-hidden="true" />
             {t(expanded ? 'Hide details' : 'Escalation briefing & proof')}

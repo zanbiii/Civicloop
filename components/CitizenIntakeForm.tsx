@@ -143,7 +143,7 @@ export default function CitizenIntakeForm({
   if (submitted) {
     return (
       <div role="status" className="flex animate-scale-in flex-col items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 ring-8 ring-emerald-100/40 dark:ring-[#16382d]/40">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 ring-8 ring-emerald-100/40 dark:ring-emerald-950/40">
           <PartyPopper className="h-8 w-8 text-emerald-600" aria-hidden="true" />
         </div>
         <h3 className="text-lg font-bold text-slate-900">{t('Report submitted')}</h3>
@@ -174,9 +174,9 @@ export default function CitizenIntakeForm({
               className={cn(
                 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition duration-300',
                 index < stepIndex
-                  ? 'bg-emerald-600 text-white'
+                  ? 'bg-ink text-[var(--on-ink)]'
                   : index === stepIndex
-                    ? 'bg-emerald-700 text-white ring-4 ring-emerald-100 dark:ring-[#16382d]'
+                    ? 'bg-signal text-[var(--on-signal)] ring-4 ring-[color-mix(in_srgb,var(--signal)_25%,transparent)]'
                     : 'bg-slate-100 text-slate-400',
               )}
             >
@@ -189,7 +189,7 @@ export default function CitizenIntakeForm({
               <span className="h-0.5 flex-1 overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
                 <span
                   className={cn(
-                    'block h-full rounded-full bg-emerald-600 transition-transform duration-300 ease-out',
+                    'block h-full rounded-full bg-signal transition-transform duration-300 ease-out',
                     index < stepIndex ? 'translate-x-0' : '-translate-x-full',
                   )}
                 />
@@ -273,7 +273,7 @@ export default function CitizenIntakeForm({
             </select>
           </div>
 
-          <div className="grid gap-3 divide-y divide-slate-100 dark:divide-[#2c3b36] rounded-2xl border border-slate-200 p-4 text-sm [&>div:not(:first-child)]:pt-3">
+          <div className="grid gap-3 divide-y divide-slate-100 dark:divide-line rounded-2xl border border-slate-200 p-4 text-sm [&>div:not(:first-child)]:pt-3">
             <div className="flex justify-between gap-3">
               <span className="shrink-0 font-semibold text-slate-500">{t('Description')}</span>
               <span className="text-right text-slate-800">{description.trim() || <span className="italic text-slate-400">{t('None — voice/photo only')}</span>}</span>

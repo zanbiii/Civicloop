@@ -16,7 +16,7 @@ import { cn } from '@/lib/cn';
 import { useTranslate } from '@/components/AppLanguageProvider';
 
 /* Validated reference palette (dataviz skill): one magnitude series + the fixed status roles. */
-const SERIES_1 = '#2a78d6';
+const SERIES_1 = 'var(--ink)';
 const STATUS = { good: '#0ca30c', warning: '#fab219', critical: '#d03b3b' } as const;
 const OVERRIDE_ACTIVATION_WEIGHT = 0.55;
 
@@ -81,7 +81,7 @@ function Kpi({ icon: Icon, label, value, sub }: { icon: typeof Brain; label: str
   return (
     <div className="surface-card p-4 transition hover:-translate-y-0.5">
       <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-50 text-emerald-700" aria-hidden="true">
+        <span className="flex h-6 w-6 items-center justify-center rounded-md border-[1.5px] border-ink text-ink" aria-hidden="true">
           <Icon className="h-3.5 w-3.5" />
         </span>
         {label}
@@ -143,7 +143,7 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-slate-900">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white shadow-sm" aria-hidden="true">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md chip-ink" aria-hidden="true">
               <Brain className="h-5 w-5" />
             </span>
             {tr('CivicSense AI Brain')}
@@ -280,7 +280,7 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
               {sortedOverrides.map((override) => {
                 const active = override.weight >= OVERRIDE_ACTIVATION_WEIGHT;
                 return (
-                  <tr key={override.id} className="border-b border-slate-100 align-top transition-colors last:border-0 hover:bg-slate-50 dark:hover:bg-[#263631]" title={override.reason}>
+                  <tr key={override.id} className="border-b border-slate-100 align-top transition-colors last:border-0 hover:bg-slate-50 dark:hover:bg-surface-2" title={override.reason}>
                     <td className="py-2 pr-3">
                       <div className="font-semibold text-slate-900">
                         {CATEGORY_META[override.category].icon} {tr(override.category)}

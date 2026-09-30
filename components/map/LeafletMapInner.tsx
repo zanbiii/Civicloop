@@ -18,6 +18,7 @@ import {
   useMap,
   useMapEvents,
 } from 'react-leaflet';
+import { useAppTheme } from '@/components/AppThemeProvider';
 import { LoaderCircle, LocateFixed, Users, Wrench } from 'lucide-react';
 import {
   CATEGORY_META,
@@ -122,7 +123,7 @@ function DepotToggle({ enabled, onToggle }: { enabled: boolean; onToggle: (next:
   return (
     <label
       ref={wrapRef}
-      className="absolute left-3 top-3 z-[1000] flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-md transition hover:border-slate-300 hover:shadow-lg"
+      className="absolute left-16 top-3 z-[1000] flex items-center gap-1.5 rounded-lg border-[1.5px] border-slate-900 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-[3px_3px_0_#16150f] transition hover:-translate-y-px"
     >
       <input
         type="checkbox"
@@ -313,6 +314,7 @@ export default function LeafletMapInner({
   const pickerEnabled = Boolean(onPickLocation);
   const initialCenter = center ?? pickedLocation ?? userLocation ?? TKR_COLLEGE_CENTER;
   const [depotsVisible, setDepotsVisible] = useState(false);
+  const { theme } = useAppTheme();
 
   return (
     <MapContainer
@@ -322,8 +324,13 @@ export default function LeafletMapInner({
       className={cn('h-full w-full', pickerEnabled && 'cursor-crosshair', className)}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        key={theme}
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url={
+          theme === 'dark'
+            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+            : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        }
         maxZoom={19}
       />
 

@@ -193,7 +193,7 @@ function CitizenAuth({ demoMode, onAuthenticated }: { demoMode: boolean; onAuthe
               'flex min-h-9 items-center justify-center gap-1.5 rounded-lg transition duration-150 active:scale-[0.98]',
               method === option.id
                 ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/70'
-                : 'text-slate-500 hover:text-slate-800 dark:hover:text-[#f1f5f3]',
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-ink',
             )}
           >
             <option.icon className="h-3.5 w-3.5" aria-hidden="true" /> {option.label}
@@ -574,8 +574,8 @@ export default function AuthModal({ open, onClose, onAuthenticated, demoMode = f
               className={cn(
                 'flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold transition duration-150 active:scale-[0.98]',
                 role === tab.role
-                  ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-[#263631] dark:hover:text-[#f1f5f3]',
+                  ? 'chip-ink'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-surface-2 dark:hover:text-ink',
               )}
             >
               <tab.icon className="h-3.5 w-3.5" aria-hidden="true" /> {t(tab.label)}

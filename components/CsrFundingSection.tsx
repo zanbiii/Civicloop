@@ -130,7 +130,7 @@ const REVENUE_STREAMS: Array<{ icon: Icon; label: string }> = [
 function SectionHeading({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
   return (
     <div className="max-w-3xl space-y-1.5">
-      <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700">{eyebrow}</div>
+      <div className="eyebrow">{eyebrow}</div>
       <h3 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{title}</h3>
       {subtitle && <p className="text-sm leading-6 text-slate-600">{subtitle}</p>}
     </div>
@@ -161,7 +161,7 @@ function FundingFlow() {
             {phaseIndex > 0 && <FlowConnector />}
             <div className="surface-card flex flex-col p-4">
               <div className="flex items-baseline gap-2">
-                <span className="font-mono text-xs font-bold text-emerald-700">0{phaseIndex + 1}</span>
+                <span className="font-mono text-xs font-bold text-signal">0{phaseIndex + 1}</span>
                 <span className="text-sm font-bold uppercase tracking-wide text-slate-900">{t(phase.phase)}</span>
               </div>
               <p className="mt-1 text-xs leading-5 text-slate-500">{t(phase.caption)}</p>
@@ -179,18 +179,18 @@ function FundingFlow() {
                       <div
                         className={cn(
                           'flex items-center gap-2.5 rounded-xl border px-3 py-2.5',
-                          isFinal ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50',
+                          isFinal ? 'border-ink bg-ink' : 'border-slate-200 bg-slate-50',
                         )}
                       >
                         <span
                           className={cn(
                             'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
-                            isFinal ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-700',
+                            isFinal ? 'bg-signal text-[var(--on-signal)]' : 'border-[1.5px] border-ink text-ink',
                           )}
                         >
                           <step.icon className="h-3.5 w-3.5" />
                         </span>
-                        <span className={cn('text-xs font-semibold leading-snug', isFinal ? 'text-emerald-800' : 'text-slate-800')}>
+                        <span className={cn('text-xs font-semibold leading-snug', isFinal ? 'text-[var(--on-ink)]' : 'text-slate-800')}>
                           {t(step.label)}
                         </span>
                         <span className="ml-auto shrink-0 font-mono text-[10px] text-slate-400">{stepNumber}</span>
@@ -249,7 +249,7 @@ function MonitoringPreview() {
   return (
     <div className="surface-card flex flex-col p-5 sm:p-6">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-[1.5px] border-ink text-ink">
           <LayoutDashboard className="h-4.5 w-4.5" />
         </span>
         <div>
@@ -260,7 +260,7 @@ function MonitoringPreview() {
       <ul className="mt-5 grid flex-1 grid-cols-1 gap-2 min-[420px]:grid-cols-2 xl:grid-cols-3">
         {MONITORED_FIELDS.map((field) => (
           <li key={field.label} className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-            <field.icon className="h-4 w-4 shrink-0 text-emerald-700" />
+            <field.icon className="h-4 w-4 shrink-0 text-signal" />
             <span className="text-xs font-semibold text-slate-800">{t(field.label)}</span>
           </li>
         ))}
@@ -277,7 +277,7 @@ function WhyCompanies() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {REASONS.map((reason) => (
           <div key={reason.title} className="surface-card group p-4 transition hover:-translate-y-0.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md border-[1.5px] border-ink text-ink">
               <reason.icon className="h-4.5 w-4.5" />
             </span>
             <h4 className="mt-3 text-sm font-bold leading-snug text-slate-900">{t(reason.title)}</h4>
@@ -304,7 +304,7 @@ function BusinessModel() {
         <div className="flex flex-col justify-center rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{t('Channel')}</div>
           <div className="mt-2 flex items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-[1.5px] border-ink text-ink">
               <Handshake className="h-4.5 w-4.5" />
             </span>
             <div>
@@ -343,26 +343,24 @@ export default function CsrFundingSection() {
   const t = useTranslate();
   return (
     <section id="csr-funding" aria-labelledby="csr-funding-title" className="scroll-mt-24 space-y-8 sm:space-y-10">
-      <div className="relative isolate overflow-hidden rounded-[1.75rem] bg-[#0c3029] px-5 py-7 text-white shadow-[0_24px_80px_-36px_rgb(6_78_59_/65%)] sm:rounded-[2rem] sm:px-9 sm:py-10 lg:px-12">
-        <div className="pointer-events-none absolute -left-24 -top-36 -z-10 h-[26rem] w-[26rem] rounded-full bg-emerald-400/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-40 right-[10%] -z-10 h-72 w-72 rounded-full bg-teal-300/10 blur-3xl" />
+      <div className="relative isolate overflow-hidden rounded-xl border-[1.5px] border-ink bg-[#16150f] px-5 py-7 text-white shadow-[6px_6px_0_var(--signal)] sm:px-9 sm:py-10 lg:px-12">
         <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-center lg:gap-12">
           <div className="space-y-4">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200/20 bg-emerald-100/10 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-100">
-              <Building2 className="h-3.5 w-3.5 text-emerald-300" /> {t('CSR FUNDING · FOR COMPANIES')}
+            <span className="inline-flex items-center gap-2 rounded-md border border-white/20 bg-white/[0.06] px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-white">
+              <Building2 className="h-3.5 w-3.5 text-[#ff8a5f]" /> {t('CSR FUNDING · FOR COMPANIES')}
             </span>
             <h2 id="csr-funding-title" className="max-w-2xl text-3xl font-bold leading-[1.1] tracking-[-0.035em] text-white sm:text-4xl lg:text-[2.75rem]">
-              {t('Turn CSR Spending Into')} <span className="text-emerald-300">{t('Measurable Civic Impact')}</span>
+              {t('Turn CSR Spending Into')} <span className="text-[#ff8a5f]">{t('Measurable Civic Impact')}</span>
             </h2>
-            <p className="max-w-xl text-sm leading-7 text-emerald-50/75 sm:text-base">
+            <p className="max-w-xl text-sm leading-7 text-white/75 sm:text-base">
               {t(
                 'Civicloop provides a transparent technology and monitoring layer, so companies can track where supported funds are being used and what outcomes they produce, from allocation to verified, citizen-confirmed results.',
               )}
             </p>
-            <div className="flex flex-wrap gap-2 pt-1 text-[11px] font-semibold text-emerald-50/80">
+            <div className="flex flex-wrap gap-2 pt-1 text-[11px] font-semibold text-white/80">
               {['Traceable', 'Evidence-backed', 'Citizen-verified'].map((tag) => (
                 <span key={tag} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-1">
-                  <BadgeCheck className="h-3.5 w-3.5 text-emerald-300" /> {t(tag)}
+                  <BadgeCheck className="h-3.5 w-3.5 text-[#ff8a5f]" /> {t(tag)}
                 </span>
               ))}
             </div>
@@ -370,20 +368,20 @@ export default function CsrFundingSection() {
 
           <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-300/10 text-emerald-200">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#ff5a1f] text-[#16150f] text-[#ff8a5f]">
                 <Landmark className="h-4.5 w-4.5" />
               </span>
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-200/70">{t('The legal context')}</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#ff8a5f]">{t('The legal context')}</div>
                 <div className="text-sm font-semibold text-white">{t('Section 135, Companies Act, 2013')}</div>
               </div>
             </div>
-            <p className="mt-3 text-xs leading-6 text-emerald-50/80">
+            <p className="mt-3 text-xs leading-6 text-white/80">
               {t(
                 'Eligible companies in India are generally required to spend at least 2% of the average net profits of the three immediately preceding financial years on CSR, subject to applicable rules and eligibility requirements.',
               )}
             </p>
-            <p className="mt-3 border-t border-white/10 pt-3 text-[11px] leading-5 text-emerald-50/60">
+            <p className="mt-3 border-t border-white/10 pt-3 text-[11px] leading-5 text-white/60">
               {t('Civicloop does not automatically receive CSR funds. Companies choose which eligible projects and partners to support.')}
             </p>
           </div>

@@ -137,7 +137,7 @@ function TicketCard({
   const afterPhoto = ticket.afterPhotos[0];
 
   return (
-    <div className="interactive-card animate-slide-up rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_6px_22px_-18px_rgb(15_23_42_/30%)]">
+    <div className="interactive-card animate-slide-up rounded-xl border-[1.5px] border-slate-300 bg-white p-4">
       <div className="flex gap-3">
         {photo && (
           <div className="relative h-16 w-16 shrink-0">
@@ -161,7 +161,7 @@ function TicketCard({
           <button
             type="button"
             onClick={() => onSelect?.(ticket.id)}
-            className="rounded text-left text-sm font-semibold text-slate-900 underline-offset-2 transition hover:text-emerald-800 hover:underline dark:hover:text-[#86efc0]"
+            className="rounded text-left text-sm font-semibold text-slate-900 underline-offset-2 transition hover:text-slate-900 hover:underline"
           >
             {CATEGORY_META[ticket.category].icon} {ticket.title}
           </button>
@@ -331,7 +331,7 @@ function ConfirmationDialog({
                     'rounded-full border px-3 py-1.5 text-xs font-semibold transition duration-150 active:scale-95',
                     praiseChips.includes(chip)
                       ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                      : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-100 dark:hover:bg-[#263631]',
+                      : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-100 dark:hover:bg-surface-2',
                   )}
                 >
                   {t(chip)}
@@ -412,7 +412,7 @@ export default function CitizenDashboard({
 
       {myTickets.length === 0 ? (
         <div className="surface-card flex animate-fade-in flex-col items-center px-5 py-12 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-8 ring-emerald-50/50 dark:ring-[#16382d]/40"><MapPin className="h-6 w-6" aria-hidden="true" /></span>
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 ring-8 ring-emerald-50/50 dark:ring-emerald-950/40"><MapPin className="h-6 w-6" aria-hidden="true" /></span>
           <h3 className="mt-4 text-sm font-bold text-slate-900">{t('Your reports will show up here')}</h3>
           <p className="mt-1 max-w-sm text-sm leading-relaxed text-slate-500">{t('Start with a photo or a quick description. We’ll keep you updated all the way to a verified fix.')}</p>
           {onNewReport && (

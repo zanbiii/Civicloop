@@ -94,7 +94,7 @@ function CsrWidget({ fund }: { fund: CsrFund }) {
         </div>
         <div className="mt-1.5 h-2.5 w-full overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={balancePercent} aria-label={t('Active Bounty Balance')}>
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.6)]"
+            className="h-full bg-signal"
             initial={{ width: 0 }}
             animate={{ width: `${balancePercent}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -406,7 +406,7 @@ function TaskCard({
       role="button"
       tabIndex={0}
       aria-label={`${ticket.title} · ${t('Bounty')} ${formatInr(total)}`}
-      className="flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-[box-shadow,border-color] duration-200 hover:border-emerald-200 hover:shadow-[0_14px_34px_-22px_rgb(6_78_59_/45%)] dark:hover:border-[#28634c]"
+      className="interactive-card flex cursor-pointer flex-col overflow-hidden rounded-xl border-[1.5px] border-slate-300 bg-white"
       onClick={onSelect}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
@@ -610,8 +610,8 @@ export default function BountyDashboard({
       {myVolunteer && <VolunteerProfileCard volunteer={myVolunteer} />}
 
       <section className="surface-card p-3 sm:p-4">
-        <div className="grid gap-3 lg:grid-cols-[11rem_minmax(0,1fr)]">
-          <nav aria-label="Bounty network" className="soft-scrollbar flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible lg:border-r lg:border-slate-100 lg:pr-3">
+        <div className="grid gap-3">
+          <nav aria-label="Bounty network" className="soft-scrollbar flex gap-1 overflow-x-auto pb-1">
             {tabs.map(({ id, label, icon: Icon, count }) => (
               <button
                 key={id}
@@ -619,15 +619,15 @@ export default function BountyDashboard({
                 onClick={() => setTab(id)}
                 aria-pressed={tab === id}
                 className={cn(
-                  'flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold transition duration-150 active:scale-[0.98] lg:w-full',
+                  'flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition duration-150 active:scale-[0.98]',
                   tab === id
-                    ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-[#263631] dark:hover:text-[#f1f5f3]',
+                    ? 'chip-ink'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span className="flex-1">{label}</span>
-                <span className={cn('min-w-6 rounded-full px-1.5 py-0.5 text-center text-[10px] tabular-nums', tab === id ? 'bg-white' : 'bg-slate-100')}>{count}</span>
+                <span className={cn('min-w-6 rounded-full px-1.5 py-0.5 text-center text-[10px] tabular-nums', tab === id ? 'bg-signal text-[var(--on-signal)]' : 'bg-slate-100')}>{count}</span>
               </button>
             ))}
           </nav>

@@ -80,7 +80,7 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
             <span key={s} className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200">
               <span
                 className={cn(
-                  'block h-full rounded-full bg-emerald-600 transition-transform duration-300 ease-out',
+                  'block h-full rounded-full bg-signal transition-transform duration-300 ease-out',
                   index <= stepIndex ? 'translate-x-0' : '-translate-x-full',
                 )}
               />
@@ -91,8 +91,8 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
         <div key={step} className="min-h-[17rem] animate-slide-up px-6 py-7">
           {step === 'privacy' && (
             <div className="space-y-4 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 ring-8 ring-emerald-50 dark:ring-[#16382d]/40">
-                <ShieldCheck className="h-7 w-7 text-emerald-600" />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg border-[1.5px] border-ink bg-signal text-[var(--on-signal)] shadow-[3px_3px_0_var(--ink)]">
+                <ShieldCheck className="h-7 w-7" />
               </div>
               <h2 className="text-lg font-bold text-slate-900">{t('Your privacy, protected by design')}</h2>
               <p className="text-sm leading-relaxed text-slate-600">
@@ -104,8 +104,8 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
 
           {step === 'location' && (
             <div className="space-y-4 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 ring-8 ring-blue-50 dark:ring-[#1d3044]/40">
-                <MapPin className="h-7 w-7 text-blue-600" />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg border-[1.5px] border-ink bg-signal text-[var(--on-signal)] shadow-[3px_3px_0_var(--ink)]">
+                <MapPin className="h-7 w-7" />
               </div>
               <h2 className="text-lg font-bold text-slate-900">{t('Help us pinpoint civic issues')}</h2>
               <p className="text-sm leading-relaxed text-slate-600">
@@ -145,10 +145,10 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
               const card = TOUR_CARDS[stepIndex - 2];
               return (
                 <div className="space-y-4 text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 ring-8 ring-violet-50 dark:ring-[#302545]/40">
-                    <card.icon className="h-7 w-7 text-violet-600" />
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg border-[1.5px] border-ink bg-signal text-[var(--on-signal)] shadow-[3px_3px_0_var(--ink)]">
+                    <card.icon className="h-7 w-7" />
                   </div>
-                  <span className="block text-xs font-semibold uppercase tracking-wide text-violet-600">
+                  <span className="block font-mono text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                     {t('Quick tour')} · {t('Step')} {stepIndex - 1} {t('of')} 3
                   </span>
                   <h2 className="text-lg font-bold text-slate-900">{t(card.title)}</h2>

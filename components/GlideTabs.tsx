@@ -55,7 +55,7 @@ export default function GlideTabs<T extends string>({
             aria-pressed={selected}
             className={cn(
               'relative isolate flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-center leading-tight transition duration-150 ease-out active:scale-[0.98] sm:px-3',
-              selected ? 'text-emerald-950' : 'text-slate-600 hover:bg-slate-900/[0.04] hover:text-slate-900 dark:hover:bg-[#2d3e38]',
+              selected ? 'text-emerald-950' : 'text-slate-600 hover:bg-slate-900/[0.04] hover:text-slate-900 dark:hover:bg-surface-2',
             )}
           >
             {selected && (

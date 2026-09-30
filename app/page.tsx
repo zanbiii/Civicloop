@@ -1,8 +1,11 @@
 'use client';
 
+import CountUp from '@/components/CountUp';
+import KpiStrip from '@/components/KpiStrip';
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   ArrowRight,
+  Brain,
   Camera,
   HardHat,
   ChevronDown,
@@ -31,7 +34,8 @@ import CoVDashboard, { ProofResult } from '@/components/CoVDashboard';
 import AIBrainDashboard, { computeBrainTelemetry } from '@/components/AIBrainDashboard';
 import AgentTerminal from '@/components/AgentTerminal';
 import BountyDashboard from '@/components/BountyDashboard';
-import GlideTabs from '@/components/GlideTabs';
+import Sidebar, { type SidebarItem } from '@/components/Sidebar';
+import CityScene from '@/components/scene/CityScene';
 import UpiReceiptModal from '@/components/UpiReceiptModal';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
 import LeafletMap from '@/components/LeafletMap';
@@ -181,41 +185,49 @@ const PITCH_ROWS: Array<{ icon: typeof GitMerge; topic: string; typical: string;
   },
 ];
 
+const LOOP_STEPS: Array<{ name: string; blurb: string; icon: typeof Brain }> = [
+  { name: 'CivicEye', blurb: 'Reads the photo and voice note, then tags the hazard and its severity.', icon: Camera },
+  { name: 'Dedup', blurb: 'Folds every report within 75 m into one master ticket with an impact counter.', icon: GitMerge },
+  { name: 'Triage', blurb: 'Routes to the right department and learns from every correction.', icon: Route },
+  { name: 'SLA Sentinel', blurb: 'Warns at 75% of the deadline and escalates breaches with a briefing.', icon: Siren },
+  { name: 'CivicProof', blurb: 'Checks the after-photo against the before-photo, then the citizen signs off.', icon: ShieldCheck },
+];
+
 function PitchBanner() {
   const t = useTranslate();
   const [open, setOpen] = useState(true);
   return (
-    <section className="overflow-hidden rounded-[1.5rem] border border-slate-800 bg-[#102b27] text-white shadow-[0_18px_55px_-38px_rgb(15_23_42_/55%)]">
+    <section id="loop-compare" className="reveal overflow-hidden rounded-xl border-[1.5px] border-ink bg-[#16150f] text-white shadow-[6px_6px_0_var(--signal)]">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-controls="pitch-banner-body"
-        className="group flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-emerald-300/[0.04] sm:px-5"
+        className="group flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-white/[0.04] sm:px-5"
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-300/10 text-emerald-200">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ff5a1f] text-[#16150f]">
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0">
           <h2 className="text-base font-bold">{t('Why Civicloop Wins over CPGRAMS & Sahaaya 2.0')}</h2>
-          <p className="text-xs text-emerald-50/55">{t('From a complaint inbox to a self-healing loop that closes on evidence.')}</p>
+          <p className="text-xs text-white/55">{t('From a complaint inbox to a self-healing loop that closes on evidence.')}</p>
         </div>
-        <ChevronDown className={cn('ml-auto h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-emerald-200', open && 'rotate-180')} aria-hidden="true" />
+        <ChevronDown className={cn('ml-auto h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-hover:text-[#ff8a5f]', open && 'rotate-180')} aria-hidden="true" />
       </button>
       {open && (
-        <div id="pitch-banner-body" className="animate-slide-down border-t border-slate-800 px-5 pb-5 pt-2">
+        <div id="pitch-banner-body" className="animate-slide-down border-t border-white/10 px-5 pb-5 pt-2">
           <div className="grid gap-2.5">
             {PITCH_ROWS.map((row) => (
-              <div key={row.topic} className="grid gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.045] p-3.5 transition-colors hover:border-emerald-300/20 md:grid-cols-[8rem_1fr_1.4fr] md:items-start">
+              <div key={row.topic} className="grid gap-2.5 rounded-lg border border-white/[0.08] bg-white/[0.04] p-3.5 transition-colors hover:border-[#ff5a1f]/60 md:grid-cols-[8rem_1fr_1.4fr] md:items-start">
                 <span className="flex items-center gap-2 text-sm font-semibold text-slate-100">
-                  <row.icon className="h-4 w-4 text-emerald-200" /> {t(row.topic)}
+                  <row.icon className="h-4 w-4 text-[#ff8a5f]" /> {t(row.topic)}
                 </span>
                 <span className="text-xs text-slate-400">
                   <span className="mr-1 font-semibold uppercase tracking-wide text-slate-500 md:hidden">{t('Typical:')}</span>
                   {t(row.typical)}
                 </span>
-                <span className="flex items-start gap-1.5 text-xs leading-relaxed text-emerald-100">
-                  <CircleCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-300" />
+                <span className="flex items-start gap-1.5 text-xs leading-relaxed text-[#ffd9c9]">
+                  <CircleCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#ff8a5f]" />
                   {t(row.civicloop)}
                 </span>
               </div>
@@ -251,11 +263,11 @@ function DemoBar({
     onScenario(kind);
   };
   const button =
-    'demo-bar-action flex min-h-8 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-900/10 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-sm transition duration-150 hover:-translate-y-px hover:border-emerald-700/20 hover:bg-emerald-50 hover:shadow active:translate-y-0 active:scale-[0.97] disabled:opacity-50';
+    'demo-bar-action flex min-h-8 shrink-0 items-center gap-1.5 rounded-md border-[1.5px] px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.06em] transition duration-150 active:scale-[0.97] disabled:opacity-50';
   return (
-    <div className="demo-bar border-b border-emerald-900/10 bg-[#e8f4ef]">
+    <div className="demo-bar">
       <div className="soft-scrollbar mx-auto flex max-w-[90rem] items-center gap-2 overflow-x-auto px-3 py-2 sm:px-5 lg:px-8">
-        <span className="shrink-0 rounded-full bg-emerald-800 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">{t('Demo lab')}</span>
+        <span className="shrink-0 chip-ink rounded-md px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em]">{t('Demo lab')}</span>
         <button type="button" disabled={busy} aria-busy={busy && lastScenario === 'pothole'} onClick={() => runScenario('pothole')} className={button}>
           {busy && lastScenario === 'pothole' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <GitMerge className="h-3.5 w-3.5" aria-hidden="true" />}
           {t('Duplicate pothole report')}
@@ -271,10 +283,28 @@ function DemoBar({
           <RotateCcw className="h-3.5 w-3.5" /> {t('Reset')}
         </button>
         {clockOffsetHours > 0 && (
-          <span role="status" className="shrink-0 animate-scale-in rounded-full bg-emerald-800 px-2 py-0.5 text-[10px] font-bold text-white">Clock +{clockOffsetHours}h</span>
+          <span role="status" className="shrink-0 animate-scale-in chip-ink rounded-md px-2 py-0.5 font-mono text-[10px] font-bold">Clock +{clockOffsetHours}h</span>
         )}
       </div>
     </div>
+  );
+}
+
+function CommandDeck({ name, role, blurb }: { name: string; role: string; blurb: string }) {
+  const t = useTranslate();
+  return (
+    <section className="surface-card relative isolate min-h-[11.5rem] overflow-hidden sm:min-h-[14rem]">
+      <CityScene variant="banner" className="absolute inset-y-0 right-0 -z-20 w-full opacity-45 sm:w-[66%] sm:opacity-100" />
+      {/* Paper scrim keeps the greeting legible wherever the city runs under it. */}
+      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,var(--surface)_0%,var(--surface)_34%,color-mix(in_srgb,var(--surface)_70%,transparent)_52%,transparent_72%)]" />
+      <div className="relative max-w-lg p-5 sm:p-8">
+        <span className="eyebrow">{t(role)}</span>
+        <h2 className="mt-3 text-3xl font-extrabold leading-[0.95] text-ink sm:text-5xl">
+          {t('Welcome back,')} <span className="hero-mark">{name}</span>
+        </h2>
+        <p className="mt-3 max-w-sm text-sm leading-6 text-slate-700">{t(blurb)}</p>
+      </div>
+    </section>
   );
 }
 
@@ -366,7 +396,7 @@ function TicketDrawer({ ticket, logs, onClose }: { ticket: CivicTicket; logs: Ci
         role="dialog"
         aria-modal="true"
         aria-label={`${ticket.referenceCode} · ${ticket.title}`}
-        className="soft-scrollbar h-full w-full max-w-lg animate-slide-in-right overflow-y-auto bg-white shadow-2xl"
+        className="soft-scrollbar h-full w-full max-w-lg animate-slide-in-right overflow-y-auto border-l-[1.5px] border-ink bg-white shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur">
@@ -506,12 +536,12 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   }, [message, onClose]);
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[2100] flex justify-center px-4">
+    <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[2100] flex justify-center px-4 lg:bottom-4">
       <div
         key={message}
         role="status"
         aria-live="polite"
-        className="pointer-events-auto flex max-w-lg animate-slide-up items-start gap-2.5 rounded-2xl border border-white/10 bg-slate-900/95 px-4 py-3 text-sm text-white shadow-2xl shadow-slate-950/30 backdrop-blur"
+        className="pointer-events-auto flex max-w-lg animate-slide-up items-start gap-2.5 rounded-lg border-[1.5px] border-[var(--signal)] bg-[#16150f] px-4 py-3 text-sm text-white shadow-[4px_4px_0_var(--signal)]"
       >
         <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/15">
           <Sparkles className="h-3 w-3 text-emerald-300" aria-hidden="true" />
@@ -544,6 +574,7 @@ export default function Home() {
   const [demoMode, setDemoMode] = useState(true);
   const [citizenTab, setCitizenTab] = useState<CitizenTab>('bounties');
   const [covTab, setCovTab] = useState<CoVTab>('bounties');
+  const [adminAnchor, setAdminAnchor] = useState('brain');
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<GeoPoint | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -641,6 +672,31 @@ export default function Home() {
     return candidates.slice(0, 4);
   }, [localAreaTickets, myTickets, citizen]);
 
+  const navItems: SidebarItem[] = citizen
+    ? [
+        { id: 'bounties', label: 'Bounty network', icon: HardHat, onSelect: () => setCitizenTab('bounties') },
+        { id: 'report', label: 'Report an issue', icon: Camera, onSelect: () => setCitizenTab('report') },
+        { id: 'reports', label: 'My reports', icon: CircleCheck, badge: myTickets.length, onSelect: () => setCitizenTab('reports') },
+        { id: 'map', label: 'City map', icon: MapIcon, onSelect: () => setCitizenTab('map') },
+      ]
+    : volunteer
+      ? [
+          { id: 'bounties', label: 'Bounty missions', icon: HardHat, onSelect: () => setCovTab('bounties') },
+          { id: 'operations', label: 'Department operations', icon: Route, onSelect: () => setCovTab('operations') },
+        ]
+      : sessionUser?.role === 'admin'
+        ? [
+            { id: 'brain', label: 'AI brain', icon: Brain, href: '#brain' },
+            { id: 'live-map', label: 'Live map', icon: MapIcon, href: '#live-map' },
+          ]
+        : [];
+  const activeNavId = citizen ? citizenTab : volunteer ? covTab : adminAnchor;
+  // The welcome banner and KPI row belong to each role's home view; task tabs go straight to their content.
+  const showOverview =
+    sessionUser !== null && (citizen ? citizenTab === 'bounties' : volunteer ? covTab === 'operations' : true);
+  const pageTitle = navItems.find((item) => item.id === activeNavId)?.label;
+  const displayName = citizen ? citizen.displayName : volunteer ? volunteer.name : sessionUser?.role === 'admin' ? sessionUser.profile.name : '';
+
   const openAuth = (role: UserRole = 'citizen') => {
     setAuthRole(role);
     setAuthOpen(true);
@@ -710,14 +766,24 @@ export default function Home() {
   };
 
   return (
-    <div className="app-shell flex min-h-full flex-1 flex-col text-slate-900">
+    <div className={cn('app-shell flex min-h-full flex-1 flex-col text-slate-900', sessionUser && 'pb-24 lg:pb-0 lg:pl-72')}>
       <a
         href="#main-content"
         className="sr-only fixed left-4 top-4 z-[3000] rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg focus:not-sr-only"
       >
         Skip to content
       </a>
+      {sessionUser && (
+        <Sidebar
+          items={navItems}
+          activeId={activeNavId}
+          onNavigate={setAdminAnchor}
+          sectionLabel={sessionUser.role === 'citizen' ? 'Citizen' : sessionUser.role === 'volunteer' ? 'CoV' : 'Admin'}
+          pulse={{ label: 'Live reports', value: telemetry.totalReports, sub: `${telemetry.slaBreached} SLA breaches` }}
+        />
+      )}
       <Header
+        title={pageTitle}
         sessionUser={activeSessionUser}
         demoMode={demoMode}
         onToggleDemoMode={() => setDemoMode((value) => !value)}
@@ -741,90 +807,118 @@ export default function Home() {
         />
       )}
 
-      <main id="main-content" className="mx-auto w-full max-w-[90rem] flex-1 space-y-7 px-3 py-5 sm:space-y-8 sm:px-5 sm:py-8 lg:px-8">
+      <main
+        id="main-content"
+        className={cn(
+          'flex-1',
+          sessionUser
+            ? 'mx-auto w-full max-w-[96rem] space-y-6 px-3 py-5 sm:px-5 sm:py-7 lg:px-8'
+            : 'w-full',
+        )}
+      >
         {!sessionUser && (
           <>
-            <section className="relative isolate overflow-hidden rounded-[1.75rem] bg-[#0c3029] px-5 py-7 text-white shadow-[0_24px_80px_-36px_rgb(6_78_59_/65%)] sm:rounded-[2rem] sm:px-9 sm:py-10 lg:px-12 lg:py-12">
-              <div className="pointer-events-none absolute -right-24 -top-36 -z-10 h-[28rem] w-[28rem] rounded-full bg-emerald-400/15 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-48 left-[30%] -z-10 h-80 w-80 rounded-full bg-teal-300/10 blur-3xl" />
-              <div className="grid gap-9 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-14">
-              <div className="space-y-5 sm:space-y-6">
-                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200/20 bg-emerald-100/10 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-100">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-60" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-300" />
-                  </span>
-                  {t('CIVICSENSE · 5 AI AGENTS AT WORK')}
-                </span>
-                <h1 className="max-w-2xl text-[2.4rem] font-bold leading-[1.08] tracking-[-0.045em] text-white sm:text-5xl lg:text-[3.65rem]">
-                  {t('Your neighborhood,')} <span className="text-emerald-300">{t('better by design.')}</span>
-                </h1>
-                <p className="max-w-xl text-sm leading-7 text-emerald-50/75 sm:text-base">
-                  {t('Report a local issue in seconds. Civicloop brings neighbors together, gets the right team on it, and keeps the fix accountable from first photo to final proof.')}
-                </p>
-                <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => openAuth('citizen')}
-                    className="group flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-300 px-5 py-3 text-sm font-bold text-emerald-950 shadow-lg shadow-black/10 transition duration-150 hover:-translate-y-0.5 hover:bg-emerald-200 hover:shadow-emerald-300/20 active:translate-y-0 active:scale-[0.98]"
-                  >
-                    {t('Report an issue')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openAuth('volunteer')}
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition duration-150 hover:border-white/40 hover:bg-white/10 active:scale-[0.98]"
-                  >
-                    <HardHat className="h-4 w-4 text-emerald-200" /> {t('Join as a CoV')}
-                  </button>
+            <section id="top" className="relative isolate overflow-hidden border-b-[1.5px] border-ink bg-paper">
+              <div className="relative mx-auto flex min-h-[calc(100svh-9.5rem)] max-w-[96rem] flex-col justify-between gap-8 px-3 pt-10 sm:px-5 lg:gap-12 lg:px-8 lg:pt-14">
+                <div className="max-w-4xl space-y-6 lg:max-w-[46%]">
+                  <span className="eyebrow">{t('CIVICSENSE · 5 AI AGENTS AT WORK')}</span>
+                  <h1 className="text-[clamp(2.7rem,6.2vw,5.9rem)] font-extrabold leading-[0.9] tracking-[-0.045em] text-ink">
+                    {t('Your neighborhood,')}
+                    <br />
+                    <span className="hero-mark">{t('better by design.')}</span>
+                  </h1>
+                  <p className="max-w-xl text-base leading-7 text-slate-700 sm:text-lg">
+                    {t('Report a local issue in seconds. Civicloop brings neighbors together, gets the right team on it, and keeps the fix accountable from first photo to final proof.')}
+                  </p>
+                  <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:flex-wrap">
+                    <button type="button" onClick={() => openAuth('citizen')} className="btn btn-primary btn-lg group">
+                      {t('Report an issue')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </button>
+                    <button type="button" onClick={() => openAuth('volunteer')} className="btn btn-secondary btn-lg">
+                      <HardHat className="h-4 w-4" /> {t('Join as a CoV')}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-slate-600">
+                    <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> {t('Your identity stays private')}</span>
+                    <span className="hidden h-1 w-1 bg-slate-400 sm:block" />
+                    <span>{t('English · ಕನ್ನಡ · हिन्दी')}</span>
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1 text-[11px] font-medium text-emerald-50/65">
-                  <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-emerald-300" /> {t('Your identity stays private')}</span>
-                  <span className="hidden h-1 w-1 rounded-full bg-emerald-200/40 sm:block" />
-                  <span>{t('English · ಕನ್ನಡ · हिन्दी')}</span>
-                </div>
-              </div>
-              <div className="relative">
-                <div className="absolute -inset-4 rounded-[2rem] bg-emerald-300/5 blur-2xl" />
-                <div className="relative rounded-[1.5rem] border border-white/10 bg-white/[0.06] p-4 shadow-2xl backdrop-blur sm:p-5">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200/70">{t('City impact')}</div>
-                      <div className="mt-1 text-sm font-semibold text-white">{t('Small actions. Visible progress.')}</div>
+
+                <CityScene className="scene-fade-left relative -mx-3 h-[340px] sm:-mx-5 sm:h-[460px] lg:absolute lg:inset-y-0 lg:left-[40%] lg:right-0 lg:-z-10 lg:mx-0 lg:h-auto" />
+
+                <dl className="grid grid-cols-2 border-[1.5px] border-b-0 border-ink bg-surface lg:grid-cols-4">
+                  {[
+                    { label: t('Neighbors heard'), value: telemetry.totalReports, sub: `${telemetry.masterIssues} ${t('issues tracked')}`, icon: Users },
+                    { label: t('Less duplicate noise'), value: `${telemetry.duplicateReductionPercent}%`, sub: `${telemetry.duplicatesMerged} ${t('reports combined')}`, icon: GitMerge },
+                    { label: t('On-time accountability'), value: telemetry.autoEscalations, sub: t('automatic deadline escalations'), icon: Siren },
+                    { label: t('Fixes with proof'), value: telemetry.proofVerified, sub: `${telemetry.proofRejected} ${t('proofs reviewed')}`, icon: Check },
+                  ].map((stat, index) => (
+                    <div
+                      key={stat.label}
+                      className={cn(
+                        'stat-cell group p-4 sm:p-5',
+                        index % 2 === 1 && 'border-l-[1.5px] border-ink',
+                        (index === 2 || index === 3) && 'border-t-[1.5px] border-ink lg:border-t-0',
+                        index === 2 && 'lg:border-l-[1.5px] lg:border-ink',
+                      )}
+                    >
+                      <dt className="flex items-center justify-between gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 group-hover:text-[var(--on-signal)] sm:text-[11px]">
+                        {stat.label}
+                        <stat.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      </dt>
+                      <dd className="mt-2 font-[family-name:var(--font-display)] text-4xl font-extrabold tracking-tight text-ink group-hover:text-[var(--on-signal)] sm:text-5xl">
+                        <CountUp value={stat.value} />
+                      </dd>
+                      <div className="mt-1 text-[11px] text-slate-500 group-hover:text-[var(--on-signal)]">{stat.sub}</div>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/15 bg-emerald-200/10 px-2.5 py-1 text-[10px] font-semibold text-emerald-100">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> {t('Live demo')}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-                {[
-                  { label: t('Neighbors heard'), value: telemetry.totalReports, sub: `${telemetry.masterIssues} ${t('issues tracked')}`, icon: Users },
-                  { label: t('Less duplicate noise'), value: `${telemetry.duplicateReductionPercent}%`, sub: `${telemetry.duplicatesMerged} ${t('reports combined')}`, icon: GitMerge },
-                  { label: t('On-time accountability'), value: telemetry.autoEscalations, sub: t('automatic deadline escalations'), icon: Siren },
-                  { label: t('Fixes with proof'), value: telemetry.proofVerified, sub: `${telemetry.proofRejected} ${t('proofs reviewed')}`, icon: Check },
-                ].map((stat) => (
-                  <div key={stat.label} className="civic-impact-stat min-h-[116px] rounded-2xl border border-white/10 p-3.5 text-slate-900 sm:p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="text-[10px] font-semibold text-slate-500 sm:text-[11px]">{stat.label}</div>
-                      <stat.icon className="h-4 w-4 shrink-0 text-emerald-700" />
-                    </div>
-                    <div className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-[1.75rem]">{stat.value}</div>
-                    <div className="mt-0.5 text-[10px] leading-relaxed text-slate-500 sm:text-[11px]">{stat.sub}</div>
-                  </div>
-                ))}
-              </div>
-                  <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200/10 bg-emerald-950/35 px-3 py-2.5 text-[11px] text-emerald-50/75">
-                    <Check className="h-4 w-4 shrink-0 text-emerald-300" />
-                    {t('Every report is tracked. Every resolution needs evidence.')}
-                  </div>
-                </div>
-              </div>
+                  ))}
+                </dl>
               </div>
             </section>
 
+            <div className="marquee overflow-hidden border-b-[1.5px] border-ink bg-[#16150f] py-2.5 text-[#f8f6ef]" aria-hidden="true">
+              <div className="marquee-track flex gap-8 font-mono text-xs font-semibold uppercase tracking-[0.16em]">
+                {[...Object.keys(CATEGORY_META), ...Object.keys(CATEGORY_META)].map((category, index) => (
+                  <span key={`${category}-${index}`} className="flex shrink-0 items-center gap-8">
+                    {category}
+                    <span className="h-1.5 w-1.5 bg-[#ff5a1f]" />
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <section id="loop" className="mx-auto w-full max-w-[96rem] px-3 py-12 sm:px-5 lg:px-8 lg:py-16">
+              <div className="reveal mb-8 flex flex-wrap items-end justify-between gap-4">
+                <div className="space-y-3">
+                  <span className="eyebrow">{t('How the loop works')}</span>
+                  <h2 className="max-w-2xl text-4xl font-extrabold leading-[0.95] text-ink sm:text-5xl">{t('A complaint that closes on evidence.')}</h2>
+                </div>
+                <p className="max-w-sm text-sm leading-6 text-slate-600">
+                  {t('From a complaint inbox to a self-healing loop that closes on evidence.')}
+                </p>
+              </div>
+              <ol className="reveal grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                {LOOP_STEPS.map((step, index) => (
+                  <li key={step.name} className="surface-card tilt group p-5">
+                    <div className="flex items-start justify-between">
+                      <span className="font-[family-name:var(--font-display)] text-6xl font-extrabold leading-none text-transparent [-webkit-text-stroke:1.5px_var(--ink)] transition-colors duration-300 group-hover:text-[var(--signal)]">
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <step.icon className="h-6 w-6 text-slate-500 transition-colors group-hover:text-ink" aria-hidden="true" />
+                    </div>
+                    <h3 className="mt-6 text-xl font-extrabold text-ink">{step.name}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{t(step.blurb)}</p>
+                  </li>
+                ))}
+              </ol>
+            </section>
+
+            <div className="mx-auto w-full max-w-[96rem] space-y-8 px-3 pb-12 sm:px-5 lg:px-8 lg:pb-16">
             <PitchBanner />
 
-            <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
+
+            <div id="bounty" className="grid gap-6 xl:grid-cols-[26rem_minmax(0,1fr)]">
               <BountyDashboard
                 csrFund={CSR_FUND}
                 volunteers={volunteers}
@@ -846,30 +940,40 @@ export default function Home() {
                 depots={SEED_TOOL_DEPOTS}
                 showingDemoReports={showingDemoReports}
                 heightClass="h-[380px] sm:h-[480px] lg:h-[600px]"
+                stretchToColumn
               />
             </div>
 
-            <CsrFundingSection />
+            <div id="csr">
+              <CsrFundingSection />
+            </div>
+            </div>
+          </>
+        )}
+
+        {showOverview && (
+          <>
+            <CommandDeck
+              name={displayName}
+              role={sessionUser.role === 'citizen' ? 'Citizen' : sessionUser.role === 'volunteer' ? 'Community volunteer' : 'Super-admin'}
+              blurb={
+                sessionUser.role === 'admin'
+                  ? 'Five agents are watching every ticket. Overrides you make teach the routing graph.'
+                  : sessionUser.role === 'volunteer'
+                    ? 'Pick a mission, fix it, and submit proof. Payout lands once the citizen signs off.'
+                    : 'Report an issue, back a neighbor’s report, and watch it close with photo proof.'
+              }
+            />
+            {/* Admin gets the richer telemetry grid inside the AI brain instead. */}
+            {sessionUser?.role !== 'admin' && <KpiStrip telemetry={telemetry} />}
           </>
         )}
 
         {citizen && (
           <>
-            <GlideTabs
-              ariaLabel="Citizen dashboard"
-              value={citizenTab}
-              onChange={setCitizenTab}
-              className="surface-card"
-              items={[
-                { id: 'bounties', label: t('Bounty network'), icon: HardHat },
-                { id: 'report', label: t('Report an issue'), icon: Camera },
-                { id: 'reports', label: <>{t('My reports')} <span className="text-[10px] opacity-70">({myTickets.length})</span></>, icon: CircleCheck },
-                { id: 'map', label: t('City map'), icon: MapIcon },
-              ]}
-            />
 
             {citizenTab === 'bounties' && (
-              <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
+              <div className="grid gap-6 xl:grid-cols-[26rem_minmax(0,1fr)]">
                 <BountyDashboard
                   csrFund={CSR_FUND}
                   volunteers={volunteerRoster}
@@ -891,6 +995,7 @@ export default function Home() {
                   depots={SEED_TOOL_DEPOTS}
                   showingDemoReports={showingDemoReports}
                   heightClass="h-[380px] sm:h-[480px] lg:h-[600px]"
+                stretchToColumn
                 />
               </div>
             )}
@@ -945,19 +1050,9 @@ export default function Home() {
 
         {volunteer && (
           <div className="space-y-5">
-            <GlideTabs
-              ariaLabel="CoV dashboard"
-              value={covTab}
-              onChange={setCovTab}
-              className="surface-card"
-              items={[
-                { id: 'bounties', label: 'Bounty missions', icon: HardHat },
-                { id: 'operations', label: 'Department operations', icon: Route },
-              ]}
-            />
 
             {covTab === 'bounties' && (
-              <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
+              <div className="grid gap-6 xl:grid-cols-[26rem_minmax(0,1fr)]">
                 <BountyDashboard
                   csrFund={CSR_FUND}
                   volunteers={volunteerRoster}
@@ -1017,19 +1112,23 @@ export default function Home() {
 
         {sessionUser?.role === 'admin' && (
           <>
-            <AIBrainDashboard tickets={tickets} overrides={overrides} logs={logs} liveAi={liveAi} />
-            <MapCard
-              tickets={tickets}
-              selectedTicketId={selectedTicketId}
-              onSelectTicket={setSelectedTicketId}
-              userLocation={userLocation}
-              onLocateMe={setUserLocation}
-            />
+            <div id="brain">
+              <AIBrainDashboard tickets={tickets} overrides={overrides} logs={logs} liveAi={liveAi} />
+            </div>
+            <div id="live-map">
+              <MapCard
+                tickets={tickets}
+                selectedTicketId={selectedTicketId}
+                onSelectTicket={setSelectedTicketId}
+                userLocation={userLocation}
+                onLocateMe={setUserLocation}
+              />
+            </div>
           </>
         )}
       </main>
 
-      <footer className="mt-8 border-t border-slate-200/80 bg-white/65 px-4 py-5 text-center text-[11px] text-slate-500">
+      <footer className="mt-8 border-t-[1.5px] border-ink bg-surface px-4 py-5 text-center font-mono text-[11px] uppercase tracking-[0.06em] text-slate-500">
         <span className="font-semibold text-slate-700">Civicloop</span> · {t('CivicSense orchestration · CivicEye vision · OpenStreetMap contributors')}
       </footer>
 

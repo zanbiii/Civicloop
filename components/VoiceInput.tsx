@@ -175,7 +175,7 @@ export default function VoiceInput({
           'relative rounded-xl border bg-white transition duration-150',
           listening
             ? 'border-red-400 ring-4 ring-red-100 dark:ring-red-950/60'
-            : 'border-slate-300 hover:border-slate-400 focus-within:border-emerald-600 focus-within:ring-4 focus-within:ring-emerald-500/15 dark:focus-within:border-emerald-400',
+            : 'border-slate-300 hover:border-slate-400 focus-within:border-slate-900 focus-within:shadow-[3px_3px_0_var(--signal)]',
         )}
       >
         <textarea
@@ -222,7 +222,7 @@ export default function VoiceInput({
               aria-label={listening ? 'Stop voice typing' : 'Start voice typing'}
               className={cn(
                 'relative flex h-10 w-10 items-center justify-center rounded-full text-white shadow transition active:scale-90',
-                listening ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-700 hover:scale-105 hover:bg-emerald-800',
+                listening ? 'bg-red-600 hover:bg-red-700' : 'chip-ink hover:scale-105 hover:bg-signal hover:text-[var(--on-signal)]',
               )}
             >
               {listening && <span className="absolute inset-0 animate-ping rounded-full bg-red-500 opacity-40" />}
