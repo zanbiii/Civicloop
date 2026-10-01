@@ -16,11 +16,14 @@ import {
   LoaderCircle,
   Map as MapIcon,
   Mic,
+  Moon,
   RotateCcw,
   Route,
   ShieldCheck,
+  Search,
   Siren,
   Sparkles,
+  TriangleAlert,
   Users,
   X,
 } from 'lucide-react';
@@ -40,6 +43,12 @@ import UpiReceiptModal from '@/components/UpiReceiptModal';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
 import LeafletMap from '@/components/LeafletMap';
 import CsrFundingSection from '@/components/CsrFundingSection';
+import { useAppTheme } from '@/components/AppThemeProvider';
+import CommandPalette, { type PaletteGroup } from '@/components/fx/CommandPalette';
+import HudFrame from '@/components/fx/HudFrame';
+import { LiveIndicator } from '@/components/fx/Indicators';
+import ScrambleText from '@/components/fx/ScrambleText';
+import SplitText from '@/components/fx/SplitText';
 import { useCivicloop } from '@/lib/useCivicloop';
 import { CSR_FUND, DEMO_COVS, DEMO_VOLUNTEER, PLACEHOLDER_IMAGE, SEED_TOOL_DEPOTS, TKR_COLLEGE_CENTER } from '@/lib/seedData';
 import { haversineMeters } from '@/lib/haversine';
@@ -197,7 +206,8 @@ function PitchBanner() {
   const t = useTranslate();
   const [open, setOpen] = useState(true);
   return (
-    <section id="loop-compare" className="reveal overflow-hidden rounded-xl border-[1.5px] border-ink bg-[#16150f] text-white shadow-[6px_6px_0_var(--signal)]">
+    <section id="loop-compare" className="fx-border fx-pitch reveal relative overflow-hidden rounded-xl text-white">
+      <span className="fx-sweep" aria-hidden="true" />
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -205,7 +215,7 @@ function PitchBanner() {
         aria-controls="pitch-banner-body"
         className="group flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-white/[0.04] sm:px-5"
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#ff5a1f] text-[#16150f]">
+        <span className="side-logo flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0">
@@ -216,9 +226,9 @@ function PitchBanner() {
       </button>
       {open && (
         <div id="pitch-banner-body" className="animate-slide-down border-t border-white/10 px-5 pb-5 pt-2">
-          <div className="grid gap-2.5">
+          <div className="fx-stagger grid gap-2.5">
             {PITCH_ROWS.map((row) => (
-              <div key={row.topic} className="grid gap-2.5 rounded-lg border border-white/[0.08] bg-white/[0.04] p-3.5 transition-colors hover:border-[#ff5a1f]/60 md:grid-cols-[8rem_1fr_1.4fr] md:items-start">
+              <div key={row.topic} className="fx-spot grid gap-2.5 rounded-lg border border-white/[0.08] bg-white/[0.04] p-3.5 transition-[border-color,transform] duration-300 hover:translate-x-1 hover:border-[var(--signal)]/60 md:grid-cols-[8rem_1fr_1.4fr] md:items-start">
                 <span className="flex items-center gap-2 text-sm font-semibold text-slate-100">
                   <row.icon className="h-4 w-4 text-[#ff8a5f]" /> {t(row.topic)}
                 </span>
@@ -293,14 +303,20 @@ function DemoBar({
 function CommandDeck({ name, role, blurb }: { name: string; role: string; blurb: string }) {
   const t = useTranslate();
   return (
-    <section className="surface-card relative isolate min-h-[11.5rem] overflow-hidden sm:min-h-[14rem]">
+    <section className="surface-card holo relative isolate min-h-[11.5rem] overflow-hidden sm:min-h-[14rem]">
+      <span className="fx-sweep" aria-hidden="true" />
+      <HudFrame readout="17.2844°N · 78.5651°E" scan className="hidden sm:block" />
       <CityScene variant="banner" className="absolute inset-y-0 right-0 -z-20 w-full opacity-45 sm:w-[66%] sm:opacity-100" />
       {/* Paper scrim keeps the greeting legible wherever the city runs under it. */}
-      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,var(--surface)_0%,var(--surface)_34%,color-mix(in_srgb,var(--surface)_70%,transparent)_52%,transparent_72%)]" />
-      <div className="relative max-w-lg p-5 sm:p-8">
-        <span className="eyebrow">{t(role)}</span>
+      <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,var(--surface)_0%,var(--surface)_34%,color-mix(in_srgb,var(--surface)_70%,transparent)_52%,transparent_72%)] dark:bg-[linear-gradient(90deg,#070a1c_0%,rgb(7_10_28/85%)_38%,transparent_75%)]" />
+      <div className="relative z-[3] max-w-lg p-5 sm:p-8">
+        <div className="flex items-center gap-3">
+          <span className="eyebrow"><ScrambleText text={t(role)} /></span>
+          <LiveIndicator label={t('Online')} tone="cyan" />
+        </div>
         <h2 className="mt-3 text-3xl font-extrabold leading-[0.95] text-ink sm:text-5xl">
-          {t('Welcome back,')} <span className="hero-mark">{name}</span>
+          <SplitText text={t('Welcome back,')} />{' '}
+          <span className="hero-mark"><SplitText text={name} startIndex={14} gradient /></span>
         </h2>
         <p className="mt-3 max-w-sm text-sm leading-6 text-slate-700">{t(blurb)}</p>
       </div>
@@ -335,8 +351,9 @@ function MapCard({
   return (
     <section className={cn('surface-card overflow-hidden p-3 sm:p-4', stretchToColumn && 'lg:flex lg:h-full lg:flex-col')}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
-        <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
-          <MapIcon className="h-4 w-4" /> {t(title)}
+        <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+          <MapIcon className="h-4 w-4 text-[var(--signal)]" /> {t(title)}
+          <LiveIndicator label={t('Live')} className="ml-1" />
         </h3>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600">
           {SEVERITIES.map((severity) => {
@@ -391,12 +408,12 @@ function TicketDrawer({ ticket, logs, onClose }: { ticket: CivicTicket; logs: Ci
   useEscapeKey(onClose);
 
   return (
-    <div className="fixed inset-0 z-[1900] flex animate-fade-in justify-end bg-slate-950/45 backdrop-blur-[2px]" onClick={onClose}>
+    <div className="fx-scrim fixed inset-0 z-[1900] flex animate-fade-in justify-end bg-slate-950/45" onClick={onClose}>
       <aside
         role="dialog"
         aria-modal="true"
         aria-label={`${ticket.referenceCode} · ${ticket.title}`}
-        className="soft-scrollbar h-full w-full max-w-lg animate-slide-in-right overflow-y-auto border-l-[1.5px] border-ink bg-white shadow-2xl"
+        className="fx-drawer soft-scrollbar h-full w-full max-w-lg animate-slide-in-right overflow-y-auto border-l-[1.5px] border-ink bg-white shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-5 py-3 backdrop-blur">
@@ -528,11 +545,15 @@ function TicketDrawer({ ticket, logs, onClose }: { ticket: CivicTicket; logs: Ci
   );
 }
 
+const TOAST_MS = 6_000;
+const WARNING_WORDS = /unavailable|cannot|not been|rejected|reopened|failed/i;
+
 /** `aboveDock` lifts the toast clear of the phone bottom dock, which only exists when signed in. */
 function Toast({ message, onClose, aboveDock }: { message: string; onClose: () => void; aboveDock: boolean }) {
   const t = useTranslate();
+  const warn = WARNING_WORDS.test(message);
   useEffect(() => {
-    const timer = window.setTimeout(onClose, 6_000);
+    const timer = window.setTimeout(onClose, TOAST_MS);
     return () => window.clearTimeout(timer);
   }, [message, onClose]);
 
@@ -542,15 +563,30 @@ function Toast({ message, onClose, aboveDock }: { message: string; onClose: () =
         key={message}
         role="status"
         aria-live="polite"
-        className="pointer-events-auto flex max-w-lg animate-slide-up items-start gap-2.5 rounded-lg border-[1.5px] border-[var(--signal)] bg-[#16150f] px-4 py-3 text-sm text-white shadow-[4px_4px_0_var(--signal)]"
+        className={cn(
+          'fx-toast pointer-events-auto flex max-w-lg items-start gap-2.5 rounded-lg border-[1.5px] border-[var(--signal)] bg-[#16150f] px-4 py-3 text-sm text-white shadow-[4px_4px_0_var(--signal)]',
+          warn && 'fx-toast-warn',
+        )}
       >
-        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/15">
-          <Sparkles className="h-3 w-3 text-emerald-300" aria-hidden="true" />
+        <span
+          className={cn(
+            'fx-toast-icon relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
+            warn ? 'bg-amber-400/15 text-amber-300' : 'bg-emerald-400/15 text-emerald-300',
+          )}
+        >
+          {warn ? (
+            <TriangleAlert className="h-3 w-3" aria-hidden="true" />
+          ) : (
+            <svg viewBox="0 0 16 16" className="fx-toast-check h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 8.5l3.2 3L13 4.5" />
+            </svg>
+          )}
         </span>
         <span className="leading-relaxed">{t(message)}</span>
         <button type="button" onClick={onClose} className="-mr-1 ml-2 shrink-0 rounded-full p-1 text-slate-400 transition hover:bg-slate-800 hover:text-white active:scale-90" aria-label={t('Dismiss')}>
           <X className="h-4 w-4" />
         </button>
+        <span className="fx-toast-progress" style={{ animationDuration: `${TOAST_MS}ms` }} aria-hidden="true" />
       </div>
     </div>
   );
@@ -565,6 +601,7 @@ type CoVTab = 'bounties' | 'operations';
 
 export default function Home() {
   const { language, setLanguage } = useAppLanguage();
+  const { theme, toggleTheme } = useAppTheme();
   const t = useTranslate();
   const civic = useCivicloop();
   const { tickets, logs, overrides, volunteers, liveAi, nowMs, clockOffsetHours } = civic;
@@ -582,6 +619,18 @@ export default function Home() {
   const [scenarioBusy, setScenarioBusy] = useState(false);
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [paidBounty, setPaidBounty] = useState<{ bounty: BountyInfo; ticketTitle: string } | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setSearchOpen((open) => !open);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const onboarded = useSyncExternalStore(noopSubscribe, readOnboarded, () => true);
   const onboardingOpen = !onboarded && !onboardingDismissed;
@@ -756,6 +805,58 @@ export default function Home() {
     setToast('Clock moved forward 6 hours — the SLA Sentinel re-checked every open ticket.');
   };
 
+  const scrollToSection = (selector: string) => document.querySelector(selector)?.scrollIntoView({ behavior: 'smooth' });
+  const searchGroups: PaletteGroup[] = [
+    {
+      label: 'Go to',
+      items: sessionUser
+        ? navItems.map((item) => ({
+            id: `nav-${item.id}`,
+            label: t(item.label),
+            hint: t('Workspace'),
+            icon: item.icon,
+            onRun: () => {
+              setAdminAnchor(item.id);
+              item.onSelect?.();
+              if (item.href) scrollToSection(item.href);
+            },
+          }))
+        : [
+            { id: 'sec-loop', label: t('How the loop works'), hint: t('Section'), icon: Route, onRun: () => scrollToSection('#loop') },
+            { id: 'sec-bounty', label: t('Bounty map'), hint: t('Section'), icon: MapIcon, onRun: () => scrollToSection('#bounty') },
+            { id: 'sec-csr', label: t('CSR funding'), hint: t('Section'), icon: Sparkles, onRun: () => scrollToSection('#csr') },
+          ],
+    },
+    {
+      label: 'Actions',
+      items: [
+        ...(sessionUser ? [] : [{ id: 'act-report', label: t('Report an issue'), icon: Camera, onRun: () => openAuth('citizen') }]),
+        ...(demoMode
+          ? [
+              { id: 'act-citizen', label: t('Switch to the demo citizen view'), icon: Users, onRun: () => quickSwitch('citizen') },
+              { id: 'act-cov', label: t('Switch to the demo CoV view'), icon: HardHat, onRun: () => quickSwitch('volunteer') },
+              { id: 'act-admin', label: t('Switch to the demo admin view'), icon: Brain, onRun: () => quickSwitch('admin') },
+            ]
+          : []),
+        { id: 'act-theme', label: t(theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'), icon: Moon, onRun: toggleTheme },
+        { id: 'act-demo', label: t(demoMode ? 'Turn off Quick Demo Mode' : 'Turn on Quick Demo Mode'), icon: FastForward, onRun: () => setDemoMode((value) => !value) },
+      ],
+    },
+    {
+      label: 'Reports',
+      items: [...masters, ...localAreaTickets.filter((ticket) => !masters.includes(ticket))].map((ticket) => ({
+        id: `ticket-${ticket.id}`,
+        label: ticket.title,
+        hint: `${ticket.referenceCode} · ${t(ticket.status)} · ${ticket.impactCount} ${t(ticket.impactCount === 1 ? 'citizen' : 'citizens')}`,
+        keywords: `${ticket.category} ${ticket.location.address ?? ''} ${ticket.assignedDepartment}`,
+        icon: Search,
+        onRun: () => setSelectedTicketId(ticket.id),
+      })),
+    },
+  ];
+
+  const viewKey = !sessionUser ? 'landing' : `${sessionUser.role}-${citizen ? citizenTab : volunteer ? covTab : 'admin'}`;
+
   const resetDemo = async () => {
     await civic.resetDemo();
     setSelectedTicketId(null);
@@ -796,6 +897,7 @@ export default function Home() {
           setSelectedTicketId(null);
         }}
         onQuickSwitchRole={quickSwitch}
+        onOpenSearch={() => setSearchOpen(true)}
       />
 
       {demoMode && (
@@ -813,26 +915,32 @@ export default function Home() {
         className={cn(
           'flex-1',
           sessionUser
-            ? 'mx-auto w-full max-w-[96rem] space-y-6 px-3 py-5 sm:px-5 sm:py-7 lg:px-8'
+            ? 'mx-auto w-full max-w-[96rem] px-3 py-5 sm:px-5 sm:py-7 lg:px-8'
             : 'w-full',
         )}
       >
+        {/* Keyed per role and tab: each switch replays the blur-to-sharp sweep entrance. */}
+        <div key={viewKey} className={cn('fx-view', sessionUser && 'space-y-6')}>
         {!sessionUser && (
           <>
             <section id="top" className="relative isolate overflow-hidden border-b-[1.5px] border-ink bg-paper">
+              <HudFrame label="CIVICLOOP // GRID-07" readout="17.2844°N · 78.5651°E · ALT 512M" scan className="hidden lg:block" />
               <div className="relative mx-auto flex min-h-[calc(100svh-9.5rem)] max-w-[96rem] flex-col justify-between gap-8 px-3 pt-10 sm:px-5 lg:gap-12 lg:px-8 lg:pt-14">
-                <div className="max-w-4xl space-y-6 lg:max-w-[46%]">
-                  <span className="eyebrow">{t('CIVICSENSE · 5 AI AGENTS AT WORK')}</span>
+                <div className="relative z-[3] max-w-4xl space-y-6 lg:max-w-[46%]" data-depth="" style={{ '--depth': 8 } as React.CSSProperties}>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="eyebrow"><ScrambleText text={t('CIVICSENSE · 5 AI AGENTS AT WORK')} delay={200} duration={1100} /></span>
+                    <LiveIndicator label={t('Systems online')} />
+                  </div>
                   <h1 className="text-[clamp(2.7rem,6.2vw,5.9rem)] font-extrabold leading-[0.9] tracking-[-0.045em] text-ink">
-                    {t('Your neighborhood,')}
+                    <SplitText text={t('Your neighborhood,')} delay={150} />
                     <br />
-                    <span className="hero-mark">{t('better by design.')}</span>
+                    <span className="hero-mark"><SplitText text={t('better by design.')} startIndex={18} delay={150} gradient /></span>
                   </h1>
                   <p className="max-w-xl text-base leading-7 text-slate-700 sm:text-lg">
                     {t('Report a local issue in seconds. Civicloop brings neighbors together, gets the right team on it, and keeps the fix accountable from first photo to final proof.')}
                   </p>
                   <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:flex-wrap">
-                    <button type="button" onClick={() => openAuth('citizen')} className="btn btn-primary btn-lg group">
+                    <button type="button" onClick={() => openAuth('citizen')} className="btn btn-primary btn-lg group" data-cursor-cta>
                       {t('Report an issue')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </button>
                     <button type="button" onClick={() => openAuth('volunteer')} className="btn btn-secondary btn-lg">
@@ -848,7 +956,8 @@ export default function Home() {
 
                 <CityScene className="scene-fade-left relative -mx-3 h-[340px] sm:-mx-5 sm:h-[460px] lg:absolute lg:inset-y-0 lg:left-[40%] lg:right-0 lg:-z-10 lg:mx-0 lg:h-auto" />
 
-                <dl className="grid grid-cols-2 border-[1.5px] border-b-0 border-ink bg-surface lg:grid-cols-4">
+                <dl className="holo relative z-[3] grid grid-cols-2 overflow-hidden border-[1.5px] border-b-0 border-ink bg-surface backdrop-blur-md lg:grid-cols-4 dark:bg-[rgb(6_9_24/72%)]">
+                  <span className="fx-sweep" aria-hidden="true" style={{ '--sweep-delay': '2.4s' } as React.CSSProperties} />
                   {[
                     { label: t('Neighbors heard'), value: telemetry.totalReports, sub: `${telemetry.masterIssues} ${t('issues tracked')}`, icon: Users },
                     { label: t('Less duplicate noise'), value: `${telemetry.duplicateReductionPercent}%`, sub: `${telemetry.duplicatesMerged} ${t('reports combined')}`, icon: GitMerge },
@@ -866,7 +975,7 @@ export default function Home() {
                     >
                       <dt className="flex items-center justify-between gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 group-hover:text-[var(--on-signal)] sm:text-[11px]">
                         {stat.label}
-                        <stat.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        <stat.icon className="h-4 w-4 shrink-0 transition-transform duration-500 group-hover:rotate-[-12deg] group-hover:scale-125" aria-hidden="true" />
                       </dt>
                       <dd className="mt-2 font-[family-name:var(--font-display)] text-4xl font-extrabold tracking-tight text-ink group-hover:text-[var(--on-signal)] sm:text-5xl">
                         <CountUp value={stat.value} />
@@ -889,10 +998,11 @@ export default function Home() {
               </div>
             </div>
 
-            <section id="loop" className="mx-auto w-full max-w-[96rem] px-3 py-12 sm:px-5 lg:px-8 lg:py-16">
-              <div className="reveal mb-8 flex flex-wrap items-end justify-between gap-4">
+            <section id="loop" className="relative isolate mx-auto w-full max-w-[96rem] overflow-hidden px-3 py-12 sm:px-5 lg:px-8 lg:py-16">
+              <span className="fx-ghost-word fx-parallax right-0 top-4 text-[clamp(6rem,18vw,16rem)]" aria-hidden="true">LOOP</span>
+              <div className="fx-scroll-rise mb-8 flex flex-wrap items-end justify-between gap-4">
                 <div className="space-y-3">
-                  <span className="eyebrow">{t('How the loop works')}</span>
+                  <span className="eyebrow"><ScrambleText text={t('How the loop works')} /></span>
                   <h2 className="max-w-2xl text-4xl font-extrabold leading-[0.95] text-ink sm:text-5xl">{t('A complaint that closes on evidence.')}</h2>
                 </div>
                 <p className="max-w-sm text-sm leading-6 text-slate-600">
@@ -903,12 +1013,12 @@ export default function Home() {
                 {LOOP_STEPS.map((step, index) => (
                   <li key={step.name} className="surface-card tilt group p-5">
                     <div className="flex items-start justify-between">
-                      <span className="font-[family-name:var(--font-display)] text-6xl font-extrabold leading-none text-transparent [-webkit-text-stroke:1.5px_var(--ink)] transition-colors duration-300 group-hover:text-[var(--signal)]">
+                      <span className="fx-z2 font-[family-name:var(--font-display)] text-6xl font-extrabold leading-none text-transparent [-webkit-text-stroke:1.5px_var(--ink)] transition-colors duration-300 group-hover:text-[var(--signal)] dark:[-webkit-text-stroke:1.5px_var(--signal)] dark:group-hover:[filter:drop-shadow(0_0_14px_var(--signal))]">
                         {String(index + 1).padStart(2, '0')}
                       </span>
-                      <step.icon className="h-6 w-6 text-slate-500 transition-colors group-hover:text-ink" aria-hidden="true" />
+                      <step.icon className="fx-z1 h-6 w-6 text-slate-500 transition-colors group-hover:text-ink dark:group-hover:text-[var(--signal)]" aria-hidden="true" />
                     </div>
-                    <h3 className="mt-6 text-xl font-extrabold text-ink">{step.name}</h3>
+                    <h3 className="fx-z1 mt-6 text-xl font-extrabold text-ink">{step.name}</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-600">{t(step.blurb)}</p>
                   </li>
                 ))}
@@ -1127,6 +1237,7 @@ export default function Home() {
             </div>
           </>
         )}
+        </div>
       </main>
 
       <footer className="mt-8 border-t-[1.5px] border-ink bg-surface px-4 py-5 text-center font-mono text-[11px] uppercase tracking-[0.06em] text-slate-500">
@@ -1149,6 +1260,8 @@ export default function Home() {
           if (location) setUserLocation(location);
         }}
       />
+
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} groups={searchGroups} />
 
       {selectedTicket && <TicketDrawer ticket={selectedTicket} logs={selectedLogs} onClose={() => setSelectedTicketId(null)} />}
       {toast && <Toast message={toast} onClose={dismissToast} aboveDock={sessionUser !== null} />}

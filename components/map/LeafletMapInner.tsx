@@ -18,7 +18,6 @@ import {
   useMap,
   useMapEvents,
 } from 'react-leaflet';
-import { useAppTheme } from '@/components/AppThemeProvider';
 import { LoaderCircle, LocateFixed, Users, Wrench } from 'lucide-react';
 import {
   CATEGORY_META,
@@ -314,7 +313,6 @@ export default function LeafletMapInner({
   const pickerEnabled = Boolean(onPickLocation);
   const initialCenter = center ?? pickedLocation ?? userLocation ?? TKR_COLLEGE_CENTER;
   const [depotsVisible, setDepotsVisible] = useState(false);
-  const { theme } = useAppTheme();
 
   return (
     <MapContainer
@@ -323,14 +321,10 @@ export default function LeafletMapInner({
       scrollWheelZoom
       className={cn('h-full w-full', pickerEnabled && 'cursor-crosshair', className)}
     >
+      {/* One keyless tile source for both themes; dark mode re-tints it in CSS (fx.css). */}
       <TileLayer
-        key={theme}
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url={
-          theme === 'dark'
-            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-            : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-        }
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={19}
       />
 

@@ -2,10 +2,12 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Bricolage_Grotesque, Geist, Geist_Mono } from 'next/font/google';
 import { AppLanguageProvider } from '@/components/AppLanguageProvider';
-import TiltEffect from '@/components/TiltEffect';
+import FxLayer from '@/components/fx/FxLayer';
 import RevealOnScroll from '@/components/RevealOnScroll';
 import { AppThemeProvider } from '@/components/AppThemeProvider';
+import { BOOT_SCRIPT } from '@/lib/fx';
 import './globals.css';
+import './fx.css';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -31,7 +33,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#ece8dc',
+  themeColor: '#03040b',
   width: 'device-width',
   initialScale: 1,
 };
@@ -40,16 +42,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      data-theme="light"
+      data-theme="dark"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} h-full antialiased`}
     >
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: "try{if(localStorage.getItem('civicloop.theme')==='dark'){document.documentElement.dataset.theme='dark'}}catch(e){}",
+            __html: "try{if(localStorage.getItem('civicloop.theme')==='light'){document.documentElement.dataset.theme='light'}}catch(e){}",
           }}
         />
+        <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
         {/*
           Leaflet's stylesheet is loaded from the CDN rather than imported, so the
           map component can stay `ssr: false` without dragging CSS into the server
@@ -64,7 +67,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body className="min-h-full flex flex-col">
         <div className="scroll-progress" aria-hidden="true" />
-        <TiltEffect />
+        <FxLayer />
         <RevealOnScroll />
         <AppThemeProvider>
           <AppLanguageProvider>{children}</AppLanguageProvider>

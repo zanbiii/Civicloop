@@ -37,19 +37,20 @@ const LIGHT: Palette = {
   labelInk: '#16150f',
 };
 
+/* Neon night city: dark glass blocks with cyan wireframe edges under a violet loop ring. */
 const DARK: Palette = {
-  bg: '#0f0f0c',
-  gridLine: '#2a2a22',
-  gridSection: '#3f3e33',
-  block: '#22221b',
-  edge: '#d8d4c6',
-  park: '#25422f',
-  signal: '#ff6a2b',
-  ring: '#f1eee4',
-  critical: '#ff5147',
-  resolved: '#4cc784',
-  labelBg: '#181813',
-  labelInk: '#f1eee4',
+  bg: '#03040b',
+  gridLine: '#13204a',
+  gridSection: '#2a3f8f',
+  block: '#0b1030',
+  edge: '#39e6ff',
+  park: '#0d3a3a',
+  signal: '#39e6ff',
+  ring: '#8b5cf6',
+  critical: '#ff3d8a',
+  resolved: '#34f5a4',
+  labelBg: '#070a1c',
+  labelInk: '#bff6ff',
 };
 
 const GRID_SIZE = 9;

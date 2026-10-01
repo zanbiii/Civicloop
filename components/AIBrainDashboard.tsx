@@ -11,12 +11,14 @@ import {
   type CivicTicket,
   type RoutingOverride,
 } from '@/types/civic';
+import type { CSSProperties } from 'react';
 import AgentTerminal from '@/components/AgentTerminal';
+import CountUp from '@/components/CountUp';
+import { Equalizer, FxBadge, GlitchText, LiveIndicator } from '@/components/fx/Indicators';
 import { cn } from '@/lib/cn';
 import { useTranslate } from '@/components/AppLanguageProvider';
 
-/* Validated reference palette (dataviz skill): one magnitude series + the fixed status roles. */
-const SERIES_1 = 'var(--ink)';
+/* Validated reference palette (dataviz skill): one magnitude series (.fx-bar) + the fixed status roles. */
 const STATUS = { good: '#0ca30c', warning: '#fab219', critical: '#d03b3b' } as const;
 const OVERRIDE_ACTIVATION_WEIGHT = 0.55;
 
@@ -79,14 +81,16 @@ export function computeBrainTelemetry(tickets: CivicTicket[], overrides: Routing
 
 function Kpi({ icon: Icon, label, value, sub }: { icon: typeof Brain; label: string; value: string; sub?: string }) {
   return (
-    <div className="surface-card p-4 transition hover:-translate-y-0.5">
+    <div className="surface-card holo tilt p-4">
       <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-        <span className="flex h-6 w-6 items-center justify-center rounded-md border-[1.5px] border-ink text-ink" aria-hidden="true">
+        <span className="fx-z2 flex h-6 w-6 items-center justify-center rounded-md border-[1.5px] border-ink text-ink dark:border-[var(--signal)] dark:text-[var(--signal)] dark:shadow-[0_0_12px_-3px_var(--signal)]" aria-hidden="true">
           <Icon className="h-3.5 w-3.5" />
         </span>
         {label}
       </div>
-      <div className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-slate-900">{value}</div>
+      <div className="fx-z1 mt-2 text-2xl font-bold tabular-nums tracking-tight text-slate-900">
+        <CountUp value={value} />
+      </div>
       {sub && <div className="mt-0.5 text-[11px] text-slate-500">{sub}</div>}
     </div>
   );
@@ -102,16 +106,54 @@ function Card({ title, subtitle, children, className }: { title: string; subtitl
   );
 }
 
-function HBar({ label, value, max, title }: { label: React.ReactNode; value: number; max: number; title: string }) {
+function HBar({ label, value, max, title, index = 0 }: { label: React.ReactNode; value: number; max: number; title: string; index?: number }) {
   const width = max > 0 ? Math.max(value > 0 ? 2 : 0, (value / max) * 100) : 0;
   return (
-    <div className="grid grid-cols-[minmax(0,9rem)_1fr_2rem] items-center gap-2 text-xs" title={title}>
+    <div className="fx-bar-row grid grid-cols-[minmax(0,9rem)_1fr_2rem] items-center gap-2 text-xs" title={title}>
       <span className="truncate text-slate-600">{label}</span>
-      <div className="h-3 rounded-r bg-slate-50">
-        <div className="h-full rounded-r transition-[width] duration-700 ease-out" style={{ width: `${width}%`, backgroundColor: SERIES_1 }} />
+      <div className="fx-bar-track h-3 rounded-r bg-slate-50">
+        <div className="fx-bar h-full rounded-r transition-[width] duration-700 ease-out" style={{ width: `${width}%`, '--i': index } as CSSProperties} />
       </div>
-      <span className="text-right font-semibold tabular-nums text-slate-800">{value}</span>
+      <span className="text-right font-semibold tabular-nums text-slate-800">
+        <CountUp value={value} />
+      </span>
     </div>
+  );
+}
+
+const DONUT_R = 34;
+const DONUT_C = 2 * Math.PI * DONUT_R;
+
+/** SLA mix as a ring that draws itself segment by segment, total counting up in the middle. */
+function Donut({ segments, total }: { segments: Array<{ key: string; label: string; value: number; color: string }>; total: number }) {
+  const drawn = segments.filter((segment) => segment.value > 0);
+  const starts = drawn.map((_, index) => drawn.slice(0, index).reduce((sum, segment) => sum + (segment.value / total) * DONUT_C, 0));
+  return (
+    <svg viewBox="0 0 90 90" className="h-28 w-28 shrink-0 -rotate-90 overflow-visible" role="img" aria-label={drawn.map((s) => `${s.label}: ${s.value}`).join(', ')}>
+      <circle cx="45" cy="45" r={DONUT_R + 8} fill="none" stroke="var(--line-strong)" strokeWidth="0.6" strokeDasharray="1 4" className="fx-donut-spin" />
+      <circle cx="45" cy="45" r={DONUT_R} fill="none" stroke="var(--line)" strokeWidth="10" />
+      {drawn.map((segment, index) => {
+        const length = (segment.value / total) * DONUT_C;
+        const dash = Math.max(0.1, length - Math.min(2, length / 3));
+        return (
+          <circle
+            key={segment.key}
+            cx="45"
+            cy="45"
+            r={DONUT_R}
+            fill="none"
+            stroke={segment.color}
+            strokeWidth="10"
+            strokeDasharray={`${dash} ${DONUT_C - dash}`}
+            transform={`rotate(${(starts[index] / DONUT_C) * 360} 45 45)`}
+            className="fx-donut-seg"
+            style={{ '--len': dash, '--i': index, color: segment.color } as CSSProperties}
+          >
+            <title>{`${segment.label}: ${segment.value}`}</title>
+          </circle>
+        );
+      })}
+    </svg>
   );
 }
 
@@ -143,10 +185,11 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-slate-900">
-            <span className="flex h-9 w-9 items-center justify-center rounded-md chip-ink" aria-hidden="true">
+            <span className="side-logo flex h-9 w-9 items-center justify-center rounded-md" aria-hidden="true">
               <Brain className="h-5 w-5" />
             </span>
-            {tr('CivicSense AI Brain')}
+            <GlitchText text={tr('CivicSense AI Brain')} />
+            <FxBadge>AI</FxBadge>
           </h2>
           <p className="mt-1 text-xs text-slate-500">{tr('Five agents, one feedback loop — deduplication, self-healing routing, SLA sentinel and proof-gated closure.')}</p>
         </div>
@@ -156,12 +199,13 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
             liveAi ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600',
           )}
         >
-          <span className={cn('h-2 w-2 rounded-full', liveAi ? 'animate-pulse bg-emerald-500' : 'bg-slate-400')} />
+          {liveAi ? <LiveIndicator label="" /> : <span className="h-2 w-2 rounded-full bg-slate-400" />}
+          <Equalizer bars={liveAi ? 6 : 4} className={liveAi ? '' : 'opacity-50'} />
           {tr(liveAi ? 'Mistral live (pixtral-12b + mistral-large)' : 'Offline mock mode — set MISTRAL_API_KEY for live vision')}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="fx-stagger grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Kpi icon={Users} label={tr('Citizen reports')} value={String(t.totalReports)} sub={`${t.citizensEngaged} ${tr('unique citizens')}`} />
         <Kpi icon={GitMerge} label={tr('Master issues')} value={String(t.masterIssues)} sub={`${t.duplicatesMerged} ${tr('duplicates merged')}`} />
         <Kpi icon={GitMerge} label={tr('Duplicate reduction')} value={`${t.duplicateReductionPercent}%`} sub={tr('fewer tickets for crews')} />
@@ -172,15 +216,40 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title={tr('SLA health · open issues')} subtitle={`${openTotal} ${tr('open')} · ${t.slaMet} ${tr('closed within SLA')} · ${tr('avg resolution')} ${t.avgResolutionHours}h`}>
+          {openTotal > 0 && (
+            <div className="mb-4 flex items-center gap-5">
+              <div className="relative">
+                <Donut segments={slaSegments} total={openTotal} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="font-[family-name:var(--font-display)] text-2xl font-extrabold text-slate-900">
+                    <CountUp value={openTotal} />
+                  </span>
+                  <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-slate-500">{tr('open')}</span>
+                </div>
+              </div>
+              <div className="grid flex-1 gap-1.5">
+                {slaSegments.map((segment) => (
+                  <div key={segment.key} className="flex items-center justify-between gap-2 text-xs text-slate-600">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: segment.color, boxShadow: `0 0 8px ${segment.color}` }} />
+                      {segment.label}
+                    </span>
+                    <span className="font-semibold tabular-nums text-slate-900">{Math.round((segment.value / openTotal) * 100)}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {openTotal > 0 ? (
             <div className="flex h-4 w-full gap-[2px] overflow-hidden rounded">
               {slaSegments
                 .filter((segment) => segment.value > 0)
-                .map((segment) => (
+                .map((segment, index) => (
                   <div
                     key={segment.key}
                     title={`${segment.label}: ${segment.value}`}
-                    style={{ width: `${(segment.value / openTotal) * 100}%`, backgroundColor: segment.color }}
+                    className="fx-bar"
+                    style={{ width: `${(segment.value / openTotal) * 100}%`, background: segment.color, boxShadow: `0 0 12px ${segment.color}`, '--i': index } as CSSProperties}
                   />
                 ))}
             </div>
@@ -200,9 +269,10 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
 
         <Card title={tr('Open issues by department')} subtitle={tr('Bar = open master issues; resolved and breached counts alongside')}>
           <div className="space-y-2">
-            {t.byDepartment.map((row) => (
+            {t.byDepartment.map((row, index) => (
               <div key={row.department} className="grid grid-cols-[1fr_auto] items-center gap-3">
                 <HBar
+                  index={index}
                   label={`${DEPARTMENT_META[row.department].icon} ${tr(row.department)}`}
                   value={row.open}
                   max={maxDeptOpen}
@@ -225,9 +295,10 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title={tr('Citizen reports by category')} subtitle={tr('Counts every co-reporter, not just master tickets')}>
           <div className="space-y-2">
-            {t.byCategory.map((row) => (
+            {t.byCategory.map((row, index) => (
               <HBar
                 key={row.category}
+                index={index}
                 label={`${CATEGORY_META[row.category].icon} ${tr(row.category)}`}
                 value={row.count}
                 max={maxCategory}
@@ -276,11 +347,11 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
                 <th className="py-2 font-semibold">{tr('Last applied')}</th>
               </tr>
             </thead>
-            <tbody>
-              {sortedOverrides.map((override) => {
+            <tbody className="fx-cascade">
+              {sortedOverrides.map((override, rowIndex) => {
                 const active = override.weight >= OVERRIDE_ACTIVATION_WEIGHT;
                 return (
-                  <tr key={override.id} className="border-b border-slate-100 align-top transition-colors last:border-0 hover:bg-slate-50 dark:hover:bg-surface-2" title={override.reason}>
+                  <tr key={override.id} className="border-b border-slate-100 align-top transition-colors last:border-0 hover:bg-slate-50 dark:hover:bg-surface-2" title={override.reason} style={{ '--i': rowIndex } as CSSProperties}>
                     <td className="py-2 pr-3">
                       <div className="font-semibold text-slate-900">
                         {CATEGORY_META[override.category].icon} {tr(override.category)}
@@ -296,8 +367,8 @@ export default function AIBrainDashboard({ tickets, overrides, logs, liveAi }: A
                     </td>
                     <td className="py-2 pr-3">
                       <div className="flex items-center gap-2">
-                        <div className="relative h-2 w-24 rounded-full bg-slate-100">
-                          <div className="h-full rounded-full" style={{ width: `${override.weight * 100}%`, backgroundColor: SERIES_1 }} />
+                        <div className="fx-bar-track relative h-2 w-24 rounded-full bg-slate-100">
+                          <div className="fx-bar h-full rounded-full" style={{ width: `${override.weight * 100}%`, '--i': rowIndex } as CSSProperties} />
                           <div
                             className="absolute -top-0.5 h-3 w-px bg-slate-500"
                             style={{ left: `${OVERRIDE_ACTIVATION_WEIGHT * 100}%` }}

@@ -14,18 +14,19 @@ const THEME_EVENT = 'civicloop:theme-change';
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 let themeOverride: AppTheme | null = null;
 
+/** Dark (the neon interface) is the default; light only when the visitor chose it. */
 function getSavedTheme(): AppTheme {
   if (themeOverride !== null) return themeOverride;
   try {
-    return window.localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light';
+    return window.localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
   } catch (error) {
     console.warn('Civicloop: unable to read the saved theme preference', error);
-    return 'light';
+    return 'dark';
   }
 }
 
 function getServerTheme(): AppTheme {
-  return 'light';
+  return 'dark';
 }
 
 function subscribeToTheme(callback: () => void): () => void {

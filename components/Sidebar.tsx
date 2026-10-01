@@ -5,6 +5,8 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Repeat2, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useTranslate } from '@/components/AppLanguageProvider';
+import CountUp from '@/components/CountUp';
+import { LiveIndicator } from '@/components/fx/Indicators';
 
 export interface SidebarItem {
   id: string;
@@ -97,18 +99,29 @@ export default function Sidebar({ items, activeId, onNavigate, sectionLabel, pul
           {items.map((item) => renderItem(item, false))}
         </nav>
 
-        <div className="side-pulse tilt mt-auto rounded-2xl p-4">
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-            </span>
-            {t(pulse.label)}
+        <div className="side-pulse tilt fx-border relative mt-auto overflow-hidden rounded-2xl p-4">
+          <span className="fx-scanline" aria-hidden="true" />
+          <LiveIndicator label={t(pulse.label)} />
+          <div className="fx-z2 mt-2 font-[family-name:var(--font-display)] text-3xl font-bold tracking-tight text-slate-900">
+            <CountUp value={pulse.value} />
           </div>
-          <div className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{pulse.value}</div>
           <div className="mt-0.5 text-[11px] text-slate-500">{t(pulse.sub)}</div>
-          <svg viewBox="0 0 120 32" className="mt-3 h-8 w-full" aria-hidden="true">
-            <path className="side-spark" d="M0 24 C12 22 16 10 28 14 S46 28 58 18 S78 4 90 12 S108 20 120 6" fill="none" strokeWidth="2" strokeLinecap="round" />
+          <svg viewBox="0 0 120 32" className="mt-3 h-8 w-full overflow-visible" aria-hidden="true">
+            <defs>
+              <linearGradient id="fx-spark-gradient" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor="#8b5cf6" />
+                <stop offset="55%" stopColor="#39e6ff" />
+                <stop offset="100%" stopColor="#ff3dcb" />
+              </linearGradient>
+            </defs>
+            <path id="fx-spark-path" className="side-spark" d="M0 24 C12 22 16 10 28 14 S46 28 58 18 S78 4 90 12 S108 20 120 6" fill="none" strokeWidth="2" strokeLinecap="round" />
+            {!reduceMotion && (
+              <circle r="2.6" className="fill-[var(--signal)] [filter:drop-shadow(0_0_4px_var(--signal))]">
+                <animateMotion dur="4s" repeatCount="indefinite" rotate="auto">
+                  <mpath href="#fx-spark-path" />
+                </animateMotion>
+              </circle>
+            )}
           </svg>
         </div>
       </aside>

@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Bot, Check, ChevronDown, Globe, HardHat, LogOut, Moon, Phone, Repeat2, Rocket, ShieldCheck, Siren, Sun, User, X } from 'lucide-react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { motion } from 'framer-motion';
+import { Bot, Check, ChevronDown, Globe, HardHat, LogOut, Moon, Phone, Repeat2, Rocket, Search, ShieldCheck, Siren, Sun, User, X } from 'lucide-react';
 import type { SessionUser, UserRole } from '@/types/civic';
 import { cn } from '@/lib/cn';
 import type { AppLanguage } from '@/lib/i18n';
 import { useEscapeKey } from '@/lib/useEscapeKey';
 import { useTranslate } from '@/components/AppLanguageProvider';
 import { useAppTheme } from '@/components/AppThemeProvider';
+import ScrambleText from '@/components/fx/ScrambleText';
 
 const LANGUAGE_LABELS: Record<AppLanguage, string> = { en: 'English', kn: 'ಕನ್ನಡ', hi: 'हिन्दी' };
 
@@ -44,6 +46,40 @@ interface HeaderProps {
   onQuickSwitchRole?: (role: UserRole) => void;
   /** Page title shown in the top bar once signed in (the sidebar owns navigation). */
   title?: string;
+  /** Opens the ⌘K command palette. */
+  onOpenSearch?: () => void;
+}
+
+const SECTION_LINKS = [
+  { href: '#loop', label: 'How the loop works' },
+  { href: '#bounty', label: 'Bounty map' },
+  { href: '#csr', label: 'CSR funding' },
+];
+
+/** Landing-page section links with a glowing pill that glides to whichever link is hovered. */
+function SectionNav() {
+  const t = useTranslate();
+  const [hovered, setHovered] = useState<string | null>(null);
+  return (
+    <nav className="ml-6 hidden items-center gap-1 xl:flex" aria-label={t('Sections')} onMouseLeave={() => setHovered(null)}>
+      {SECTION_LINKS.map((link) => (
+        <a
+          key={link.href}
+          href={link.href}
+          onMouseEnter={() => setHovered(link.href)}
+          onFocus={() => setHovered(link.href)}
+          onBlur={() => setHovered(null)}
+          data-magnetic
+          className="fx-navlink whitespace-nowrap rounded-md px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-600 transition-colors hover:text-slate-900"
+        >
+          {hovered === link.href && (
+            <motion.span layoutId="fx-nav-pill" className="fx-nav-pill" transition={{ type: 'spring', stiffness: 420, damping: 34 }} aria-hidden="true" />
+          )}
+          <span className="relative">{t(link.label)}</span>
+        </a>
+      ))}
+    </nav>
+  );
 }
 
 export default function Header({
@@ -56,6 +92,7 @@ export default function Header({
   onLogout,
   onQuickSwitchRole,
   title,
+  onOpenSearch,
 }: HeaderProps) {
   const t = useTranslate();
   const { theme, toggleTheme } = useAppTheme();
@@ -76,6 +113,21 @@ export default function Header({
   }, [languageMenuOpen]);
 
   const RoleIcon = sessionUser ? ROLE_META[sessionUser.role].icon : User;
+
+  // Arrow keys walk the language menu; focus wraps at both ends.
+  const onMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]'));
+    const current = items.indexOf(document.activeElement as HTMLButtonElement);
+    const step = event.key === 'ArrowDown' ? 1 : -1;
+    items[(current + step + items.length) % items.length]?.focus();
+  };
+
+  useEffect(() => {
+    if (!languageMenuOpen) return;
+    languageMenuRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus();
+  }, [languageMenuOpen]);
 
   return (
     <div className="sticky top-0 z-50">
@@ -116,32 +168,31 @@ export default function Header({
             </div>
           </div>
 
-          {!sessionUser && (
-            <nav className="ml-6 hidden items-center gap-1 xl:flex" aria-label={t('Sections')}>
-              {[
-                { href: '#loop', label: 'How the loop works' },
-                { href: '#bounty', label: 'Bounty map' },
-                { href: '#csr', label: 'CSR funding' },
-              ].map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="whitespace-nowrap rounded-md px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                >
-                  {t(link.label)}
-                </a>
-              ))}
-            </nav>
-          )}
+          {!sessionUser && <SectionNav />}
 
           {sessionUser && title && (
             <div className="hidden min-w-0 lg:block">
               <div className="eyebrow">{t(ROLE_META[sessionUser.role].label)} {t('workspace')}</div>
-              <h1 className="truncate text-2xl font-extrabold leading-tight text-slate-900">{t(title)}</h1>
+              <h1 className="truncate text-2xl font-extrabold leading-tight text-slate-900">
+                <ScrambleText text={t(title)} duration={650} />
+              </h1>
             </div>
           )}
 
           <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
+            {onOpenSearch && (
+              <button
+                type="button"
+                onClick={onOpenSearch}
+                data-magnetic
+                className="btn btn-secondary btn-sm min-h-9 gap-2 rounded-full px-3 font-medium text-slate-500"
+                aria-label={t('Search')}
+                title={`${t('Search')} (Ctrl+K)`}
+              >
+                <Search className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="fx-kbd hidden lg:inline">⌘K</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={onToggleDemoMode}
@@ -197,7 +248,7 @@ export default function Header({
             )}
 
             <span
-              className="hidden items-center gap-1 whitespace-nowrap rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800 xl:flex"
+              className="hidden items-center gap-1 whitespace-nowrap rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800 min-[1760px]:flex"
               title={t('Personal phone numbers and identities are scrubbed from public view — only issue location and category are shared with CoVs.')}
             >
               <ShieldCheck className="h-3.5 w-3.5" /> {t('Privacy-first')}
@@ -207,6 +258,7 @@ export default function Header({
               <button
                 type="button"
                 onClick={toggleTheme}
+                data-magnetic
                 className="btn btn-secondary btn-icon h-9 w-9"
                 aria-label={t(theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode')}
                 title={t(theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode')}
@@ -232,7 +284,8 @@ export default function Header({
                 <>
                   <div
                     role="menu"
-                    className="absolute right-0 z-50 mt-1.5 w-36 origin-top-right animate-slide-down overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-900/10"
+                    onKeyDown={onMenuKeyDown}
+                    className="fx-menu absolute right-0 z-50 mt-1.5 w-36 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-900/10"
                   >
                     {(Object.keys(LANGUAGE_LABELS) as AppLanguage[]).map((code) => (
                       <button
