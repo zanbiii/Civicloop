@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Bot, Check, ChevronDown, Globe, HardHat, LogOut, Moon, Phone, Repeat2, Rocket, ShieldCheck, Siren, Sun, User, X } from 'lucide-react';
 import type { SessionUser, UserRole } from '@/types/civic';
 import { cn } from '@/lib/cn';
@@ -61,7 +61,19 @@ export default function Header({
   const { theme, toggleTheme } = useAppTheme();
   const [sosDismissed, setSosDismissed] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+  const languageMenuRef = useRef<HTMLDivElement>(null);
   useEscapeKey(() => setLanguageMenuOpen(false), languageMenuOpen);
+
+  // A document listener rather than a full-screen overlay: the top bar's backdrop-filter
+  // makes it the containing block for fixed children, so an overlay would only cover the header.
+  useEffect(() => {
+    if (!languageMenuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!languageMenuRef.current?.contains(event.target as Node)) setLanguageMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [languageMenuOpen]);
 
   const RoleIcon = sessionUser ? ROLE_META[sessionUser.role].icon : User;
 
@@ -203,7 +215,7 @@ export default function Header({
               </button>
             </div>
 
-            <div className="relative">
+            <div ref={languageMenuRef} className="relative">
               <button
                 type="button"
                 onClick={() => setLanguageMenuOpen((open) => !open)}
@@ -218,7 +230,6 @@ export default function Header({
               </button>
               {languageMenuOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setLanguageMenuOpen(false)} />
                   <div
                     role="menu"
                     className="absolute right-0 z-50 mt-1.5 w-36 origin-top-right animate-slide-down overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-900/10"

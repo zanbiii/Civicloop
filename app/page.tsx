@@ -528,7 +528,8 @@ function TicketDrawer({ ticket, logs, onClose }: { ticket: CivicTicket; logs: Ci
   );
 }
 
-function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+/** `aboveDock` lifts the toast clear of the phone bottom dock, which only exists when signed in. */
+function Toast({ message, onClose, aboveDock }: { message: string; onClose: () => void; aboveDock: boolean }) {
   const t = useTranslate();
   useEffect(() => {
     const timer = window.setTimeout(onClose, 6_000);
@@ -536,7 +537,7 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   }, [message, onClose]);
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[2100] flex justify-center px-4 lg:bottom-4">
+    <div className={cn('pointer-events-none fixed inset-x-0 z-[2100] flex justify-center px-4 lg:bottom-4', aboveDock ? 'bottom-24' : 'bottom-4')}>
       <div
         key={message}
         role="status"
@@ -1150,7 +1151,7 @@ export default function Home() {
       />
 
       {selectedTicket && <TicketDrawer ticket={selectedTicket} logs={selectedLogs} onClose={() => setSelectedTicketId(null)} />}
-      {toast && <Toast message={toast} onClose={dismissToast} />}
+      {toast && <Toast message={toast} onClose={dismissToast} aboveDock={sessionUser !== null} />}
 
       <UpiReceiptModal
         bounty={paidBounty?.bounty ?? null}
