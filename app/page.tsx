@@ -213,7 +213,7 @@ function PitchBanner() {
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-controls="pitch-banner-body"
-        className="group flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-white/[0.04] sm:px-5"
+        className="group flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-white/4 sm:px-5"
       >
         <span className="side-logo flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
           <Sparkles className="h-5 w-5" />
@@ -228,7 +228,7 @@ function PitchBanner() {
         <div id="pitch-banner-body" className="animate-slide-down border-t border-white/10 px-5 pb-5 pt-2">
           <div className="fx-stagger grid gap-2.5">
             {PITCH_ROWS.map((row) => (
-              <div key={row.topic} className="fx-spot grid gap-2.5 rounded-lg border border-white/[0.08] bg-white/[0.04] p-3.5 transition-[border-color,transform] duration-300 hover:translate-x-1 hover:border-[var(--signal)]/60 md:grid-cols-[8rem_1fr_1.4fr] md:items-start">
+              <div key={row.topic} className="fx-spot grid gap-2.5 rounded-lg border border-white/8 bg-white/4 p-3.5 transition-[border-color,transform] duration-300 hover:translate-x-1 hover:border-(--signal)/60 md:grid-cols-[8rem_1fr_1.4fr] md:items-start">
                 <span className="flex items-center gap-2 text-sm font-semibold text-slate-100">
                   <row.icon className="h-4 w-4 text-[#ff8a5f]" /> {t(row.topic)}
                 </span>
@@ -276,7 +276,7 @@ function DemoBar({
     'demo-bar-action flex min-h-8 shrink-0 items-center gap-1.5 rounded-md border-[1.5px] px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.06em] transition duration-150 active:scale-[0.97] disabled:opacity-50';
   return (
     <div className="demo-bar">
-      <div className="soft-scrollbar mx-auto flex max-w-[90rem] items-center gap-2 overflow-x-auto px-3 py-2 sm:px-5 lg:px-8">
+      <div className="soft-scrollbar mx-auto flex max-w-360 items-center gap-2 overflow-x-auto px-3 py-2 sm:px-5 lg:px-8">
         <span className="shrink-0 chip-ink rounded-md px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.12em]">{t('Demo lab')}</span>
         <button type="button" disabled={busy} aria-busy={busy && lastScenario === 'pothole'} onClick={() => runScenario('pothole')} className={button}>
           {busy && lastScenario === 'pothole' ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <GitMerge className="h-3.5 w-3.5" aria-hidden="true" />}
@@ -303,13 +303,13 @@ function DemoBar({
 function CommandDeck({ name, role, blurb }: { name: string; role: string; blurb: string }) {
   const t = useTranslate();
   return (
-    <section className="surface-card holo relative isolate min-h-[11.5rem] overflow-hidden sm:min-h-[14rem]">
+    <section className="surface-card holo relative isolate min-h-46 overflow-hidden sm:min-h-56">
       <span className="fx-sweep" aria-hidden="true" />
       <HudFrame readout="17.2844°N · 78.5651°E" scan className="hidden sm:block" />
       <CityScene variant="banner" className="absolute inset-y-0 right-0 -z-20 w-full opacity-45 sm:w-[66%] sm:opacity-100" />
       {/* Paper scrim keeps the greeting legible wherever the city runs under it. */}
       <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,var(--surface)_0%,var(--surface)_34%,color-mix(in_srgb,var(--surface)_70%,transparent)_52%,transparent_72%)] dark:bg-[linear-gradient(90deg,#070a1c_0%,rgb(7_10_28/85%)_38%,transparent_75%)]" />
-      <div className="relative z-[3] max-w-lg p-5 sm:p-8">
+      <div className="relative z-3 max-w-lg p-5 sm:p-8">
         <div className="flex items-center gap-3">
           <span className="eyebrow"><ScrambleText text={t(role)} /></span>
           <LiveIndicator label={t('Online')} tone="cyan" />
@@ -352,7 +352,7 @@ function MapCard({
     <section className={cn('surface-card overflow-hidden p-3 sm:p-4', stretchToColumn && 'lg:flex lg:h-full lg:flex-col')}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
         <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-          <MapIcon className="h-4 w-4 text-[var(--signal)]" /> {t(title)}
+          <MapIcon className="h-4 w-4 text-signal" /> {t(title)}
           <LiveIndicator label={t('Live')} className="ml-1" />
         </h3>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600">
@@ -408,7 +408,7 @@ function TicketDrawer({ ticket, logs, onClose }: { ticket: CivicTicket; logs: Ci
   useEscapeKey(onClose);
 
   return (
-    <div className="fx-scrim fixed inset-0 z-[1900] flex animate-fade-in justify-end bg-slate-950/45" onClick={onClose}>
+    <div className="fx-scrim fixed inset-0 z-1900 flex animate-fade-in justify-end bg-slate-950/45" onClick={onClose}>
       <aside
         role="dialog"
         aria-modal="true"
@@ -558,13 +558,13 @@ function Toast({ message, onClose, aboveDock }: { message: string; onClose: () =
   }, [message, onClose]);
 
   return (
-    <div className={cn('pointer-events-none fixed inset-x-0 z-[2100] flex justify-center px-4 lg:bottom-4', aboveDock ? 'bottom-24' : 'bottom-4')}>
+    <div className={cn('pointer-events-none fixed inset-x-0 z-2100 flex justify-center px-4 lg:bottom-4', aboveDock ? 'bottom-24' : 'bottom-4')}>
       <div
         key={message}
         role="status"
         aria-live="polite"
         className={cn(
-          'fx-toast pointer-events-auto flex max-w-lg items-start gap-2.5 rounded-lg border-[1.5px] border-[var(--signal)] bg-[#16150f] px-4 py-3 text-sm text-white shadow-[4px_4px_0_var(--signal)]',
+          'fx-toast pointer-events-auto flex max-w-lg items-start gap-2.5 rounded-lg border-[1.5px] border-signal bg-slate-900 px-4 py-3 text-sm text-white shadow-[4px_4px_0_var(--signal)]',
           warn && 'fx-toast-warn',
         )}
       >
@@ -871,7 +871,7 @@ export default function Home() {
     <div className={cn('app-shell flex min-h-full flex-1 flex-col text-slate-900', sessionUser && 'pb-24 lg:pb-0 lg:pl-72')}>
       <a
         href="#main-content"
-        className="sr-only fixed left-4 top-4 z-[3000] rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg focus:not-sr-only"
+        className="sr-only fixed left-4 top-4 z-3000 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg focus:not-sr-only"
       >
         Skip to content
       </a>
@@ -915,7 +915,7 @@ export default function Home() {
         className={cn(
           'flex-1',
           sessionUser
-            ? 'mx-auto w-full max-w-[96rem] px-3 py-5 sm:px-5 sm:py-7 lg:px-8'
+            ? 'mx-auto w-full max-w-384 px-3 py-5 sm:px-5 sm:py-7 lg:px-8'
             : 'w-full',
         )}
       >
@@ -925,8 +925,8 @@ export default function Home() {
           <>
             <section id="top" className="relative isolate overflow-hidden border-b-[1.5px] border-ink bg-paper">
               <HudFrame label="CIVICLOOP // GRID-07" readout="17.2844°N · 78.5651°E · ALT 512M" scan className="hidden lg:block" />
-              <div className="relative mx-auto flex min-h-[calc(100svh-9.5rem)] max-w-[96rem] flex-col justify-between gap-8 px-3 pt-10 sm:px-5 lg:gap-12 lg:px-8 lg:pt-14">
-                <div className="relative z-[3] max-w-4xl space-y-6 lg:max-w-[46%]" data-depth="" style={{ '--depth': 8 } as React.CSSProperties}>
+              <div className="relative mx-auto flex min-h-[calc(100svh-9.5rem)] max-w-384 flex-col justify-between gap-8 px-3 pt-10 sm:px-5 lg:gap-12 lg:px-8 lg:pt-14">
+                <div className="relative z-3 max-w-4xl space-y-6 lg:max-w-[46%]" data-depth="" style={{ '--depth': 8 } as React.CSSProperties}>
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="eyebrow"><ScrambleText text={t('CIVICSENSE · 5 AI AGENTS AT WORK')} delay={200} duration={1100} /></span>
                     <LiveIndicator label={t('Systems online')} />
@@ -954,9 +954,9 @@ export default function Home() {
                   </div>
                 </div>
 
-                <CityScene className="scene-fade-left relative -mx-3 h-[340px] sm:-mx-5 sm:h-[460px] lg:absolute lg:inset-y-0 lg:left-[40%] lg:right-0 lg:-z-10 lg:mx-0 lg:h-auto" />
+                <CityScene className="scene-fade-left relative -mx-3 h-85 sm:-mx-5 sm:h-115 lg:absolute lg:inset-y-0 lg:left-[40%] lg:right-0 lg:-z-10 lg:mx-0 lg:h-auto" />
 
-                <dl className="holo relative z-[3] grid grid-cols-2 overflow-hidden border-[1.5px] border-b-0 border-ink bg-surface backdrop-blur-md lg:grid-cols-4 dark:bg-[rgb(6_9_24/72%)]">
+                <dl className="holo relative z-3 grid grid-cols-2 overflow-hidden border-[1.5px] border-b-0 border-ink bg-surface backdrop-blur-md lg:grid-cols-4 dark:bg-[rgb(6_9_24/72%)]">
                   <span className="fx-sweep" aria-hidden="true" style={{ '--sweep-delay': '2.4s' } as React.CSSProperties} />
                   {[
                     { label: t('Neighbors heard'), value: telemetry.totalReports, sub: `${telemetry.masterIssues} ${t('issues tracked')}`, icon: Users },
@@ -973,21 +973,21 @@ export default function Home() {
                         index === 2 && 'lg:border-l-[1.5px] lg:border-ink',
                       )}
                     >
-                      <dt className="flex items-center justify-between gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 group-hover:text-[var(--on-signal)] sm:text-[11px]">
+                      <dt className="flex items-center justify-between gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 group-hover:text-(--on-signal) sm:text-[11px]">
                         {stat.label}
-                        <stat.icon className="h-4 w-4 shrink-0 transition-transform duration-500 group-hover:rotate-[-12deg] group-hover:scale-125" aria-hidden="true" />
+                        <stat.icon className="h-4 w-4 shrink-0 transition-transform duration-500 group-hover:-rotate-12 group-hover:scale-125" aria-hidden="true" />
                       </dt>
-                      <dd className="mt-2 font-[family-name:var(--font-display)] text-4xl font-extrabold tracking-tight text-ink group-hover:text-[var(--on-signal)] sm:text-5xl">
+                      <dd className="mt-2 font-display text-4xl font-extrabold tracking-tight text-ink group-hover:text-(--on-signal) sm:text-5xl">
                         <CountUp value={stat.value} />
                       </dd>
-                      <div className="mt-1 text-[11px] text-slate-500 group-hover:text-[var(--on-signal)]">{stat.sub}</div>
+                      <div className="mt-1 text-[11px] text-slate-500 group-hover:text-(--on-signal)">{stat.sub}</div>
                     </div>
                   ))}
                 </dl>
               </div>
             </section>
 
-            <div className="marquee overflow-hidden border-b-[1.5px] border-ink bg-[#16150f] py-2.5 text-[#f8f6ef]" aria-hidden="true">
+            <div className="marquee overflow-hidden border-b-[1.5px] border-ink bg-slate-900 py-2.5 text-slate-50" aria-hidden="true">
               <div className="marquee-track flex gap-8 font-mono text-xs font-semibold uppercase tracking-[0.16em]">
                 {[...Object.keys(CATEGORY_META), ...Object.keys(CATEGORY_META)].map((category, index) => (
                   <span key={`${category}-${index}`} className="flex shrink-0 items-center gap-8">
@@ -998,7 +998,7 @@ export default function Home() {
               </div>
             </div>
 
-            <section id="loop" className="relative isolate mx-auto w-full max-w-[96rem] overflow-hidden px-3 py-12 sm:px-5 lg:px-8 lg:py-16">
+            <section id="loop" className="relative isolate mx-auto w-full max-w-384 overflow-hidden px-3 py-12 sm:px-5 lg:px-8 lg:py-16">
               <span className="fx-ghost-word fx-parallax right-0 top-4 text-[clamp(6rem,18vw,16rem)]" aria-hidden="true">LOOP</span>
               <div className="fx-scroll-rise mb-8 flex flex-wrap items-end justify-between gap-4">
                 <div className="space-y-3">
@@ -1013,10 +1013,10 @@ export default function Home() {
                 {LOOP_STEPS.map((step, index) => (
                   <li key={step.name} className="surface-card tilt group p-5">
                     <div className="flex items-start justify-between">
-                      <span className="fx-z2 font-[family-name:var(--font-display)] text-6xl font-extrabold leading-none text-transparent [-webkit-text-stroke:1.5px_var(--ink)] transition-colors duration-300 group-hover:text-[var(--signal)] dark:[-webkit-text-stroke:1.5px_var(--signal)] dark:group-hover:[filter:drop-shadow(0_0_14px_var(--signal))]">
+                      <span className="fx-z2 font-display text-6xl font-extrabold leading-none text-transparent [-webkit-text-stroke:1.5px_var(--ink)] transition-colors duration-300 group-hover:text-signal dark:[-webkit-text-stroke:1.5px_var(--signal)] dark:group-hover:filter-[drop-shadow(0_0_14px_var(--signal))]">
                         {String(index + 1).padStart(2, '0')}
                       </span>
-                      <step.icon className="fx-z1 h-6 w-6 text-slate-500 transition-colors group-hover:text-ink dark:group-hover:text-[var(--signal)]" aria-hidden="true" />
+                      <step.icon className="fx-z1 h-6 w-6 text-slate-500 transition-colors group-hover:text-ink dark:group-hover:text-signal" aria-hidden="true" />
                     </div>
                     <h3 className="fx-z1 mt-6 text-xl font-extrabold text-ink">{step.name}</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-600">{t(step.blurb)}</p>
@@ -1025,7 +1025,7 @@ export default function Home() {
               </ol>
             </section>
 
-            <div className="mx-auto w-full max-w-[96rem] space-y-8 px-3 pb-12 sm:px-5 lg:px-8 lg:pb-16">
+            <div className="mx-auto w-full max-w-384 space-y-8 px-3 pb-12 sm:px-5 lg:px-8 lg:pb-16">
             <PitchBanner />
 
 
